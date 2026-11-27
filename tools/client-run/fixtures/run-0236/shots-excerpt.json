@@ -1,0 +1,2841 @@
+[
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "components/button",
+      "status": "ready",
+      "createdAt": "2026-11-25T01:41:09.036Z",
+      "createdBy": {
+        "cmd": "design sketch new components/button --override --variants a,b,c --by claude-opus-5-5 --round Drei Knopfformen --note Kapsel mit Glas wie der alte Katalog, weiches Rechteck mit Rahmen, Kinoweiß mit Glas; alle auf dem Knopf des Baukastens, 44 Pixel hoch. --variant-note a=Kapsel wie im alten Katalog: Abspielen in Türkis, Mehr Infos und Symbolknöpfe als mattes Glas. Vertraut und ruhig über Bildern, auf schwarzem Grund wirkt das Glas aber schwach. --variant-note b=Weiches Rechteck: Abspielen in Türkis, Mehr Infos mit feinem Rahmen, Symbolknöpfe eckig gerundet. Klar und sachlich, wirkt aber eher wie eine Arbeits-App als wie ein Kino. --variant-note c=Kinoweiß: Abspielen als weiße Kapsel, Mehr Infos als Glas, Türkis nur im Fokusring. Am stärksten über Plakaten, dafür trägt der Knopf die Markenfarbe kaum.",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Drei Knopfformen",
+          "note": "Kapsel mit Glas wie der alte Katalog, weiches Rechteck mit Rahmen, Kinoweiß mit Glas; alle auf dem Knopf des Baukastens, 44 Pixel hoch.",
+          "asks": ["abspielen", "mehr-infos", "filter", "ueber-bild"]
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Kapsel wie im alten Katalog: Abspielen in Türkis, Mehr Infos und Symbolknöpfe als mattes Glas. Vertraut und ruhig über Bildern, auf schwarzem Grund wirkt das Glas aber schwach."
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Weiches Rechteck: Abspielen in Türkis, Mehr Infos mit feinem Rahmen, Symbolknöpfe eckig gerundet. Klar und sachlich, wirkt aber eher wie eine Arbeits-App als wie ein Kino."
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Kinoweiß: Abspielen als weiße Kapsel, Mehr Infos als Glas, Türkis nur im Fokusring. Am stärksten über Plakaten, dafür trägt der Knopf die Markenfarbe kaum."
+        }
+      },
+      "merge": "override",
+      "readyContent": {
+        "a": "534887af7b15e149",
+        "b": "238208c3adaf418c",
+        "c": "35edb19c00b74e47"
+      },
+      "mergeHold": {
+        "reason": "variant a changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild; variant b changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild; variant c changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild",
+        "at": "2026-11-25T01:48:29.450Z"
+      },
+      "recommended": "a",
+      "product": "tomflix",
+      "layer": "components",
+      "name": "button",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": {
+        "merges": false,
+        "reason": "variant a changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild; variant b changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild; variant c changes abspielen, abspielen-hover, abspielen-focus-visible, abspielen-active, abspielen-disabled, mehr-infos, mehr-infos-hover, mehr-infos-focus-visible, mehr-infos-active, mehr-infos-disabled, filter, filter-hover, filter-focus-visible, filter-active, filter-disabled, merken, ueber-bild",
+        "contents": {
+          "a": "534887af7b15e149",
+          "b": "238208c3adaf418c",
+          "c": "35edb19c00b74e47"
+        },
+        "at": "2026-11-25T01:47:46.900Z"
+      },
+      "targetParts": ["components/button"],
+      "dir": ".ethlete/design/tomflix/sketches/components-button",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": []
+        },
+        {
+          "variant": "b",
+          "problems": []
+        },
+        {
+          "variant": "c",
+          "problems": []
+        }
+      ],
+      "targets": [
+        {
+          "part": "components/button",
+          "variant": "a",
+          "states": [
+            "abspielen",
+            "abspielen-hover",
+            "abspielen-focus-visible",
+            "abspielen-active",
+            "abspielen-disabled",
+            "mehr-infos",
+            "mehr-infos-hover",
+            "mehr-infos-focus-visible",
+            "mehr-infos-active",
+            "mehr-infos-disabled",
+            "filter",
+            "filter-hover",
+            "filter-focus-visible",
+            "filter-active",
+            "filter-disabled",
+            "merken",
+            "ueber-bild"
+          ],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {},
+          "changes": {
+            "added": [
+              "abspielen",
+              "abspielen-hover",
+              "abspielen-focus-visible",
+              "abspielen-active",
+              "abspielen-disabled",
+              "mehr-infos",
+              "mehr-infos-hover",
+              "mehr-infos-focus-visible",
+              "mehr-infos-active",
+              "mehr-infos-disabled",
+              "filter",
+              "filter-hover",
+              "filter-focus-visible",
+              "filter-active",
+              "filter-disabled",
+              "merken",
+              "ueber-bild"
+            ],
+            "dropped": [
+              "filled",
+              "filled-hover",
+              "filled-active",
+              "filled-focus-visible",
+              "outline",
+              "outline-hover",
+              "outline-active",
+              "outline-focus-visible",
+              "tonal",
+              "tonal-hover",
+              "tonal-active",
+              "tonal-focus-visible",
+              "transparent",
+              "transparent-hover",
+              "transparent-active",
+              "transparent-focus-visible",
+              "pressed",
+              "pressed-hover",
+              "pressed-active",
+              "pressed-focus-visible",
+              "danger",
+              "danger-hover",
+              "danger-active",
+              "danger-focus-visible",
+              "small",
+              "small-hover",
+              "small-active",
+              "small-focus-visible",
+              "disabled",
+              "icon-filled",
+              "icon-filled-hover",
+              "icon-filled-active",
+              "icon-filled-focus-visible",
+              "icon-outline",
+              "icon-outline-hover",
+              "icon-outline-active",
+              "icon-outline-focus-visible",
+              "icon-tonal",
+              "icon-tonal-hover",
+              "icon-tonal-active",
+              "icon-tonal-focus-visible",
+              "icon-transparent",
+              "icon-transparent-hover",
+              "icon-transparent-active",
+              "icon-transparent-focus-visible",
+              "size-xs",
+              "size-xs-hover",
+              "size-xs-active",
+              "size-xs-focus-visible",
+              "size-sm",
+              "size-sm-hover",
+              "size-sm-active",
+              "size-sm-focus-visible",
+              "size-md",
+              "size-md-hover",
+              "size-md-active",
+              "size-md-focus-visible",
+              "size-lg",
+              "size-lg-hover",
+              "size-lg-active",
+              "size-lg-focus-visible",
+              "size-xl",
+              "size-xl-hover",
+              "size-xl-active",
+              "size-xl-focus-visible"
+            ],
+            "note": {
+              "before": "scale of the decided shape, Q182, lead merge",
+              "after": "Kapsel mit mattem Glas für Zweitknöpfe, wie die 44-Pixel-Kapseln des alten Katalogs."
+            }
+          },
+          "inherited": [
+            "filled",
+            "filled-hover",
+            "filled-active",
+            "filled-focus-visible",
+            "outline",
+            "outline-hover",
+            "outline-active",
+            "outline-focus-visible",
+            "tonal",
+            "tonal-hover",
+            "tonal-active",
+            "tonal-focus-visible",
+            "transparent",
+            "transparent-hover",
+            "transparent-active",
+            "transparent-focus-visible",
+            "pressed",
+            "pressed-hover",
+            "pressed-active",
+            "pressed-focus-visible",
+            "danger",
+            "danger-hover",
+            "danger-active",
+            "danger-focus-visible",
+            "small",
+            "small-hover",
+            "small-active",
+            "small-focus-visible",
+            "disabled",
+            "icon-filled",
+            "icon-filled-hover",
+            "icon-filled-active",
+            "icon-filled-focus-visible",
+            "icon-outline",
+            "icon-outline-hover",
+            "icon-outline-active",
+            "icon-outline-focus-visible",
+            "icon-tonal",
+            "icon-tonal-hover",
+            "icon-tonal-active",
+            "icon-tonal-focus-visible",
+            "icon-transparent",
+            "icon-transparent-hover",
+            "icon-transparent-active",
+            "icon-transparent-focus-visible",
+            "size-xs",
+            "size-xs-hover",
+            "size-xs-active",
+            "size-xs-focus-visible",
+            "size-sm",
+            "size-sm-hover",
+            "size-sm-active",
+            "size-sm-focus-visible",
+            "size-md",
+            "size-md-hover",
+            "size-md-active",
+            "size-md-focus-visible",
+            "size-lg",
+            "size-lg-hover",
+            "size-lg-active",
+            "size-lg-focus-visible",
+            "size-xl",
+            "size-xl-hover",
+            "size-xl-active",
+            "size-xl-focus-visible"
+          ]
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "states": [
+            "abspielen",
+            "abspielen-hover",
+            "abspielen-focus-visible",
+            "abspielen-active",
+            "abspielen-disabled",
+            "mehr-infos",
+            "mehr-infos-hover",
+            "mehr-infos-focus-visible",
+            "mehr-infos-active",
+            "mehr-infos-disabled",
+            "filter",
+            "filter-hover",
+            "filter-focus-visible",
+            "filter-active",
+            "filter-disabled",
+            "merken",
+            "ueber-bild"
+          ],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {},
+          "changes": {
+            "added": [
+              "abspielen",
+              "abspielen-hover",
+              "abspielen-focus-visible",
+              "abspielen-active",
+              "abspielen-disabled",
+              "mehr-infos",
+              "mehr-infos-hover",
+              "mehr-infos-focus-visible",
+              "mehr-infos-active",
+              "mehr-infos-disabled",
+              "filter",
+              "filter-hover",
+              "filter-focus-visible",
+              "filter-active",
+              "filter-disabled",
+              "merken",
+              "ueber-bild"
+            ],
+            "dropped": [
+              "filled",
+              "filled-hover",
+              "filled-active",
+              "filled-focus-visible",
+              "outline",
+              "outline-hover",
+              "outline-active",
+              "outline-focus-visible",
+              "tonal",
+              "tonal-hover",
+              "tonal-active",
+              "tonal-focus-visible",
+              "transparent",
+              "transparent-hover",
+              "transparent-active",
+              "transparent-focus-visible",
+              "pressed",
+              "pressed-hover",
+              "pressed-active",
+              "pressed-focus-visible",
+              "danger",
+              "danger-hover",
+              "danger-active",
+              "danger-focus-visible",
+              "small",
+              "small-hover",
+              "small-active",
+              "small-focus-visible",
+              "disabled",
+              "icon-filled",
+              "icon-filled-hover",
+              "icon-filled-active",
+              "icon-filled-focus-visible",
+              "icon-outline",
+              "icon-outline-hover",
+              "icon-outline-active",
+              "icon-outline-focus-visible",
+              "icon-tonal",
+              "icon-tonal-hover",
+              "icon-tonal-active",
+              "icon-tonal-focus-visible",
+              "icon-transparent",
+              "icon-transparent-hover",
+              "icon-transparent-active",
+              "icon-transparent-focus-visible",
+              "size-xs",
+              "size-xs-hover",
+              "size-xs-active",
+              "size-xs-focus-visible",
+              "size-sm",
+              "size-sm-hover",
+              "size-sm-active",
+              "size-sm-focus-visible",
+              "size-md",
+              "size-md-hover",
+              "size-md-active",
+              "size-md-focus-visible",
+              "size-lg",
+              "size-lg-hover",
+              "size-lg-active",
+              "size-lg-focus-visible",
+              "size-xl",
+              "size-xl-hover",
+              "size-xl-active",
+              "size-xl-focus-visible"
+            ],
+            "note": {
+              "before": "scale of the decided shape, Q182, lead merge",
+              "after": "Weiches Rechteck mit feinem Rahmen für Zweitknöpfe, 44 Pixel hoch."
+            }
+          },
+          "inherited": [
+            "filled",
+            "filled-hover",
+            "filled-active",
+            "filled-focus-visible",
+            "outline",
+            "outline-hover",
+            "outline-active",
+            "outline-focus-visible",
+            "tonal",
+            "tonal-hover",
+            "tonal-active",
+            "tonal-focus-visible",
+            "transparent",
+            "transparent-hover",
+            "transparent-active",
+            "transparent-focus-visible",
+            "pressed",
+            "pressed-hover",
+            "pressed-active",
+            "pressed-focus-visible",
+            "danger",
+            "danger-hover",
+            "danger-active",
+            "danger-focus-visible",
+            "small",
+            "small-hover",
+            "small-active",
+            "small-focus-visible",
+            "disabled",
+            "icon-filled",
+            "icon-filled-hover",
+            "icon-filled-active",
+            "icon-filled-focus-visible",
+            "icon-outline",
+            "icon-outline-hover",
+            "icon-outline-active",
+            "icon-outline-focus-visible",
+            "icon-tonal",
+            "icon-tonal-hover",
+            "icon-tonal-active",
+            "icon-tonal-focus-visible",
+            "icon-transparent",
+            "icon-transparent-hover",
+            "icon-transparent-active",
+            "icon-transparent-focus-visible",
+            "size-xs",
+            "size-xs-hover",
+            "size-xs-active",
+            "size-xs-focus-visible",
+            "size-sm",
+            "size-sm-hover",
+            "size-sm-active",
+            "size-sm-focus-visible",
+            "size-md",
+            "size-md-hover",
+            "size-md-active",
+            "size-md-focus-visible",
+            "size-lg",
+            "size-lg-hover",
+            "size-lg-active",
+            "size-lg-focus-visible",
+            "size-xl",
+            "size-xl-hover",
+            "size-xl-active",
+            "size-xl-focus-visible"
+          ]
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "states": [
+            "abspielen",
+            "abspielen-hover",
+            "abspielen-focus-visible",
+            "abspielen-active",
+            "abspielen-disabled",
+            "mehr-infos",
+            "mehr-infos-hover",
+            "mehr-infos-focus-visible",
+            "mehr-infos-active",
+            "mehr-infos-disabled",
+            "filter",
+            "filter-hover",
+            "filter-focus-visible",
+            "filter-active",
+            "filter-disabled",
+            "merken",
+            "ueber-bild"
+          ],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {},
+          "changes": {
+            "added": [
+              "abspielen",
+              "abspielen-hover",
+              "abspielen-focus-visible",
+              "abspielen-active",
+              "abspielen-disabled",
+              "mehr-infos",
+              "mehr-infos-hover",
+              "mehr-infos-focus-visible",
+              "mehr-infos-active",
+              "mehr-infos-disabled",
+              "filter",
+              "filter-hover",
+              "filter-focus-visible",
+              "filter-active",
+              "filter-disabled",
+              "merken",
+              "ueber-bild"
+            ],
+            "dropped": [
+              "filled",
+              "filled-hover",
+              "filled-active",
+              "filled-focus-visible",
+              "outline",
+              "outline-hover",
+              "outline-active",
+              "outline-focus-visible",
+              "tonal",
+              "tonal-hover",
+              "tonal-active",
+              "tonal-focus-visible",
+              "transparent",
+              "transparent-hover",
+              "transparent-active",
+              "transparent-focus-visible",
+              "pressed",
+              "pressed-hover",
+              "pressed-active",
+              "pressed-focus-visible",
+              "danger",
+              "danger-hover",
+              "danger-active",
+              "danger-focus-visible",
+              "small",
+              "small-hover",
+              "small-active",
+              "small-focus-visible",
+              "disabled",
+              "icon-filled",
+              "icon-filled-hover",
+              "icon-filled-active",
+              "icon-filled-focus-visible",
+              "icon-outline",
+              "icon-outline-hover",
+              "icon-outline-active",
+              "icon-outline-focus-visible",
+              "icon-tonal",
+              "icon-tonal-hover",
+              "icon-tonal-active",
+              "icon-tonal-focus-visible",
+              "icon-transparent",
+              "icon-transparent-hover",
+              "icon-transparent-active",
+              "icon-transparent-focus-visible",
+              "size-xs",
+              "size-xs-hover",
+              "size-xs-active",
+              "size-xs-focus-visible",
+              "size-sm",
+              "size-sm-hover",
+              "size-sm-active",
+              "size-sm-focus-visible",
+              "size-md",
+              "size-md-hover",
+              "size-md-active",
+              "size-md-focus-visible",
+              "size-lg",
+              "size-lg-hover",
+              "size-lg-active",
+              "size-lg-focus-visible",
+              "size-xl",
+              "size-xl-hover",
+              "size-xl-active",
+              "size-xl-focus-visible"
+            ],
+            "note": {
+              "before": "scale of the decided shape, Q182, lead merge",
+              "after": "Weiße Kapsel für Abspielen, Glas für Zweitknöpfe, Türkis im Fokusring."
+            }
+          },
+          "inherited": [
+            "filled",
+            "filled-hover",
+            "filled-active",
+            "filled-focus-visible",
+            "outline",
+            "outline-hover",
+            "outline-active",
+            "outline-focus-visible",
+            "tonal",
+            "tonal-hover",
+            "tonal-active",
+            "tonal-focus-visible",
+            "transparent",
+            "transparent-hover",
+            "transparent-active",
+            "transparent-focus-visible",
+            "pressed",
+            "pressed-hover",
+            "pressed-active",
+            "pressed-focus-visible",
+            "danger",
+            "danger-hover",
+            "danger-active",
+            "danger-focus-visible",
+            "small",
+            "small-hover",
+            "small-active",
+            "small-focus-visible",
+            "disabled",
+            "icon-filled",
+            "icon-filled-hover",
+            "icon-filled-active",
+            "icon-filled-focus-visible",
+            "icon-outline",
+            "icon-outline-hover",
+            "icon-outline-active",
+            "icon-outline-focus-visible",
+            "icon-tonal",
+            "icon-tonal-hover",
+            "icon-tonal-active",
+            "icon-tonal-focus-visible",
+            "icon-transparent",
+            "icon-transparent-hover",
+            "icon-transparent-active",
+            "icon-transparent-focus-visible",
+            "size-xs",
+            "size-xs-hover",
+            "size-xs-active",
+            "size-xs-focus-visible",
+            "size-sm",
+            "size-sm-hover",
+            "size-sm-active",
+            "size-sm-focus-visible",
+            "size-md",
+            "size-md-hover",
+            "size-md-active",
+            "size-md-focus-visible",
+            "size-lg",
+            "size-lg-hover",
+            "size-lg-active",
+            "size-lg-focus-visible",
+            "size-xl",
+            "size-xl-hover",
+            "size-xl-active",
+            "size-xl-focus-visible"
+          ]
+        }
+      ],
+      "shotFrames": [
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "abspielen",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "abspielen-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "abspielen-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "abspielen-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "abspielen-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "mehr-infos",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "mehr-infos-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "mehr-infos-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "mehr-infos-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "mehr-infos-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "filter",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "filter-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "filter-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "filter-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "a",
+          "state": "filter-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "abspielen",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 200,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "abspielen-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 200,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "abspielen-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 200,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "abspielen-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 200,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "abspielen-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 200,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "mehr-infos",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 208,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "mehr-infos-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 208,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "mehr-infos-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 208,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "mehr-infos-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 208,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "mehr-infos-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 208,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "filter",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "filter-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "filter-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "filter-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "b",
+          "state": "filter-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "abspielen",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "abspielen-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "abspielen-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "abspielen-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "abspielen-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 204,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "mehr-infos",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "mehr-infos-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "mehr-infos-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "mehr-infos-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "mehr-infos-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 212,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "filter",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "filter-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "filter-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "filter-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        },
+        {
+          "part": "components/button",
+          "variant": "c",
+          "state": "filter-disabled",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 108,
+            "height": 108
+          }
+        }
+      ],
+      "report": null
+    }
+  },
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "components/title-card",
+      "status": "ready",
+      "createdAt": "2026-11-25T01:40:59.941Z",
+      "createdBy": {
+        "cmd": "design sketch new components/title-card --variants a,b,c --by claude-opus-5-5 --product tomflix --round Titelkarte mit Logo --note Drei Arten, das Titellogo auf die Karte zu setzen, alle bei gleicher Kartenbreite. --variant-note a=Querformat aus dem Szenenbild, das Logo unten links auf einem dunklen Verlauf, Jahr und Länge darunter. Kompakt, aber die Karte wirkt weniger wie ein Plakat. --variant-note b=Hochformat aus dem Szenenbild geschnitten, das Logo mittig unten, Neu oder 4K oben rechts. Wirkt wie ein Plakat, doch der Ausschnitt kann Gesichter anschneiden. --variant-note c=Szenenbild oben, darunter ein ruhiger Streifen mit Logo, Jahr und Länge. Jedes Logo bleibt lesbar, dafür wird die Karte höher und das Bild kleiner.",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Titelkarte mit Logo",
+          "note": "Drei Arten, das Titellogo auf die Karte zu setzen, alle bei gleicher Kartenbreite."
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Querformat aus dem Szenenbild, das Logo unten links auf einem dunklen Verlauf, Jahr und Länge darunter. Kompakt, aber die Karte wirkt weniger wie ein Plakat."
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Hochformat aus dem Szenenbild geschnitten, das Logo mittig unten, Neu oder 4K oben rechts. Wirkt wie ein Plakat, doch der Ausschnitt kann Gesichter anschneiden."
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Szenenbild oben, darunter ein ruhiger Streifen mit Logo, Jahr und Länge. Jedes Logo bleibt lesbar, dafür wird die Karte höher und das Bild kleiner."
+        }
+      },
+      "readyContent": {
+        "a": "0f66f8e4df1be578",
+        "b": "c28765fda7519381",
+        "c": "1ba8e27b09ba11ac"
+      },
+      "mergeHold": {
+        "reason": "new part, the user merges",
+        "at": "2026-11-25T01:46:52.879Z"
+      },
+      "recommended": "b",
+      "product": "tomflix",
+      "layer": "components",
+      "name": "title-card",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": {
+        "merges": false,
+        "reason": "new part, the user merges",
+        "contents": {
+          "a": "0f66f8e4df1be578",
+          "b": "c28765fda7519381",
+          "c": "1ba8e27b09ba11ac"
+        },
+        "at": "2026-11-25T01:46:52.629Z"
+      },
+      "targetParts": ["components/title-card"],
+      "dir": ".ethlete/design/tomflix/sketches/components-title-card",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": []
+        },
+        {
+          "variant": "b",
+          "problems": []
+        },
+        {
+          "variant": "c",
+          "problems": []
+        }
+      ],
+      "targets": [
+        {
+          "part": "components/title-card",
+          "variant": "a",
+          "states": ["film", "film-hover", "film-focus-visible", "film-active", "series", "new", "no-logo"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "components/title-card",
+          "variant": "b",
+          "states": ["film", "film-hover", "film-focus-visible", "film-active", "series", "new", "no-logo"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "components/title-card",
+          "variant": "c",
+          "states": ["film", "film-hover", "film-focus-visible", "film-active", "series", "new", "no-logo"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        }
+      ],
+      "shotFrames": [
+        {
+          "part": "components/title-card",
+          "variant": "a",
+          "state": "film",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 192
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "a",
+          "state": "film-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 192
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "a",
+          "state": "film-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 192
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "a",
+          "state": "film-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 192
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "b",
+          "state": "film",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 340
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "b",
+          "state": "film-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 340
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "b",
+          "state": "film-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 340
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "b",
+          "state": "film-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 340
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "c",
+          "state": "film",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 240
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "c",
+          "state": "film-hover",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 240
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "c",
+          "state": "film-focus-visible",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 240
+          }
+        },
+        {
+          "part": "components/title-card",
+          "variant": "c",
+          "state": "film-active",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 248,
+            "height": 240
+          }
+        }
+      ],
+      "report": null
+    }
+  },
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "elements/hero",
+      "status": "in progress",
+      "createdAt": "2026-11-25T01:49:46.017Z",
+      "createdBy": {
+        "cmd": "design sketch new elements/hero --variants a,b,c --by claude-opus-5-5 --product tomflix --round Titel oben im Katalog --note Drei Anordnungen für den hervorgehobenen Titel mit Logo, Zeile und zwei Knöpfen, gleich hoch auf Desktop und Handy. --variant-note a=Szenenbild über die ganze Breite, Logo, Angaben und Knöpfe unten links. Am stärksten wie Kino, doch das Logo braucht einen dunklen Verlauf über dem Bild. --variant-note b=Links Logo, Angaben und Knöpfe, rechts das Szenenbild als Karte über seinem eigenen weichen Licht. Ruhig und gut lesbar, das Bild wird aber kleiner. --variant-note c=Breitbild-Streifen wie im Kino, Logo mittig darauf, Angaben und Knöpfe mittig darunter. Wirkt feierlich, braucht aber mehr Höhe bis zur Suche.",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Titel oben im Katalog",
+          "note": "Drei Anordnungen für den hervorgehobenen Titel mit Logo, Zeile und zwei Knöpfen, gleich hoch auf Desktop und Handy."
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Szenenbild über die ganze Breite, Logo, Angaben und Knöpfe unten links. Am stärksten wie Kino, doch das Logo braucht einen dunklen Verlauf über dem Bild."
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Links Logo, Angaben und Knöpfe, rechts das Szenenbild als Karte über seinem eigenen weichen Licht. Ruhig und gut lesbar, das Bild wird aber kleiner."
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Breitbild-Streifen wie im Kino, Logo mittig darauf, Angaben und Knöpfe mittig darunter. Wirkt feierlich, braucht aber mehr Höhe bis zur Suche."
+        }
+      },
+      "hold": {
+        "until": "Button-Sketch gewählt und übernommen",
+        "by": "claude-opus-5-5",
+        "heldAt": "2026-11-25T01:52:24.913Z"
+      },
+      "product": "tomflix",
+      "layer": "elements",
+      "name": "hero",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": null,
+      "targetParts": ["elements/hero"],
+      "dir": ".ethlete/design/tomflix/sketches/elements-hero",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": [
+            {
+              "rule": "CANONICAL-CLASS",
+              "file": ".ethlete/design/tomflix/sketches/elements-hero/a/elements/hero/hero.ts",
+              "message": "The class `object-left-bottom` can be written as `object-bottom-left`"
+            },
+            {
+              "rule": "CANONICAL-CLASS",
+              "file": ".ethlete/design/tomflix/sketches/elements-hero/a/elements/hero/hero.ts",
+              "message": "The class `md:max-w-140` can be written as `md:max-w-4xl`"
+            }
+          ]
+        },
+        {
+          "variant": "b",
+          "problems": [
+            {
+              "rule": "STATE-SENTENCE",
+              "file": ".ethlete/design/tomflix/sketches/elements-hero/b/elements/hero/hero.ts",
+              "message": "state without a sentence in describe: default"
+            }
+          ]
+        },
+        {
+          "variant": "c",
+          "problems": [
+            {
+              "rule": "STATE-SENTENCE",
+              "file": ".ethlete/design/tomflix/sketches/elements-hero/c/elements/hero/hero.ts",
+              "message": "state without a sentence in describe: default"
+            }
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "part": "elements/hero",
+          "variant": "a",
+          "states": ["dune", "no-logo", "series"],
+          "widths": [1440, 390],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "elements/hero",
+          "variant": "b",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "elements/hero",
+          "variant": "c",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        }
+      ],
+      "shotFrames": [],
+      "report": null
+    }
+  },
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "elements/shell-app",
+      "status": "in progress",
+      "createdAt": "2026-11-25T01:50:03.074Z",
+      "createdBy": {
+        "cmd": "design sketch new elements/shell-app --variants a,b,c --round Drei Rahmen für jede Seite --note Eine Suchkapsel wie im alten Katalog, eine klassische Kopfleiste mit Navigation, eine schmale Seitenleiste; alle mit denselben Knöpfen, Suchfeld und Reitern. --by claude-opus-5-5",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Drei Rahmen für jede Seite",
+          "note": "Eine Suchkapsel wie im alten Katalog, eine klassische Kopfleiste mit Navigation, eine schmale Seitenleiste; alle mit denselben Knöpfen, Suchfeld und Reitern."
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1"
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1"
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1"
+        }
+      },
+      "hold": {
+        "until": "Button-Sketch gewählt und übernommen",
+        "by": "claude-opus-5-5",
+        "heldAt": "2026-11-25T01:52:25.213Z"
+      },
+      "product": "tomflix",
+      "layer": "elements",
+      "name": "shell-app",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": null,
+      "targetParts": ["elements/shell-app"],
+      "dir": ".ethlete/design/tomflix/sketches/elements-shell-app",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": [
+            {
+              "rule": "CANONICAL-CLASS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/a/elements/shell-app/shell-app.ts",
+              "message": "The class `h-[5.4rem]` can be written as `h-13.5`"
+            },
+            {
+              "rule": "CANONICAL-CLASS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/a/elements/shell-app/shell-app.ts",
+              "message": "The class `w-[76rem]` can be written as `w-190`"
+            },
+            {
+              "rule": "CANONICAL-CLASS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/a/elements/shell-app/shell-app.ts",
+              "message": "The class `min-h-[84rem]` can be written as `min-h-210`"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: contents outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: none outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: inline-flex outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "align-items: center outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: block outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "flex-direction: column outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "justify-content: center outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "min-width: 0 outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "white-space: nowrap outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: flex outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "display: grid outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "place-items: center outside foundations - a Tailwind utility in the markup draws it"
+            },
+            {
+              "rule": "UTILITY-CSS",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.css",
+              "message": "text-transform: uppercase outside foundations - a Tailwind utility in the markup draws it"
+            }
+          ]
+        },
+        {
+          "variant": "b",
+          "problems": [
+            {
+              "rule": "STATE-SENTENCE",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/b/elements/shell-app/shell-app.ts",
+              "message": "state without a sentence in describe: default"
+            }
+          ]
+        },
+        {
+          "variant": "c",
+          "problems": [
+            {
+              "rule": "STATE-SENTENCE",
+              "file": ".ethlete/design/tomflix/sketches/elements-shell-app/c/elements/shell-app/shell-app.ts",
+              "message": "state without a sentence in describe: default"
+            }
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "part": "elements/shell-app",
+          "variant": "a",
+          "states": [],
+          "interactions": [],
+          "unchanged": [],
+          "error": "Cannot find module '@system/foundations/logo' imported from '/home/tom/dev/client-runs/2026-11-25-0236/tomflix/.ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.ts'"
+        },
+        {
+          "part": "elements/shell-app",
+          "variant": "b",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "elements/shell-app",
+          "variant": "c",
+          "states": ["default"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        }
+      ],
+      "shotFrames": [],
+      "report": null
+    }
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/shell-app",
+    "sketch": "elements/shell-app",
+    "variant": "a",
+    "state": null,
+    "problem": "Cannot find module '@system/foundations/logo' imported from '/home/tom/dev/client-runs/2026-11-25-0236/tomflix/.ethlete/"
+  },
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "foundations/colors",
+      "status": "ready",
+      "createdAt": "2026-11-25T01:40:08.592Z",
+      "createdBy": {
+        "cmd": "design sketch new foundations/colors --override --variants a,b,c --by claude-opus-5-5 --round Drei Farbrichtungen --note Nachtblau wie der alte Katalog, reines Kinoschwarz, warmes Heimkino-Schwarz; alle mit Türkis. --variant-note a=Nachtblaues Schwarz und Türkis des alten Katalogs, nur die leisen Texte heller für gute Lesbarkeit. Vertraut, aber Plakate stehen auf blaugrauem statt schwarzem Grund. --variant-note b=Reines Kinoschwarz mit Türkis und neutralem Grau. Am kontrastreichsten und ruhigsten für Plakate, wirkt dafür kühl und hart. --variant-note c=Warmes Fast-Schwarz mit cremigem Weiß und Türkis. Wohnlich wie ein Heimkino, die warmen Töne beißen sich aber leicht mit kühlen Plakaten.",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Drei Farbrichtungen",
+          "note": "Nachtblau wie der alte Katalog, reines Kinoschwarz, warmes Heimkino-Schwarz; alle mit Türkis.",
+          "asks": ["accent-dark"]
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Nachtblaues Schwarz und Türkis des alten Katalogs, nur die leisen Texte heller für gute Lesbarkeit. Vertraut, aber Plakate stehen auf blaugrauem statt schwarzem Grund."
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Reines Kinoschwarz mit neutralem Grau, Türkis und klarem Rot und Gelb als Warnfarben. Plakate leuchten am stärksten, aber Schatten verschwinden und erhöhte Flächen brauchen hellere Töne."
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Warmes Fast-Schwarz mit cremigem Weiß und Türkis. Wohnlich wie ein Heimkino, die warmen Töne beißen sich aber leicht mit kühlen Plakaten."
+        }
+      },
+      "merge": "override",
+      "readyContent": {
+        "a": "2b2a4cc0dac9be90",
+        "b": "c1ec7d2b88075a28",
+        "c": "6df4596999387614"
+      },
+      "mergeHold": {
+        "reason": "variant a changes surface-dark, accent-dark, contrast-dark; variant b changes surface-dark, accent-dark, contrast-dark; variant c changes surface-dark, accent-dark, contrast-dark",
+        "at": "2026-11-25T01:45:12.249Z"
+      },
+      "recommended": "a",
+      "product": "tomflix",
+      "layer": "foundations",
+      "name": "colors",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": {
+        "merges": false,
+        "reason": "variant a changes surface-dark, accent-dark, contrast-dark; variant b changes surface-dark, accent-dark, contrast-dark; variant c changes surface-dark, accent-dark, contrast-dark",
+        "contents": {
+          "a": "2b2a4cc0dac9be90",
+          "b": "c1ec7d2b88075a28",
+          "c": "6df4596999387614"
+        },
+        "at": "2026-11-25T01:45:11.991Z"
+      },
+      "targetParts": ["foundations/colors"],
+      "dir": ".ethlete/design/tomflix/sketches/foundations-colors",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": []
+        },
+        {
+          "variant": "b",
+          "problems": []
+        },
+        {
+          "variant": "c",
+          "problems": []
+        }
+      ],
+      "targets": [
+        {
+          "part": "foundations/colors",
+          "variant": "a",
+          "states": ["surface-dark", "accent-dark", "contrast-dark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {
+            "surface-dark": {
+              "width": 638,
+              "height": 646,
+              "box": {
+                "x": 16,
+                "y": 16,
+                "width": 606,
+                "height": 614
+              },
+              "pixels": 371798,
+              "regions": 1
+            },
+            "accent-dark": {
+              "width": 638,
+              "height": 914,
+              "box": {
+                "x": 16,
+                "y": 16,
+                "width": 606,
+                "height": 882
+              },
+              "pixels": 527603,
+              "regions": 1
+            }
+          },
+          "changes": {
+            "added": [],
+            "dropped": [],
+            "note": null
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "b",
+          "states": ["surface-dark", "accent-dark", "contrast-dark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {
+            "surface-dark": {
+              "width": 638,
+              "height": 646,
+              "box": {
+                "x": 40,
+                "y": 43,
+                "width": 540,
+                "height": 538
+              },
+              "pixels": 6213,
+              "regions": 27
+            },
+            "accent-dark": {
+              "width": 638,
+              "height": 914,
+              "box": {
+                "x": 40,
+                "y": 43,
+                "width": 528,
+                "height": 805
+              },
+              "pixels": 25613,
+              "regions": 54
+            }
+          },
+          "changes": {
+            "added": [],
+            "dropped": [],
+            "note": null
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "c",
+          "states": ["surface-dark", "accent-dark", "contrast-dark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {},
+          "crops": {
+            "surface-dark": {
+              "width": 638,
+              "height": 646,
+              "box": {
+                "x": 16,
+                "y": 16,
+                "width": 606,
+                "height": 614
+              },
+              "pixels": 371123,
+              "regions": 1
+            },
+            "accent-dark": {
+              "width": 638,
+              "height": 914,
+              "box": {
+                "x": 16,
+                "y": 16,
+                "width": 606,
+                "height": 882
+              },
+              "pixels": 516959,
+              "regions": 1
+            }
+          },
+          "changes": {
+            "added": [],
+            "dropped": [],
+            "note": null
+          }
+        }
+      ],
+      "shotFrames": [
+        {
+          "part": "foundations/colors",
+          "variant": null,
+          "state": "surface-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 646
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": null,
+          "state": "accent-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 914
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": null,
+          "state": "contrast-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 3109,
+            "height": 630
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "a",
+          "state": "surface-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 646
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "a",
+          "state": "accent-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 914
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "a",
+          "state": "contrast-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 3116,
+            "height": 630
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "b",
+          "state": "surface-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 646
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "b",
+          "state": "accent-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 914
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "b",
+          "state": "contrast-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 3116,
+            "height": 630
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "c",
+          "state": "surface-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 646
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "c",
+          "state": "accent-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 638,
+            "height": 914
+          }
+        },
+        {
+          "part": "foundations/colors",
+          "variant": "c",
+          "state": "contrast-dark",
+          "preset": null,
+          "width": null,
+          "frame": {
+            "width": 3116,
+            "height": 630
+          }
+        }
+      ],
+      "report": null
+    }
+  },
+  {
+    "kind": "sketch",
+    "product": "tomflix",
+    "sketch": {
+      "target": "foundations/logo",
+      "status": "ready",
+      "createdAt": "2026-11-25T01:41:02.058Z",
+      "createdBy": {
+        "cmd": "design sketch new foundations/logo --variants a,b,c --by claude-opus-5-5 --product tomflix --round Drei Logo-Ideen --note Gefaltetes T aus dem alten Katalog, verfeinert, gegen zwei neue Ideen: Filmbild und Eintrittskarte. --variant-note a=Das gefaltete T aus dem alten Katalog, verfeinert: T in Türkis, OMFLIX in Textfarbe. Ruhig und wiedererkennbar, braucht aber Breite; allein steht nur das T. --variant-note b=Ein Filmbild mit Perforation trägt das T, daneben TOMFLIX. Klar nach Kino, die Löcher verschwimmen aber unter 20 Pixel. --variant-note c=Eine Eintrittskarte mit ausgestanztem T, daneben TOMFLIX. Wirkt einladend für Familie und Freunde, ist aber weniger eigen als das gefaltete T.",
+        "session": "8c4b4d7b-665b-46ae-9570-7f084b416548"
+      },
+      "baseline": {
+        "foundations/colors": "43a4e4926735c3be",
+        "foundations/elevation": "60ce2935fb035ef8",
+        "foundations/icons": "72375c6dbcbf7f74",
+        "components/accent-on-light": "567fbf4fe2fcb819",
+        "components/accordion": "2de81b9e2cf77053",
+        "components/action-sheet": "8736a8998dad6413",
+        "components/anchored-dialog": "207928c8819bd1f2",
+        "components/avatar": "bd30d4506ee6b573",
+        "components/badge": "0fbbe4a2f0404285",
+        "components/banner": "15630976270c5744",
+        "components/bracket": "012f20cb99db1cea",
+        "components/breadcrumb": "34b8c24e7a15fd2b",
+        "components/button": "746f0d4a76c83eae",
+        "components/calendar": "a1791a943f625038",
+        "components/card": "b27d4e266a8e0999",
+        "components/carousel": "bf2221bf653d1be4",
+        "components/chart": "0bc8c9131311f27f",
+        "components/checkbox": "8a5db649d9ee9401",
+        "components/chip": "15785914248607d0",
+        "components/copy-button": "e6d257617199bc2d",
+        "components/description-list": "7eefd9e4df111936",
+        "components/dialog": "bc84f7fb3281860d",
+        "components/divider": "61857205be8b4110",
+        "components/empty-state": "8e7b280667c0cf6c",
+        "components/floating-action": "01381fc050ff016e",
+        "components/form-field": "6d827bf2d951a53d",
+        "components/grid": "b09b9b99a0f56e09",
+        "components/input": "2f08938954c6836c",
+        "components/kbd": "3a61a87c7d7f50c4",
+        "components/loader": "ebcdf0bf50e1d1c5",
+        "components/masonry": "80232b6f6dc4efb4",
+        "components/match": "e527fd3e2b200181",
+        "components/menu": "0d09cdabc2d98c84",
+        "components/notification": "4c05d9b1c663a743",
+        "components/otp-input": "7bfae50f6e645adc",
+        "components/pagination": "22474efd4ebda89a",
+        "components/picture": "a431b18c7e2b6ee7",
+        "components/progress-steps": "155927be3d7ede4d",
+        "components/query-error": "a03ba920be258dec",
+        "components/radio-group": "479c67f0bc561019",
+        "components/scheduler": "3897faf73c598b17",
+        "components/scrollable": "5accf58be0bbdd5e",
+        "components/scrollbar": "ba792b958ff840d9",
+        "components/select": "35acb2babdb0108d",
+        "components/select-panel": "2d6669ef26a3e822",
+        "components/skeleton": "05507b79c084a190",
+        "components/slider": "dbf5f9fd735b6e90",
+        "components/standings": "78634e0d7745e9bd",
+        "components/stat-tile": "264c5f17f3364032",
+        "components/stream": "bba635c85be0715c",
+        "components/switch": "46ce9acae6546eb6",
+        "components/table": "880c3eddf45ca901",
+        "components/tabs": "3869a1b98d7be6db",
+        "components/textarea": "c01d60563dfe7894",
+        "components/timeline": "e985e754ed14b7f7",
+        "components/toolbar": "b62bb6c1539dbdd4",
+        "components/tooltip": "4defd5665eab5f5f",
+        "components/tree": "e15213fac4751487",
+        "fixtures.ts": "909089fbef7b8f34"
+      },
+      "rounds": [
+        {
+          "key": "r1",
+          "title": "Drei Logo-Ideen",
+          "note": "Gefaltetes T aus dem alten Katalog, verfeinert, gegen zwei neue Ideen: Filmbild und Eintrittskarte."
+        }
+      ],
+      "variantInfo": {
+        "a": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Das gefaltete T aus dem alten Katalog, verfeinert: T in Türkis, OMFLIX in Textfarbe. Ruhig und wiedererkennbar, braucht aber Breite; allein steht nur das T."
+        },
+        "b": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Ein Filmbild mit Perforation trägt das T, daneben TOMFLIX. Klar nach Kino, die Löcher verschwimmen aber unter 20 Pixel."
+        },
+        "c": {
+          "authors": ["claude-opus-5-5"],
+          "round": "r1",
+          "note": "Eine Eintrittskarte mit ausgestanztem T, daneben TOMFLIX. Wirkt einladend für Familie und Freunde, ist aber weniger eigen als das gefaltete T."
+        }
+      },
+      "readyContent": {
+        "a": "90110378bccc941a",
+        "b": "54c3fd9c10f427ec",
+        "c": "323e9e1250b6e481"
+      },
+      "mergeHold": {
+        "reason": "new part, the user merges",
+        "at": "2026-11-25T01:42:21.150Z"
+      },
+      "recommended": "a",
+      "product": "tomflix",
+      "layer": "foundations",
+      "name": "logo",
+      "variants": ["a", "b", "c"],
+      "autoMergeForecast": {
+        "merges": false,
+        "reason": "new part, the user merges",
+        "contents": {
+          "a": "90110378bccc941a",
+          "b": "54c3fd9c10f427ec",
+          "c": "323e9e1250b6e481"
+        },
+        "at": "2026-11-25T01:42:20.938Z"
+      },
+      "targetParts": ["foundations/logo"],
+      "dir": ".ethlete/design/tomflix/sketches/foundations-logo",
+      "changedSinceReady": [],
+      "holdTargetEnd": null,
+      "staleBase": null,
+      "rebaseUncommitted": null,
+      "addedSkips": [],
+      "readyRefusal": null,
+      "problems": [
+        {
+          "variant": "a",
+          "problems": []
+        },
+        {
+          "variant": "b",
+          "problems": []
+        },
+        {
+          "variant": "c",
+          "problems": []
+        }
+      ],
+      "targets": [
+        {
+          "part": "foundations/logo",
+          "variant": "a",
+          "states": ["mark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "foundations/logo",
+          "variant": "b",
+          "states": ["mark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        },
+        {
+          "part": "foundations/logo",
+          "variant": "c",
+          "states": ["mark"],
+          "interactions": [],
+          "unchanged": [],
+          "sameAsRest": {}
+        }
+      ],
+      "shotFrames": [],
+      "report": null
+    }
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "a",
+    "state": "dune",
+    "problem": "500 �PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0005�\u0000\u0000\u0000P\b\u0002\u0000\u0000\u0000`hE!\u0000\u0000\u0010\u0000IDATx��\u0007\\\u0014���ׂ`A\u0014\u000b��;*6T�\u0017�(�(�X�\u0012c7Įر�\u0012kL�A��n�\u0005\u0014E��\r\u0010T@E)�ϝ��{r�s�ӈy���ϱ��Ӟ�y"
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "a",
+    "state": "no-logo",
+    "problem": "500 �PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0005�\u0000\u0000\u0000P\b\u0002\u0000\u0000\u0000`hE!\u0000\u0000\u0010\u0000IDATx��\t\\M���OH��$!k֐-�첔T*\u0012ٗƾLc�ٳ��Xǌe����:�$K�RֲU\n\tQ���w���{�]\\F��~]��s�9��}�"
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "a",
+    "state": "series",
+    "problem": "500 �PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0005�\u0000\u0000\u0000P\b\u0002\u0000\u0000\u0000`hE!\u0000\u0000\u0010\u0000IDATx��\t\\M���\u000f�,�����![(��-)�$�/����N��}\u001d똱OJ�}\u001d{��Hٳ%�����8���ս繋��|߯��v�9�پ��|�"
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "b",
+    "state": "default",
+    "file": "/home/tom/dev/client-runs/2026-11-25-0236/shots/elements-hero_b_elements-hero_default.png",
+    "note": null,
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 54,
+          "height": 15
+        },
+        "page": {
+          "width": 54,
+          "height": 15
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 54,
+          "height": 15
+        },
+        "boxes": [
+          {
+            "element": "div.hero",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 54,
+              "height": 15
+            }
+          }
+        ],
+        "images": [],
+        "texts": [
+          {
+            "element": "div.hero",
+            "text": "hero",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 54,
+              "height": 15
+            },
+            "textBox": {
+              "x": 0,
+              "y": 0,
+              "width": 22,
+              "height": 14
+            },
+            "ink": {
+              "top": 3,
+              "bottom": 3
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 54,
+              "height": 15
+            },
+            "client": {
+              "width": 54,
+              "height": 15
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    }
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/hero",
+    "sketch": "elements/hero",
+    "variant": "c",
+    "state": "default",
+    "file": "/home/tom/dev/client-runs/2026-11-25-0236/shots/elements-hero_c_elements-hero_default.png",
+    "note": null,
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 54,
+          "height": 15
+        },
+        "page": {
+          "width": 54,
+          "height": 15
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 54,
+          "height": 15
+        },
+        "boxes": [
+          {
+            "element": "div.hero",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 54,
+              "height": 15
+            }
+          }
+        ],
+        "images": [],
+        "texts": [
+          {
+            "element": "div.hero",
+            "text": "hero",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 54,
+              "height": 15
+            },
+            "textBox": {
+              "x": 0,
+              "y": 0,
+              "width": 22,
+              "height": 14
+            },
+            "ink": {
+              "top": 3,
+              "bottom": 3
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 54,
+              "height": 15
+            },
+            "client": {
+              "width": 54,
+              "height": 15
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    }
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/shell-app",
+    "sketch": "elements/shell-app",
+    "variant": "b",
+    "state": "default",
+    "file": "/home/tom/dev/client-runs/2026-11-25-0236/shots/elements-shell-app_b_elements-shell-app_default.png",
+    "note": null,
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 75,
+          "height": 15
+        },
+        "page": {
+          "width": 75,
+          "height": 15
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 75,
+          "height": 15
+        },
+        "boxes": [
+          {
+            "element": "div.shell-app",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 75,
+              "height": 15
+            }
+          }
+        ],
+        "images": [],
+        "texts": [
+          {
+            "element": "div.shell-app",
+            "text": "shell-app",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 75,
+              "height": 15
+            },
+            "textBox": {
+              "x": 0,
+              "y": 0,
+              "width": 43,
+              "height": 14
+            },
+            "ink": {
+              "top": 3,
+              "bottom": 0
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 75,
+              "height": 15
+            },
+            "client": {
+              "width": 75,
+              "height": 15
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    }
+  },
+  {
+    "product": "tomflix",
+    "part": "elements/shell-app",
+    "sketch": "elements/shell-app",
+    "variant": "c",
+    "state": "default",
+    "file": "/home/tom/dev/client-runs/2026-11-25-0236/shots/elements-shell-app_c_elements-shell-app_default.png",
+    "note": null,
+    "frame": {
+      "probe": {
+        "viewport": {
+          "width": 75,
+          "height": 15
+        },
+        "page": {
+          "width": 75,
+          "height": 15
+        },
+        "root": {
+          "x": 0,
+          "y": 0,
+          "width": 75,
+          "height": 15
+        },
+        "boxes": [
+          {
+            "element": "div.shell-app",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 75,
+              "height": 15
+            }
+          }
+        ],
+        "images": [],
+        "texts": [
+          {
+            "element": "div.shell-app",
+            "text": "shell-app",
+            "box": {
+              "x": 0,
+              "y": 0,
+              "width": 75,
+              "height": 15
+            },
+            "textBox": {
+              "x": 0,
+              "y": 0,
+              "width": 43,
+              "height": 14
+            },
+            "ink": {
+              "top": 3,
+              "bottom": 0
+            },
+            "clips": false,
+            "ellipsis": false,
+            "scroll": {
+              "width": 75,
+              "height": 15
+            },
+            "client": {
+              "width": 75,
+              "height": 15
+            },
+            "clippers": []
+          }
+        ],
+        "scrollbars": []
+      },
+      "failedImages": []
+    }
+  }
+]

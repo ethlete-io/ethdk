@@ -8,7 +8,8 @@ import { frameFindingsOf, probeFrame } from './frame-probe.mjs';
 import { decodePng, differenceOf, inkOf } from './png.mjs';
 import { textOnlyCopiesOf } from './text-only.mjs';
 import { leftRefusalsOf, readTranscript } from './transcript.mjs';
-import { logoFindingsOf, trapFindingsOf } from './trap-check.mjs';
+import { failureCauseOf } from './failure-cause.mjs';
+import { logoFindingsOf, trapFindingsOf, unreadySketchesOf } from './trap-check.mjs';
 import { treeFindingsOf } from './tree-check.mjs';
 
 const EMPTY_INK = 0.004;
@@ -74,7 +75,7 @@ const probeView = async ({ base, browser, view, width }) => {
 };
 
 /** What Studio shows for a run: the product parts and the sketch variants, each state as a picture. */
-const collectShots = async ({ base, shotsDir, browser }) => {
+const collectShots = async ({ base, shotsDir, browser, logFile }) => {
   const products = await json(`${base}/__design/system`);
   const shots = [];
   const views = [];
@@ -104,9 +105,17 @@ const collectShots = async ({ base, shotsDir, browser }) => {
     const query = { ...view, priority: 'low' };
     const answer = await fetch(`${base}/__design/shot?${new URLSearchParams(query)}`, {
       signal: AbortSignal.timeout(SHOT_TIMEOUT_MS),
-    }).catch((error) => ({ ok: false, status: 0, text: async () => String(error) }));
+    }).catch((error) => ({
+      ok: false,
+      status: 0,
+      headers: new Headers({ 'content-type': 'text/plain' }),
+      arrayBuffer: async () => Buffer.from(String(error)),
+    }));
     if (!answer.ok) {
-      shots.push({ ...view, problem: `${answer.status} ${(await answer.text()).trim().slice(0, 200)}` });
+      shots.push({
+        ...view,
+        problem: failureCauseOf({ view, answer, body: await answer.arrayBuffer(), log: readFileSync(logFile, 'utf8') }),
+      });
       continue;
     }
     const png = Buffer.from(await answer.arrayBuffer());
@@ -142,13 +151,16 @@ const where = (shot) =>
 export const findingsOf = ({ shots, refusals, result, tree = [] }) => {
   const findings = [];
   const add = (seen, cause, file) => findings.push({ seen, cause, file });
+  const unready = unreadySketchesOf(shots);
+  const drawnStates = (target) => shots.filter((shot) => shot.sketch === target && shot.picture).length;
   for (const { seen, cause } of tree) add(seen, cause);
   for (const shot of shots) {
+    if (shot.kind !== 'sketch' && unready.has(shot.sketch)) continue;
     if (shot.kind === 'sketch') {
       const { sketch } = shot;
       if (sketch.status !== 'ready')
         add(
-          `Sketch ${sketch.target} steht in Studio auf „${sketch.status}“, nicht zur Wahl bereit.`,
+          `Sketch ${sketch.target} steht in Studio auf „${sketch.status}“, nicht zur Wahl bereit (${drawnStates(sketch.target)} Zustände gezeichnet).`,
           sketch.readyRefusal
             ? `Ready verweigert: ${JSON.stringify(sketch.readyRefusal).slice(0, 160)}`
             : 'Agent hat `sketch ready` nicht erreicht.',
@@ -167,7 +179,7 @@ export const findingsOf = ({ shots, refusals, result, tree = [] }) => {
     else if (shot.frame)
       for (const { seen, cause } of frameFindingsOf(shot.frame)) add(`${where(shot)}: ${seen}`, cause, shot.file);
   }
-  const drawn = shots.filter((shot) => shot.picture);
+  const drawn = shots.filter((shot) => shot.picture && !unready.has(shot.sketch));
   const groups = Map.groupBy(drawn, (shot) => `${shot.sketch ?? ''}|${shot.part}`);
   for (const group of groups.values()) {
     const variants = [...new Set(group.map((shot) => shot.variant))].filter(Boolean);
@@ -264,7 +276,12 @@ export const judgeRun = async ({ runDir, target, sdk, expected = { sketches: [] 
     throw error;
   });
   try {
-    const { shots, sketches, parts, skipped } = await collectShots({ base: server.base, shotsDir, browser });
+    const { shots, sketches, parts, skipped } = await collectShots({
+      base: server.base,
+      shotsDir,
+      browser,
+      logFile: join(runDir, 'judge-server.log'),
+    });
     writeFileSync(
       join(runDir, 'shots.json'),
       JSON.stringify(shots, (key, value) => (key === 'picture' || key === 'textless' ? undefined : value), 1),

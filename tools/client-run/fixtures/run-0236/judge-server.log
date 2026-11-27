@@ -1,0 +1,15 @@
+design-explore: hosts the resident design process on 127.0.0.1:38999
+design-explore: drawing /home/tom/dev/client-runs/2026-11-25-0236/tomflix
+  ➜  Local:   http://localhost:36743/
+  ➜  Network: use --host to expose
+2:52:33 AM [vite] (ssr) Error when evaluating SSR module /home/tom/dev/client-runs/2026-11-25-0236/tomflix/.ethlete/design/tomflix/sketches/elements-shell-app/a/elements/shell-app/shell-app.ts?design-product=tomflix&design-sketch=elements%2Fshell-app&design-variant=a: Cannot find module '@system/foundations/logo' imported from '/home/tom/dev/client-runs/2026-11-25-0236/tomflix/.ethlete/design/tomflix/sketches/elements-shell-app/shared/shell-kit.ts'
+      at fetchModule (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:36285:32)
+      at RunnableDevEnvironment.fetchModule (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:37160:10)
+      at environment.fetchModule (/home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/@ethlete/cli/src/lib/design/fetch-watch.js:47:25)
+      at fetchModule (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:37093:17)
+      at handleInvoke (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:25318:27)
+      at EventEmitter.listenerForInvokeHandler (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:25373:19)
+      at EventEmitter.emit (node:events:509:28)
+      at Object.send (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/chunks/node.js:15830:37)
+      at Object.invoke (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/module-runner.js:616:31)
+      at Object.invoke (file:///home/tom/dev/client-runs/2026-11-25-0236/tomflix/node_modules/vite/dist/node/module-runner.js:669:31)

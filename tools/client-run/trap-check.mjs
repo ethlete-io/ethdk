@@ -6,7 +6,8 @@
  */
 export const trapFindingsOf = ({ expected, shots }) => {
   const findings = [];
-  const views = shots.filter((shot) => shot.sketch && shot.state);
+  const unready = unreadySketchesOf(shots);
+  const views = shots.filter((shot) => shot.sketch && shot.state && !unready.has(shot.sketch));
   for (const order of expected.sketches ?? []) {
     if (!order.traps?.length) continue;
     const match = new RegExp(order.match, 'i');
@@ -29,6 +30,14 @@ export const trapFindingsOf = ({ expected, shots }) => {
   }
   return findings;
 };
+
+/** The sketches Studio lists as not ready, by target: their states and variants are unfinished, so only the status is a finding. */
+export const unreadySketchesOf = (shots) =>
+  new Map(
+    shots
+      .filter((shot) => shot.kind === 'sketch' && shot.sketch.status !== 'ready')
+      .map((shot) => [shot.sketch.target, shot.sketch]),
+  );
 
 const covers = (trap, view) => {
   const probe = view.frame?.probe;
@@ -53,12 +62,13 @@ export const logoFindingsOf = ({ expected, shots, katalog }) => {
     katalog.filter((entry) => entry.logo).map((entry) => [entry.logo.replace(/-logo\.png$/, ''), entry]),
   );
   const findings = [];
+  const unready = unreadySketchesOf(shots);
   for (const order of expected.sketches ?? []) {
     if (!order.logoWhereExists) continue;
     const match = new RegExp(order.match, 'i');
     const missing = Map.groupBy(
       shots
-        .filter((shot) => shot.sketch && shot.state && match.test(shot.sketch))
+        .filter((shot) => shot.sketch && shot.state && !unready.has(shot.sketch) && match.test(shot.sketch))
         .flatMap((view) => {
           const files = (view.frame?.probe?.images ?? []).map((image) => image.src.split('/').pop());
           return [...new Set(files.map((file) => file.replace(/-(plakat|plakat-klein|hintergrund)\.\w+$/, '')))]
