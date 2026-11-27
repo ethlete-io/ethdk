@@ -93,7 +93,7 @@ describe('the shot store hit check', () => {
 
     expect(sized?.size).toEqual({ width: 320, height: 120 });
     expect(bytesReadIn(store)).toBeLessThan(4 * 1024);
-    expect(sized?.png).toEqual(png);
+    expect(sized?.png.equals(png)).toBe(true);
   });
 
   it('stats each read file once while one turn checks many entries drawn from it', () => {
