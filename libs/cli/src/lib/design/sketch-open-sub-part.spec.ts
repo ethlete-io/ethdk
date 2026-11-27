@@ -186,40 +186,45 @@ export default definePart<Props>({
 });
 `;
 
+const heroOverTfButton = ({ recommend }: { recommend?: string }) => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-open-override-'));
+  const config = { styles: [], base: '@ethlete/components', schemes: ['dark' as const] };
+
+  write(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { tomflix: config } }));
+  mkdirSync(join(target, DESIGN_DIR, 'tomflix'), { recursive: true });
+  cpSync(SDK_BUTTON, join(target, INSTALLED, 'sdk/components/button'), { recursive: true });
+  write(
+    join(target, INSTALLED, 'config.json'),
+    JSON.stringify({ products: { sdk: { presets: { desktop: { width: 1440 } } } } }),
+  );
+
+  const product = () => resolveProduct({ target, name: 'tomflix', config });
+  const parsed = parseTarget('components/button');
+  const button =
+    typeof parsed === 'string'
+      ? parsed
+      : createSketch({ product: product(), sketch: parsed, variants: ['a', 'b'], merge: 'override' });
+
+  if (typeof button === 'string') throw new Error(button);
+
+  for (const variant of button.variants)
+    write(resolve(variantDirOf(button, variant), 'components/button/button.ts'), TF_BUTTON_SOURCE);
+  write(resolve(sharedDirOf(button), 'button-kit.ts'), BUTTON_KIT_SOURCE);
+  writeSketchFile({ ...button, recommended: recommend }, { base: button });
+
+  const hero = opened(product(), 'elements/hero');
+
+  write(resolve(variantDirOf(hero, 'a'), 'elements/hero/hero.ts'), HERO_USING_TF_BUTTON);
+  write(resolve(variantDirOf(hero, 'b'), 'elements/hero/hero.ts'), HERO_STUB_SOURCE);
+  write(resolve(sharedDirOf(hero), 'hero-data.ts'), HERO_DATA_SOURCE);
+
+  return { target, config, product, button, hero };
+};
+
 describe('a composition sketch that uses an SDK part another open sketch overrides', () => {
   // Client run 0236: hero variant a and the hero's shared data import tfButton from the open override sketch of the SDK button, which recommends a and builds it in its own shared folder; variant b is still a stub.
   it('draws the override from the variant the open sketch recommends', () => {
-    const target = mkdtempSync(join(tmpdir(), 'cli-open-override-'));
-    const config = { styles: [], base: '@ethlete/components', schemes: ['dark' as const] };
-
-    write(join(target, DESIGN_DIR, 'config.json'), JSON.stringify({ products: { tomflix: config } }));
-    mkdirSync(join(target, DESIGN_DIR, 'tomflix'), { recursive: true });
-    cpSync(SDK_BUTTON, join(target, INSTALLED, 'sdk/components/button'), { recursive: true });
-    write(
-      join(target, INSTALLED, 'config.json'),
-      JSON.stringify({ products: { sdk: { presets: { desktop: { width: 1440 } } } } }),
-    );
-
-    const product = () => resolveProduct({ target, name: 'tomflix', config });
-    const parsed = parseTarget('components/button');
-    const button =
-      typeof parsed === 'string'
-        ? parsed
-        : createSketch({ product: product(), sketch: parsed, variants: ['a', 'b'], merge: 'override' });
-
-    if (typeof button === 'string') throw new Error(button);
-
-    for (const variant of button.variants)
-      write(resolve(variantDirOf(button, variant), 'components/button/button.ts'), TF_BUTTON_SOURCE);
-    write(resolve(sharedDirOf(button), 'button-kit.ts'), BUTTON_KIT_SOURCE);
-    writeSketchFile({ ...button, recommended: 'a' }, { base: button });
-
-    const hero = opened(product(), 'elements/hero');
-
-    write(resolve(variantDirOf(hero, 'a'), 'elements/hero/hero.ts'), HERO_USING_TF_BUTTON);
-    write(resolve(variantDirOf(hero, 'b'), 'elements/hero/hero.ts'), HERO_STUB_SOURCE);
-    write(resolve(sharedDirOf(hero), 'hero-data.ts'), HERO_DATA_SOURCE);
-
+    const { target, config, product, button, hero } = heroOverTfButton({ recommend: 'a' });
     const system = createSystemModules({ target, config: { products: { tomflix: config } } });
 
     expect(
@@ -242,6 +247,18 @@ describe('a composition sketch that uses an SDK part another open sketch overrid
       expect(typecheckVariant({ target, product: product(), sketch: reread(target, hero.target), variant })).toEqual({
         kind: 'ok',
       });
+  }, 120_000);
+
+  // Before the button agent recommends a variant, the hero check names the command instead of a bare TS2614 against the SDK button.
+  it('names sketch recommend while the override sketch recommends no variant', () => {
+    const { product, hero } = heroOverTfButton({});
+    const messages = variantProblemsOf({ product: product(), sketch: hero }).flatMap(({ problems }) =>
+      problems.map((problem) => problem.message),
+    );
+
+    expect(messages).toContain(
+      'components/button is drawn in the open sketch on components/button, which recommends no variant - run design sketch recommend components/button --variant <key> --by <model id>',
+    );
   }, 120_000);
 });
 
