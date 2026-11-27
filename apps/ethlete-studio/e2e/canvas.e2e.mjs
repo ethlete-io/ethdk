@@ -1371,6 +1371,7 @@ const HEAVY_EDIT = {
   before: "label: 'Stand',",
   after: "label: 'Stand A',",
 };
+// A cold @edit without draw-ahead takes ~3.4 s on 2 cores (accepted 27.11.); do not raise this budget to fit it.
 const HEAVY_EDIT_HOLD_MS = 3000;
 const HEAVY_EDIT_WATCH_MS = 20000;
 
