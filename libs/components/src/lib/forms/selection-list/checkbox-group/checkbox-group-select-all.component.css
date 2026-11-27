@@ -91,7 +91,7 @@
   }
 
   .et-checkbox-group-select-all:where([aria-disabled='true']) {
-    opacity: var(--et-checkbox-option-opacity-disabled, 0.5);
+    opacity: var(--et-checkbox-option-disabled-opacity, 0.5);
     pointer-events: none;
     cursor: default;
   }

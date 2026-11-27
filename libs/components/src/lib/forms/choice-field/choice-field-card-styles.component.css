@@ -3,8 +3,8 @@
     width: auto;
 
     /* The panel dims as one unit while disabled, so the control must not dim a second time on top of it. */
-    --et-checkbox-opacity-disabled: 1;
-    --et-switch-opacity-disabled: 1;
+    --et-checkbox-disabled-opacity: 1;
+    --et-switch-disabled-opacity: 1;
 
     .et-choice-field-control {
       position: relative;

@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 const css = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'accordion.component.css'), 'utf8');
 
 describe('accordion.component.css hover tokens', () => {
-  it('lets --et-accordion-header-hover-background: transparent drop the tint', () => {
-    expect(css).toMatch(/&:hover\s*\{\s*background: var\(\s*--et-accordion-header-hover-background,/);
+  it('lets --et-accordion-header-hover: transparent drop the tint', () => {
+    expect(css).toMatch(/&:hover\s*\{\s*background: var\(\s*--et-accordion-header-hover,/);
   });
 
   it('decorates the title text through --et-accordion-header-hover-text-decoration, none by default', () => {

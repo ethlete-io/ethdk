@@ -29,25 +29,25 @@
     initial-value: pointer;
   }
 
-  @property --et-button-opacity-disabled {
+  @property --et-button-disabled-opacity {
     syntax: '<number>';
     inherits: false;
     initial-value: 0.4;
   }
 
-  @property --et-button-variant-opacity-hover-delta {
+  @property --et-button-variant-hover-opacity-delta {
     syntax: '<number>';
     inherits: false;
     initial-value: 0.08;
   }
 
-  @property --et-button-variant-opacity-focus-delta {
+  @property --et-button-variant-focus-opacity-delta {
     syntax: '<number>';
     inherits: false;
     initial-value: 0.12;
   }
 
-  @property --et-button-variant-opacity-active-delta {
+  @property --et-button-variant-active-opacity-delta {
     syntax: '<number>';
     inherits: false;
     initial-value: 0.16;
@@ -87,16 +87,16 @@
 
     @media (hover: hover) {
       &:not([disabled], [aria-disabled='true']):hover {
-        --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
+        --_et-tone-fill-opacity: var(--et-button-variant-hover-opacity-delta);
       }
     }
 
     &:focus-visible {
-      --_et-tone-fill-opacity: var(--et-button-variant-opacity-focus-delta);
+      --_et-tone-fill-opacity: var(--et-button-variant-focus-opacity-delta);
     }
 
     &:not([disabled], [aria-disabled='true']):active {
-      --_et-tone-fill-opacity: var(--et-button-variant-opacity-active-delta);
+      --_et-tone-fill-opacity: var(--et-button-variant-active-opacity-delta);
     }
   }
 
@@ -106,18 +106,18 @@
     ):not([disabled], [aria-disabled='true']) {
     @media (hover: hover) {
       &:hover {
-        --_et-button-state-background: var(--et-button-outline-hover-background);
+        --_et-button-state-background: var(--et-button-outline-hover);
         --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
       }
     }
 
     &:focus-visible {
-      --_et-button-state-background: var(--et-button-outline-hover-background);
+      --_et-button-state-background: var(--et-button-outline-hover);
       --_et-button-state-border-color: var(--et-button-outline-hover-border-color);
     }
 
     &:active {
-      --_et-button-state-background: var(--et-button-outline-active-background);
+      --_et-button-state-background: var(--et-button-outline-active);
       --_et-button-state-border-color: var(--et-button-outline-active-border-color);
     }
   }
@@ -128,16 +128,16 @@
     ) {
     @media (hover: hover) {
       &:hover {
-        --_et-button-state-background: var(--et-button-transparent-hover-background);
+        --_et-button-state-background: var(--et-button-transparent-hover);
       }
     }
 
     &:focus-visible {
-      --_et-button-state-background: var(--et-button-transparent-hover-background);
+      --_et-button-state-background: var(--et-button-transparent-hover);
     }
 
     &:active {
-      --_et-button-state-background: var(--et-button-transparent-active-background);
+      --_et-button-state-background: var(--et-button-transparent-active);
     }
   }
 
@@ -146,16 +146,16 @@
 
     @media (hover: hover) {
       &:not([disabled], [aria-disabled='true']):hover {
-        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-hover-opacity-delta));
       }
     }
 
     &:focus-visible {
-      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-focus-opacity-delta));
     }
 
     &:not([disabled], [aria-disabled='true']):active {
-      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-active-opacity-delta));
     }
   }
 
@@ -165,16 +165,16 @@
 
     @media (hover: hover) {
       &:not([disabled], [aria-disabled='true']):hover {
-        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-hover-opacity-delta));
       }
     }
 
     &:focus-visible {
-      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-focus-delta));
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-focus-opacity-delta));
     }
 
     &:not([disabled], [aria-disabled='true']):active {
-      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-active-delta));
+      --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-active-opacity-delta));
     }
   }
 

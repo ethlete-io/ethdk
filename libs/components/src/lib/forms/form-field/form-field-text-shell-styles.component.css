@@ -50,17 +50,17 @@
         color-mix(in oklab, var(--et-surface-text, currentColor) 43%, var(--et-surface-background, transparent))
       );
       --_et-form-field-frame-border-hover: var(
-        --et-form-field-control-border-color-hover,
+        --et-form-field-control-hover-border-color,
         var(--_et-form-field-label-color-active)
       );
-      --_et-form-field-frame-focus: var(--et-form-field-control-border-color-focus, var(--et-tone-fill, currentColor));
+      --_et-form-field-frame-focus: var(--et-form-field-control-focus-border-color, var(--et-tone-fill, currentColor));
       --_et-form-field-frame-focus-readonly: var(
-        --et-form-field-control-border-color-focus,
+        --et-form-field-control-focus-border-color,
         var(--et-surface-text, currentColor)
       );
       --_et-form-field-label-color: var(--et-form-field-label-color, var(--et-surface-text-muted, currentColor));
       --_et-form-field-label-color-active: var(
-        --et-form-field-label-color-active,
+        --et-form-field-label-active-color,
         var(--et-surface-text, currentColor)
       );
 
@@ -267,7 +267,7 @@
           }
 
           .et-form-field-control-slot {
-            color: var(--et-form-field-value-color-active, var(--et-form-field-value-color));
+            color: var(--et-form-field-value-active-color, var(--et-form-field-value-color));
           }
 
           .et-form-field-label-area,
@@ -293,7 +293,7 @@
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-control-slot,
       &:where([data-expanded]:not([data-readonly])) .et-form-field-control-slot,
       &:where([data-focused]:not([data-readonly])) .et-form-field-control-slot {
-        color: var(--et-form-field-value-color-active, var(--et-form-field-value-color));
+        color: var(--et-form-field-value-active-color, var(--et-form-field-value-color));
       }
 
       &:where(:has(:focus-visible):not([data-readonly])) .et-form-field-label-area,

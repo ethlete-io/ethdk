@@ -101,7 +101,7 @@
     & .et-scrollbar-thumb:hover,
     &.et-scrollbar--dragging .et-scrollbar-thumb {
       background-color: var(
-        --et-scrollbar-thumb-active-color,
+        --et-scrollbar-thumb-active,
         color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 60%, transparent)
       );
     }

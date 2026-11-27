@@ -206,6 +206,15 @@
       "description": "Remove activeUnderline from provideTabsConfig, which is removed: the active underline is always on.",
       "generator": "@ethlete/components:migrate-tabs-active-underline",
       "docs": "/components/tabs"
+    },
+    {
+      "name": "state-token-names",
+      "version": "1.0.0-next.104",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename the component state tokens to one pattern (--et-<component>[-<part>][-<variant>]-<state>[-<property>]), e.g. --et-select-option-background-hover to --et-select-option-hover.",
+      "generator": "@ethlete/components:migrate-state-token-names",
+      "docs": "/core/theming"
     }
   ]
 }

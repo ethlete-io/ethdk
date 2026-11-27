@@ -1,9 +1,9 @@
 @layer components.sdk {
   et-form-field:where([data-variant='ghost']) {
     --et-form-field-control-border-color: transparent;
-    --et-form-field-control-border-color-hover: transparent;
+    --et-form-field-control-hover-border-color: transparent;
     --et-form-field-value-color: var(--et-surface-text-muted, currentColor);
-    --et-form-field-value-color-active: var(--et-surface-text, currentColor);
+    --et-form-field-value-active-color: var(--et-surface-text, currentColor);
   }
 
   @property --et-form-field-gap {

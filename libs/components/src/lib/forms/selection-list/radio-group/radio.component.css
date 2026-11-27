@@ -23,7 +23,7 @@
     initial-value: 150ms;
   }
 
-  @property --et-radio-opacity-disabled {
+  @property --et-radio-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
@@ -108,7 +108,7 @@
     }
 
     &[aria-disabled='true'] {
-      opacity: var(--et-radio-opacity-disabled);
+      opacity: var(--et-radio-disabled-opacity);
       pointer-events: none;
       cursor: default;
 

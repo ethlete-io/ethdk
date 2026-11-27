@@ -23,7 +23,7 @@
     initial-value: 150ms;
   }
 
-  @property --et-checkbox-option-opacity-disabled {
+  @property --et-checkbox-option-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
@@ -105,7 +105,7 @@
     }
 
     &[aria-disabled='true'] {
-      opacity: var(--et-checkbox-option-opacity-disabled);
+      opacity: var(--et-checkbox-option-disabled-opacity);
       pointer-events: none;
       cursor: default;
 

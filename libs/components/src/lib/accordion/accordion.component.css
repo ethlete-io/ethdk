@@ -111,7 +111,7 @@
     @media (hover: hover) {
       &:hover {
         background: var(
-          --et-accordion-header-hover-background,
+          --et-accordion-header-hover,
           color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 7%, transparent)
         );
 
@@ -127,7 +127,7 @@
 
     &:active {
       background: var(
-        --et-accordion-header-active-background,
+        --et-accordion-header-active,
         color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 14%, transparent)
       );
     }

@@ -168,7 +168,7 @@ import { TitleSearchComponent } from '../title-search/title-search.component';
               @case ('close') {
                 <span
                   [etProvideColor]="errorTheme()"
-                  class="contents [--et-window-control-button-close-background-active:var(--et-tone-fill-active)] [--et-window-control-button-close-background:var(--et-tone-fill)] [--et-window-control-button-close-color:var(--et-tone-on-fill)]"
+                  class="contents [--et-window-control-button-close-active:var(--et-tone-fill-active)] [--et-window-control-button-close-background:var(--et-tone-fill)] [--et-window-control-button-close-color:var(--et-tone-on-fill)]"
                 >
                   <button
                     [shape]="CAPTION_SHAPE"

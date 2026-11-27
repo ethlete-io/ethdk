@@ -13,9 +13,9 @@ describe('table stylesheet tokens', () => {
     expect(tableCss).toContain('min-block-size: var(--et-table-header-row-min-height, auto)');
   });
 
-  it('paints a hovered row with --et-table-row-hover-background, pinned cells included', () => {
-    expect(tableCss).toContain('background: var(--et-table-row-hover-background, var(--_et-table-row-hover))');
-    expect(stickyCss).toContain('background: var(--et-table-row-hover-background, var(--_et-table-row-hover-solid))');
+  it('paints a hovered row with --et-table-row-hover, pinned cells included', () => {
+    expect(tableCss).toContain('background: var(--et-table-row-hover, var(--_et-table-row-hover))');
+    expect(stickyCss).toContain('background: var(--et-table-row-hover, var(--_et-table-row-hover-solid))');
   });
 
   it('lets a row set its own paint with --et-table-row-background', () => {

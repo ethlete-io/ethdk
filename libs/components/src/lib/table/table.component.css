@@ -11,7 +11,7 @@
     initial-value: 12px;
   }
 
-  @property --et-table-opacity-disabled {
+  @property --et-table-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.4;
@@ -552,7 +552,7 @@
      (A hovered *selected* row keeps its accent instead — see the selection feature's styles.) */
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell {
-      background: var(--et-table-row-hover-background, var(--_et-table-row-hover));
+      background: var(--et-table-row-hover, var(--_et-table-row-hover));
     }
   }
 
@@ -646,7 +646,7 @@
   /* Scoped to the cell rather than to the button, so a disabled column that is not sortable - whose
      label is a plain span - dims with the rest of them. */
   .et-table-header-cell:where([data-disabled]) .et-table-header-label {
-    opacity: var(--et-table-opacity-disabled);
+    opacity: var(--et-table-disabled-opacity);
   }
 
   .et-table-header-label:where(.et-table-header-label--sortable:disabled) {

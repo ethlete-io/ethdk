@@ -90,7 +90,7 @@
     @media (hover: hover) {
       &:not([disabled], [aria-disabled='true']):hover {
         --_et-button-border-color: var(
-          --et-pagination-item-border-color-hover,
+          --et-pagination-item-hover-border-color,
           var(--et-pagination-item-border-color, transparent)
         );
       }

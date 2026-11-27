@@ -38,11 +38,11 @@ describe('form-field tokens', () => {
 
   it.each([
     ['--et-form-field-control-border-color', '--_et-form-field-frame-border'],
-    ['--et-form-field-control-border-color-hover', '--_et-form-field-frame-border-hover'],
-    ['--et-form-field-control-border-color-focus', '--_et-form-field-frame-focus'],
+    ['--et-form-field-control-hover-border-color', '--_et-form-field-frame-border-hover'],
+    ['--et-form-field-control-focus-border-color', '--_et-form-field-frame-focus'],
     ['--et-form-field-control-focus-ring-width', 'box-shadow'],
     ['--et-form-field-value-color', 'color'],
-    ['--et-form-field-value-color-active', 'color'],
+    ['--et-form-field-value-active-color', 'color'],
     ['--et-form-field-label-gap', 'column-gap'],
     ['--et-form-field-label-font-weight', 'font-weight'],
     ['--et-form-field-label-letter-spacing', 'letter-spacing'],
@@ -56,7 +56,7 @@ describe('form-field tokens', () => {
       read('form-field.component.css'),
     );
 
-    expect(ghost?.[1]).toMatch(/--et-form-field-control-border-color-hover:\s*transparent/);
+    expect(ghost?.[1]).toMatch(/--et-form-field-control-hover-border-color:\s*transparent/);
   });
 
   it('keeps the colour and spacing tokens unregistered, so an unset one falls back to the inherited value', () => {

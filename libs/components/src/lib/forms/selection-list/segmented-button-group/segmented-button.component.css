@@ -59,7 +59,7 @@
     initial-value: 0px;
   }
 
-  @property --et-segmented-button-opacity-disabled {
+  @property --et-segmented-button-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
@@ -116,7 +116,7 @@
     }
 
     &[aria-disabled='true'] {
-      opacity: var(--et-segmented-button-opacity-disabled);
+      opacity: var(--et-segmented-button-disabled-opacity);
       pointer-events: none;
       cursor: default;
     }
@@ -125,7 +125,7 @@
       &:hover:not([aria-disabled='true']):not([data-readonly]):not([aria-checked='true']) {
         color: var(--et-surface-text, currentColor);
         background-color: var(
-          --et-segmented-button-hover-fill,
+          --et-segmented-button-hover,
           color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 10%, transparent)
         );
       }
@@ -159,7 +159,7 @@
     }
 
     :where(et-segmented-button-group[data-variant='tabs']) & {
-      --et-segmented-button-hover-fill: transparent;
+      --et-segmented-button-hover: transparent;
       --et-segmented-button-press-scale: 1;
       --et-segmented-button-focus-ring-offset: 2px;
 

@@ -101,7 +101,7 @@ export const TriggerTokens: StoryObj = {
     docs: {
       description: {
         story:
-          '`--et-accordion-header-hover-background` and `--et-accordion-header-active-background` set to ' +
+          '`--et-accordion-header-hover` and `--et-accordion-header-active` set to ' +
           '`transparent` drop the fill; `--et-accordion-header-padding-inline` (3px) and ' +
           '`--et-accordion-header-padding-inline-end` (17px) inset the label and the chevron differently.',
       },

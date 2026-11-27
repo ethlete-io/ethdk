@@ -198,25 +198,25 @@
 
     &:hover::before {
       background: var(
-        --et-carousel-dot-hover-color,
+        --et-carousel-dot-hover,
         color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 55%, transparent)
       );
     }
 
     &:active::before {
       background: var(
-        --et-carousel-dot-pressed-color,
+        --et-carousel-dot-pressed,
         color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 85%, transparent)
       );
     }
 
     &:where([data-active])::before {
-      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
+      background: var(--et-carousel-dot-active, light-dark(var(--et-tone-text), var(--et-tone-fill)));
     }
 
     /* `:hover`/`:active` above outrank the `:where()` rule, so the selected dot needs its own state selector. */
     &:where([data-active]):is(:hover, :active)::before {
-      background: var(--et-carousel-dot-active-color, light-dark(var(--et-tone-text), var(--et-tone-fill)));
+      background: var(--et-carousel-dot-active, light-dark(var(--et-tone-text), var(--et-tone-fill)));
     }
   }
 

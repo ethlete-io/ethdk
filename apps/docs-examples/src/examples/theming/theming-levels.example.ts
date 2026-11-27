@@ -279,7 +279,7 @@ export class ThemingLevelsOverlayButtonComponent {
     }
 
     .app-theming-stage[data-hover-next-level] et-accordion-group {
-      --et-accordion-header-hover-background: var(--et-surface-next-background);
+      --et-accordion-header-hover: var(--et-surface-next-background);
     }
 
     .app-theming-level-rows {

@@ -46,7 +46,7 @@
   @media (hover: hover) {
     .et-table-row:hover .et-table-cell.et-table-sticky-start,
     .et-table-row:hover .et-table-cell.et-table-sticky-end {
-      background: var(--et-table-row-hover-background, var(--_et-table-row-hover-solid));
+      background: var(--et-table-row-hover, var(--_et-table-row-hover-solid));
     }
   }
 

@@ -81,7 +81,7 @@
 
     &:where([disabled]),
     &:where([aria-disabled='true']:not([data-loading='true'])) {
-      opacity: var(--et-button-opacity-disabled);
+      opacity: var(--et-button-disabled-opacity);
       cursor: not-allowed;
       pointer-events: none;
     }
@@ -104,7 +104,7 @@
       }
 
       &:focus-visible {
-        --_et-tone-fill-opacity: calc(1 - var(--et-button-variant-opacity-focus-delta));
+        --_et-tone-fill-opacity: calc(1 - var(--et-button-variant-focus-opacity-delta));
       }
 
       &:not([disabled], [aria-disabled='true']):active {

@@ -73,24 +73,24 @@
     }
 
     &:where([data-selected]) {
-      --_et-select-option-color-rest: var(--et-select-option-color-selected);
+      --_et-select-option-color-rest: var(--et-select-option-selected-color);
       color: var(--_et-select-option-color-rest);
     }
 
     &:where([data-active][data-active-source='keyboard']) {
-      outline: 2px solid var(--et-select-option-outline-color-active, var(--et-tone-text, currentColor));
+      outline: 2px solid var(--et-select-option-active-outline-color, var(--et-tone-text, currentColor));
       outline-offset: -2px;
-      background: var(--et-select-option-background-active, transparent);
-      color: var(--et-select-option-color-active, var(--_et-select-option-color-rest));
+      background: var(--et-select-option-active, transparent);
+      color: var(--et-select-option-active-color, var(--_et-select-option-color-rest));
     }
 
     @media (hover: hover) {
       &:where([data-active]:hover) {
         background: var(
-          --et-select-option-background-hover,
+          --et-select-option-hover,
           color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 12%, transparent)
         );
-        color: var(--et-select-option-color-hover, var(--_et-select-option-color-rest));
+        color: var(--et-select-option-hover-color, var(--_et-select-option-color-rest));
       }
     }
 

@@ -35,7 +35,7 @@
     initial-value: 16px;
   }
 
-  @property --et-chip-opacity-disabled {
+  @property --et-chip-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.4;
@@ -59,7 +59,7 @@
     -webkit-tap-highlight-color: transparent;
 
     &:where([data-disabled]) {
-      opacity: var(--et-chip-opacity-disabled);
+      opacity: var(--et-chip-disabled-opacity);
       pointer-events: none;
     }
 

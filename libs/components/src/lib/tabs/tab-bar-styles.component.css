@@ -200,7 +200,7 @@
       );
 
       .et-tab-bar-underline {
-        opacity: var(--et-tab-hover-underline-opacity, 0);
+        opacity: var(--et-tab-underline-hover-opacity, 0);
       }
     }
 

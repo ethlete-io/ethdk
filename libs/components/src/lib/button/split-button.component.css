@@ -92,11 +92,11 @@
       }
 
       &:where([data-variant='outline'], [data-variant='transparent']) {
-        --_et-tone-fill-opacity: var(--et-button-variant-opacity-hover-delta);
+        --_et-tone-fill-opacity: var(--et-button-variant-hover-opacity-delta);
       }
 
       &:where([data-variant='tonal']) {
-        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+        --_et-tone-fill-opacity: calc(0.16 + var(--et-button-variant-hover-opacity-delta));
       }
     }
   }

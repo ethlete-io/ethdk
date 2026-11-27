@@ -41,7 +41,7 @@
     initial-value: 150ms;
   }
 
-  @property --et-dropzone-opacity-disabled {
+  @property --et-dropzone-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
@@ -289,7 +289,7 @@
   et-dropzone[data-disabled] {
     .et-dropzone-area,
     .et-dropzone-list {
-      opacity: var(--et-dropzone-opacity-disabled);
+      opacity: var(--et-dropzone-disabled-opacity);
     }
   }
 }

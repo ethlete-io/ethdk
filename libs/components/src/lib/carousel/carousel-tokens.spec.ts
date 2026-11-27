@@ -14,14 +14,14 @@ const autoplayCss = read('carousel-autoplay-styles.component.css');
 const ACTIVE = 'light-dark(var(--et-tone-text), var(--et-tone-fill))';
 
 describe('carousel colour tokens', () => {
-  it('tints the inactive dot and its hover from --et-carousel-dot-color and --et-carousel-dot-hover-color', () => {
+  it('tints the inactive dot and its hover from --et-carousel-dot-color and --et-carousel-dot-hover', () => {
     expect(carouselCss).toContain('background: var(--et-carousel-dot-color, color-mix(');
-    expect(carouselCss).toContain('background: var(--et-carousel-dot-hover-color, color-mix(');
+    expect(carouselCss).toContain('background: var(--et-carousel-dot-hover, color-mix(');
   });
 
-  it('draws the active dot and the countdown fill from --et-carousel-dot-active-color only', () => {
-    expect(carouselCss).toContain(`background: var(--et-carousel-dot-active-color, ${ACTIVE});`);
-    expect(autoplayCss).toContain(`background: var(--et-carousel-dot-active-color, ${ACTIVE});`);
+  it('draws the active dot and the countdown fill from --et-carousel-dot-active only', () => {
+    expect(carouselCss).toContain(`background: var(--et-carousel-dot-active, ${ACTIVE});`);
+    expect(autoplayCss).toContain(`background: var(--et-carousel-dot-active, ${ACTIVE});`);
     expect(`${carouselCss}\n${autoplayCss}`).not.toContain(`background: ${ACTIVE};`);
   });
 

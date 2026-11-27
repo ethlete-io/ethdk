@@ -29,7 +29,7 @@
     initial-value: 150ms;
   }
 
-  @property --et-switch-opacity-disabled {
+  @property --et-switch-disabled-opacity {
     syntax: '<number>';
     inherits: true;
     initial-value: 0.5;
@@ -48,7 +48,7 @@
     outline: none;
 
     &[aria-disabled='true'] {
-      opacity: var(--et-switch-opacity-disabled);
+      opacity: var(--et-switch-disabled-opacity);
       pointer-events: none;
       cursor: default;
     }
