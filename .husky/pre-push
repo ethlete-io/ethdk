@@ -11,6 +11,9 @@ export NX_DAEMON=false
 zero=0000000000000000000000000000000000000000
 failed=0
 docs_stamp=$(git rev-parse --git-path pre-push-docs-built)
+# `yarn push` runs the suite before git push opens the connection and records the sha here; a long lock wait with the
+# connection open makes GitHub drop it. Only the exact stamped sha skips the suite.
+suite_stamp=$(git rev-parse --git-path pre-push-suite-ok)
 
 while read -r _ local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
@@ -34,7 +37,11 @@ while read -r _ local_sha remote_ref remote_sha; do
   node tools/scripts/pre-push-checks.mjs "$base" "$local_sha" || failed=1
 
   if [ "$remote_ref" = refs/heads/next ]; then
-    node tools/scripts/push-suite.mjs --only lint,tools,coverage "$base..$local_sha" || failed=1
+    if [ "$(cat "$suite_stamp" 2>/dev/null)" = "$local_sha" ]; then
+      echo "pre-push: push suite already ok for $local_sha"
+    else
+      node tools/scripts/push-suite.mjs --only lint,tools,coverage "$base..$local_sha" || failed=1
+    fi
     node tools/scripts/push-slot.mjs check || failed=1
   fi
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { mirrorDir } from './next-mirror.mjs';
@@ -34,6 +34,24 @@ export const mirrorStatus = (sha, dir = mirrorDir()) => {
   }
 };
 
+const defaultSuite = ({ cwd, sha, remote, branch }) => {
+  const git = (...args) => spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const remoteHead = git('rev-parse', '--verify', '-q', `refs/remotes/${remote}/${branch}`);
+  const base = remoteHead.status === 0 ? remoteHead.stdout.trim() : git('merge-base', sha, 'origin/main').stdout.trim();
+  return spawnSync(
+    process.execPath,
+    [join(cwd, 'tools/scripts/push-suite.mjs'), '--only', 'lint,tools,coverage', `${base}..${sha}`],
+    { cwd, stdio: 'inherit' },
+  ).status;
+};
+
+/** The file the pre-push hook reads: it holds the sha whose push suite ended ok. */
+export const suiteStampPath = (cwd) =>
+  resolve(
+    cwd,
+    spawnSync('git', ['rev-parse', '--git-path', 'pre-push-suite-ok'], { cwd, encoding: 'utf8' }).stdout.trim(),
+  );
+
 /** Takes the push slot, pushes HEAD to `next`, then releases the slot. Returns the exit code. */
 export const pushNext = ({
   cwd,
@@ -43,6 +61,7 @@ export const pushNext = ({
   dryRun = false,
   mirror = mirrorDir(),
   log = console.error,
+  suite = defaultSuite,
 }) => {
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' }).stdout.trim();
   for (const line of uncommittedDesignRecordLines({ cwd })) log(line);
@@ -69,6 +88,14 @@ export const pushNext = ({
     return 1;
   }
   if (!claim.ok) log(`push-next: push slot not claimed, pushing anyway: ${claim.reason}`);
+  if (branch === 'next') {
+    const suiteStatus = suite({ cwd, sha, remote, branch });
+    if (suiteStatus !== 0) {
+      log('push-next: the push suite failed, nothing pushed, the push slot stays held.');
+      return suiteStatus || 1;
+    }
+    writeFileSync(suiteStampPath(cwd), `${sha}\n`);
+  }
   const pushed = spawnSync('git', ['push', remote, `${sha}:${branch}`], { cwd, stdio: 'inherit' });
   if (pushed.status !== 0) {
     log('push-next: push failed, the push slot stays held.');

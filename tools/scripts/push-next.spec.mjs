@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { gitSpawn } from './git-test-env.mjs';
-import { pushNext } from './push-next.mjs';
+import { pushNext, suiteStampPath } from './push-next.mjs';
 import { claimSlot, readSlot, releasedLine, SLOT_REF, SLOT_TTL_MS } from './push-slot.mjs';
 
 for (const key of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']) delete process.env[key];
@@ -48,7 +48,7 @@ test('a push reaches next and releases the slot', (t) => {
   assert.equal(claimSlot({ cwd: mac, holder: 'mac', sha }).ok, true);
   assert.notEqual(originRef(origin, SLOT_REF), '');
 
-  const code = pushNext({ cwd: mac, holder: 'mac', log: () => undefined });
+  const code = pushNext({ cwd: mac, suite: () => 0, holder: 'mac', log: () => undefined });
 
   assert.equal(code, 0);
   assert.equal(originRef(origin, 'refs/heads/next'), sha);
@@ -61,7 +61,7 @@ test('a failed push keeps the slot and exits non-zero', (t) => {
   run(origin, 'config', 'receive.denyNonFastForwards', 'true');
   run(mac, 'remote', 'set-url', '--push', 'origin', join(origin, 'missing'));
 
-  const code = pushNext({ cwd: mac, holder: 'mac', log: () => undefined });
+  const code = pushNext({ cwd: mac, suite: () => 0, holder: 'mac', log: () => undefined });
 
   assert.notEqual(code, 0);
   assert.notEqual(originRef(origin, SLOT_REF), '');
@@ -113,20 +113,20 @@ test('a commit the mirror judged red is refused; a green, error or unjudged one 
   writeVerdict(mirror, sha, 'red');
   const lines = [];
 
-  assert.equal(pushNext({ cwd: mac, holder: 'mac', mirror, log: (l) => lines.push(l) }), 1);
+  assert.equal(pushNext({ cwd: mac, suite: () => 0, holder: 'mac', mirror, log: (l) => lines.push(l) }), 1);
   assert.notEqual(originRef(origin, 'refs/heads/next'), sha);
   assert.match(lines[0], /judged [0-9a-f]{12} red/);
 
   run(mac, 'commit', '-q', '--allow-empty', '-m', 'fix');
   const fix = run(mac, 'rev-parse', 'HEAD');
-  assert.equal(pushNext({ cwd: mac, holder: 'mac', mirror, log: () => undefined }), 0);
+  assert.equal(pushNext({ cwd: mac, suite: () => 0, holder: 'mac', mirror, log: () => undefined }), 0);
   assert.equal(originRef(origin, 'refs/heads/next'), fix);
 
   for (const status of ['green', 'error']) {
     run(mac, 'commit', '-q', '--allow-empty', '-m', status);
     const head = run(mac, 'rev-parse', 'HEAD');
     writeVerdict(mirror, head, status);
-    assert.equal(pushNext({ cwd: mac, holder: 'mac', mirror, log: () => undefined }), 0);
+    assert.equal(pushNext({ cwd: mac, suite: () => 0, holder: 'mac', mirror, log: () => undefined }), 0);
     assert.equal(originRef(origin, 'refs/heads/next'), head);
   }
 });
@@ -154,7 +154,7 @@ test('an expired slot of another holder is taken and released without a warning'
   claimSlot({ cwd: mac, holder: 'linux', sha, now: Date.now() - 2 * SLOT_TTL_MS, log: () => undefined });
   const lines = [];
 
-  const code = pushNext({ cwd: mac, holder: 'mac', mirror, log: (l) => lines.push(l) });
+  const code = pushNext({ cwd: mac, suite: () => 0, holder: 'mac', mirror, log: (l) => lines.push(l) });
 
   assert.equal(code, 0);
   assert.deepEqual(lines, ['push slot released']);
@@ -168,10 +168,38 @@ test('a live slot of another holder blocks the push and stays', (t) => {
   const slot = originRef(origin, SLOT_REF);
   const lines = [];
 
-  const code = pushNext({ cwd: mac, holder: 'mac', mirror, log: (l) => lines.push(l) });
+  const code = pushNext({ cwd: mac, suite: () => 0, holder: 'mac', mirror, log: (l) => lines.push(l) });
 
   assert.equal(code, 1);
   assert.notEqual(originRef(origin, 'refs/heads/next'), sha);
   assert.equal(originRef(origin, SLOT_REF), slot);
   assert.match(lines[0], /push slot held by linux/);
+});
+
+test('the suite runs before git push and a verdict is stamped for the sha', (t) => {
+  const { mac, sha } = setup(t);
+  const order = [];
+  const code = pushNext({
+    cwd: mac,
+    holder: 'mac',
+    log: () => undefined,
+    suite: ({ sha: ran }) => {
+      order.push(`suite ${ran}`);
+      assert.equal(existsSync(suiteStampPath(mac)), false);
+      return 0;
+    },
+  });
+
+  assert.equal(code, 0);
+  assert.deepEqual(order, [`suite ${sha}`]);
+  assert.equal(readFileSync(suiteStampPath(mac), 'utf8').trim(), sha);
+});
+
+test('a failing suite stops the push and records no verdict', (t) => {
+  const { origin, mac } = setup(t);
+  const code = pushNext({ cwd: mac, holder: 'mac', log: () => undefined, suite: () => 3 });
+
+  assert.equal(code, 3);
+  assert.notEqual(originRef(origin, 'refs/heads/next'), run(mac, 'rev-parse', 'HEAD'));
+  assert.equal(existsSync(suiteStampPath(mac)), false);
 });

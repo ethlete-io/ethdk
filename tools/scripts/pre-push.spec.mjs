@@ -61,3 +61,24 @@ test('builds the docs once per pushed sha', () => {
     .filter((line) => line.startsWith('vitepress build'));
   assert.equal(builds.length, 1);
 });
+
+test('skips the suite for a stamped sha and runs it for any other', () => {
+  const ctx = setup();
+  const calls = join(ctx.dir, '.bin', 'node.log');
+  stub(join(ctx.bin, 'node'), `echo "$@" >> "${calls}"`);
+  const suiteRuns = () =>
+    readFileSync(calls, 'utf8')
+      .split('\n')
+      .filter((line) => line.includes('push-suite.mjs')).length;
+
+  assert.equal(push(ctx).status, 0);
+  assert.equal(suiteRuns(), 1);
+
+  writeFileSync(join(ctx.dir, '.git', 'pre-push-suite-ok'), `${ctx.head}\n`);
+  assert.equal(push(ctx).status, 0);
+  assert.equal(suiteRuns(), 1);
+
+  writeFileSync(join(ctx.dir, '.git', 'pre-push-suite-ok'), `${ctx.base}\n`);
+  assert.equal(push(ctx).status, 0);
+  assert.equal(suiteRuns(), 2);
+});
