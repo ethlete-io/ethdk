@@ -300,7 +300,14 @@ async function tick($: EngineInterface) {
     const stat = await $.fs.stat(root, { resolve: true }).catch(() => undefined);
     const projectRoot = stat?.realPath ?? root;
     const known = new Set(next.map((p) => p.path));
-    for (const run of await registryRuns($.fs, { nowMs, projectRoot })) {
+    for (const run of await registryRuns(
+      {
+        list: (path) => $.fs.list(path),
+        read: (path) => $.fs.read(path),
+        stat: (path) => $.fs.stat(path),
+      },
+      { nowMs, projectRoot },
+    )) {
       if (known.has(run.entry.log)) continue;
       next.push(await progressOfRegistryRun($, run, last.get(run.entry.log), nowMs));
     }

@@ -6,8 +6,8 @@ import { discoverRuns, durationOf } from './progress';
 const PANE = 'codex-runs';
 const POLL_MS = 5000;
 const PROCESS_TIMEOUT_MS = 2000;
-const runs = atom({ plugin: PANE, key: 'runs' } as const, []);
-const selected = atom({ plugin: PANE, key: 'selected' } as const, null);
+const runs = atom({ plugin: 'codex-runs', key: 'runs' } as const, []);
+const selected = atom({ plugin: 'codex-runs', key: 'selected' } as const, null);
 
 let timer: Timer | undefined;
 let pending: Promise<void> | undefined;
