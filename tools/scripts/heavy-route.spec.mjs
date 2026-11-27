@@ -203,3 +203,15 @@ test('--on and HEAVY_ROUTE=off pick the machine by hand', () => {
   assert.equal(remoteCalls().length, 1);
   assert.equal(runHeavy(['--on', 'moon', '--', 'true']).status, 2);
 });
+
+test('--env, --forward and --yarn-cache reach remote-run, --yarn-cache only for rack', () => {
+  const { runHeavy, remoteCalls } = setup();
+  const args = ['--env', 'NPM_TOKEN', '--forward', '8000', '--yarn-cache', '--', 'npx', 'nx', 'lint', 'cli'];
+  assert.equal(runHeavy(['--on', 'rack', ...args]).status, 5);
+  assert.equal(runHeavy(['--on', 'mac', ...args]).status, 5);
+  const [rack, mac] = remoteCalls();
+  const own = (call) => call.argv.slice(call.argv.indexOf('--slot') + 2, call.argv.indexOf('--'));
+  assert.deepEqual(own(rack), ['--env', 'NPM_TOKEN', '--forward', '8000', '--yarn-cache']);
+  assert.deepEqual(own(mac), ['--env', 'NPM_TOKEN', '--forward', '8000']);
+  assert.equal(runHeavy(['--yarnCache', 'x', '--', 'true']).status, 2);
+});

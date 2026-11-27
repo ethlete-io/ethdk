@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { gitEnv } from './git-test-env.mjs';
-import { LINUX_IMAGE, parseArgs, remoteScript } from './remote-run.mjs';
+import { LINUX_IMAGE, neededCacheFiles, parseArgs, remoteScript } from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
 const SHA = 'a'.repeat(40);
@@ -94,6 +94,8 @@ test('parses host, ref, slot and the suite after --', () => {
     slot: 'w1',
     log: undefined,
     fetch: [],
+    env: [],
+    forward: [],
     suite: 'yarn nx run-many -t test',
   });
   assert.equal(parseArgs(['--host', 'mac', '--', 'true']).ref, 'HEAD');
@@ -157,7 +159,7 @@ test('--linux runs the suite in the pinned Playwright image, on the rack through
   });
   assert.match(
     rack,
-    /MSYS_NO_PATHCONV=1 wsl\.exe -d ethlete -- bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/remote-guard\.sh 'w1' -- \\\n *bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/rack-docker-run\.sh "\$sha" 'w1' -- 'yarn test'/,
+    /MSYS_NO_PATHCONV=1 wsl\.exe -d ethlete --exec bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/remote-guard\.sh 'w1' -- \\\n *bash \/mnt\/c\/Users\/trbor\/ethlete-rr\/rack-docker-run\.sh "\$sha" 'w1' -- 'yarn test'/,
   );
   assert.doesNotMatch(rack, /worktree add/);
 });
@@ -165,7 +167,7 @@ test('--linux runs the suite in the pinned Playwright image, on the rack through
 test('exits 2 on bad arguments without calling ssh', () => {
   const result = run(['--host', 'nope', '--', 'true']);
   assert.equal(result.status, 2);
-  assert.equal(result.calls, '');
+  assert.doesNotMatch(result.calls, /trbor@/);
 });
 
 test('registers the run in the run registry with its machine, log and exit code', () => {
@@ -326,4 +328,103 @@ test('fetch unpacks the returned tar into the repo top, also after a failing sui
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('--env and --forward are repeatable and refuse bad names and ports', () => {
+  const opts = parseArgs(['--host', 'rack', '--env', 'A_TOKEN', '--env', 'B', '--forward', '8000', '--', 'true']);
+  assert.deepEqual(opts.env, ['A_TOKEN', 'B']);
+  assert.deepEqual(
+    parseArgs(['--host', 'rack', '--forward', '80', '--forward', '8000', '--', 'x']).forward,
+    [80, 8000],
+  );
+  assert.throws(() => parseArgs(['--host', 'rack', '--env', 'A-B', '--', 'true']), /--env needs a variable name/);
+  assert.throws(() => parseArgs(['--host', 'rack', '--forward', '0', '--', 'true']), /--forward needs a port/);
+  assert.throws(() => parseArgs(['--host', 'rack', '--forward', 'x', '--', 'true']), /--forward needs a port/);
+});
+
+test('an --env name that is unset here exits 2 before ssh', () => {
+  const result = run(['--host', 'rack', '--env', 'RR_SPEC_UNSET_VAR', '--', 'true']);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--env RR_SPEC_UNSET_VAR is not set here/);
+  assert.doesNotMatch(result.calls, /trbor@/);
+});
+
+test('--env values go into the ssh script, and only the names into the container argv', () => {
+  const base = { sha: SHA, slot: 'w1', suite: 'yarn test', env: [['NPM_TOKEN', "s3'cret"]] };
+  const native = remoteScript({ ...base, host: 'mac', linux: false });
+  assert.match(native, /export NPM_TOKEN='s3'\\''cret'/);
+
+  const mac = remoteScript({ ...base, host: 'mac', linux: true });
+  assert.match(mac, /-e NX_DAEMON=false -e NPM_TOKEN \\/);
+  assert.equal(mac.split('s3').length, 2);
+
+  const rack = remoteScript({ ...base, host: 'rack', linux: true, rackHelper: 'echo helper\n' });
+  assert.match(rack, /export RR_ENV='NPM_TOKEN'/);
+  assert.match(rack, /export WSLENV="NPM_TOKEN\/u:RR_ENV\/u\$\{WSLENV:\+:\$WSLENV\}"/);
+  assert.equal(rack.split('s3').length, 2);
+
+  const helper = readFileSync(join(dirname(SCRIPT), 'rack-docker-run.sh'), 'utf8');
+  assert.match(helper, /for name in \$\{RR_ENV:-\}; do env_args\+=\(-e "\$name"\); done/);
+  assert.match(helper, /docker run [^\n]*"\$\{env_args\[@\]\}"/);
+});
+
+test('--forward lets the suite reach a server of the caller through 127.0.0.1', async () => {
+  const { createServer } = await import('node:net');
+  const server = createServer((socket) => socket.end('from-caller'));
+  await new Promise((resolve) => server.listen(0, '127.0.0.2', resolve));
+  const { port } = server.address();
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-forward-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  for (const name of ['git', 'yarn']) chmodSync(join(bin, name), 0o755);
+  const script = remoteScript({
+    sha: SHA,
+    slot: 'w1',
+    suite: `node -e "require('net').connect(${port}, '127.0.0.1').on('data', (d) => require('fs').writeFileSync(process.env.HOME + '/got', d))"; exit 4`,
+    host: 'mac',
+    linux: false,
+    forward: [port],
+    caller: '127.0.0.2',
+  });
+  try {
+    const { spawn } = await import('node:child_process');
+    const child = spawn('bash', ['-c', script], {
+      env: { PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`, HOME: home },
+    });
+    let output = '';
+    child.stdout.on('data', (d) => (output += d));
+    child.stderr.on('data', (d) => (output += d));
+    const code = await new Promise((resolve) => child.on('close', resolve));
+    assert.equal(code, 4, output);
+    assert.equal(readFileSync(join(home, 'got'), 'utf8'), 'from-caller');
+    assert.doesNotMatch(output, /did not start/);
+  } finally {
+    server.close();
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test('--yarn-cache is a rack Linux option and picks the cache files the lockfile needs that exist here', () => {
+  assert.equal(parseArgs(['--host', 'rack', '--linux', '--yarn-cache', '--', 'true']).yarnCache, true);
+  assert.throws(
+    () => parseArgs(['--host', 'mac', '--linux', '--yarn-cache', '--', 'true']),
+    /rack Linux container only/,
+  );
+  assert.throws(() => parseArgs(['--host', 'rack', '--yarn-cache', '--', 'true']), /rack Linux container only/);
+  const info = [
+    { value: 'a@npm:1', children: { Cache: { Path: '/c/a-npm-1-x-10c0.zip' } } },
+    { value: 'root@workspace:.', children: { Version: '0.0.0' } },
+    { value: 'b@ssh:x', children: { Cache: { Path: '/c/b-ssh-y-10c0.zip' } } },
+  ]
+    .map((line) => JSON.stringify(line))
+    .join('\n');
+  assert.deepEqual(
+    neededCacheFiles(`${info}\n`, (path) => path !== '/c/b-ssh-y-10c0.zip'),
+    ['/c/a-npm-1-x-10c0.zip'],
+  );
 });

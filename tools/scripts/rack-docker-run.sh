@@ -49,7 +49,11 @@ DOCKERFILE
 cache="$HOME/rack-linux/.cache"
 mkdir -p "$cache/yarn-$slot" "$cache/tools" "$cache/cargo-registry"
 
-exec docker run --rm --init --ipc=host --label "ethlete-rr-slot=$slot" \
+# RR_ENV names the variables remote-run --env forwards; -e NAME takes the value from this environment.
+env_args=()
+for name in ${RR_ENV:-}; do env_args+=(-e "$name"); done
+
+exec docker run --rm --init --ipc=host --label "ethlete-rr-slot=$slot" "${env_args[@]}" \
   --user "$(id -u):$(id -g)" -e HOME=/home/ubuntu \
   --add-host=host.docker.internal:host-gateway \
   -v "$work:/work" -w /work \

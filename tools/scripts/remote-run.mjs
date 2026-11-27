@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { killWithParent } from './kill-with-parent.mjs';
 import { registerRun } from './run-registry.mjs';
@@ -26,21 +26,22 @@ const GUARD = join(dirname(fileURLToPath(import.meta.url)), 'remote-guard.sh');
 const PICTURE_SUITE = /--project[= ]visual\b|\bvisual\b|screenshot|golden|baseline|--update-snapshots/i;
 
 const USAGE =
-  'usage: remote-run.mjs --host rack|mac [--linux] [--ref <sha>] [--slot <name>] [--log <file>] [--fetch <path>]... -- <suite command>';
+  'usage: remote-run.mjs --host rack|mac [--linux] [--ref <sha>] [--slot <name>] [--log <file>] [--fetch <path>]...' +
+  ' [--env <name>]... [--forward <port>]... [--yarn-cache] -- <suite command>';
 
 export const parseArgs = (argv) => {
   const split = argv.indexOf('--');
   const own = split === -1 ? argv : argv.slice(0, split);
   const suite = split === -1 ? '' : argv.slice(split + 1).join(' ');
-  const opts = { host: undefined, ref: 'HEAD', slot: 'w1', log: undefined, fetch: [], suite };
+  const opts = { host: undefined, ref: 'HEAD', slot: 'w1', log: undefined, fetch: [], env: [], forward: [], suite };
 
   for (let i = 0; i < own.length; i++) {
-    if (own[i] === '--linux') {
-      opts.linux = true;
+    if (own[i] === '--linux' || own[i] === '--yarn-cache') {
+      opts[own[i] === '--linux' ? 'linux' : 'yarnCache'] = true;
       continue;
     }
     const key = own[i].replace(/^--/, '');
-    if (!['host', 'ref', 'slot', 'log', 'fetch'].includes(key) || own[i + 1] === undefined) {
+    if (!['host', 'ref', 'slot', 'log', 'fetch', 'env', 'forward'].includes(key) || own[i + 1] === undefined) {
       throw new Error(`unknown or incomplete option ${own[i]}\n${USAGE}`);
     }
     if (key === 'fetch') {
@@ -49,6 +50,18 @@ export const parseArgs = (argv) => {
         throw new Error(`--fetch needs a path inside the repo, got ${path}`);
       }
       opts.fetch.push(path);
+      continue;
+    }
+    if (key === 'env') {
+      const name = own[++i];
+      if (!/^[A-Za-z_]\w*$/.test(name)) throw new Error(`--env needs a variable name, got ${name}`);
+      opts.env.push(name);
+      continue;
+    }
+    if (key === 'forward') {
+      const port = Number(own[++i]);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`--forward needs a port, got ${own[i]}`);
+      opts.forward.push(port);
       continue;
     }
     opts[key] = own[++i];
@@ -60,12 +73,43 @@ export const parseArgs = (argv) => {
     throw new Error(`picture-comparing suites need Linux baselines: add --linux or run them on tank`);
   }
   if (!/^[\w.-]+$/.test(opts.slot)) throw new Error(`--slot must match [\\w.-]+`);
+  if (opts.yarnCache && !(opts.linux && opts.host === 'rack')) {
+    throw new Error('--yarn-cache seeds the rack Linux container only: use it with --host rack --linux');
+  }
   return opts;
 };
 
 const shellQuote = (value) => `'${value.replaceAll("'", `'\\''`)}'`;
 
 const fetchArgs = (fetch) => fetch.map(shellQuote).join(' ');
+
+const FORWARD_PROXY =
+  'const n=require(`net`),[ps,h]=process.argv.slice(1),q=ps.split(`,`);let w=0;for(const p of q)n.createServer(c=>{' +
+  'const u=n.connect(+p,h);c.pipe(u).pipe(c);u.on(`error`,()=>c.destroy());c.on(`error`,()=>u.destroy())' +
+  '}).listen(+p,`127.0.0.1`,()=>++w===q.length&&console.log(`ready`))';
+
+/**
+ * The suite behind a TCP proxy from 127.0.0.1:<port> on the remote side to the same port on the caller, so the suite
+ * reaches a server that runs only on the calling machine. One line: the rack passes it through wsl.exe argv.
+ */
+export const withForward = (suite, ports, caller) =>
+  ports.length
+    ? `exec {rr_fd}< <(node -e ${shellQuote(FORWARD_PROXY)} ${ports.join(',')} ${shellQuote(caller)}); rr_fwd=$!; ` +
+      `read -r -u $rr_fd _ || echo '[remote-run] --forward did not start' >&2; (${suite})` +
+      `; rr_code=$?; kill $rr_fwd 2>/dev/null; (exit $rr_code)`
+    : suite;
+
+// The values travel in the ssh script on stdin, never in an argv the remote process list shows.
+const envExports = (env, rackLinux) =>
+  [
+    ...env.map(([name, value]) => `export ${name}=${shellQuote(value)}`),
+    ...(rackLinux && env.length
+      ? [
+          `export RR_ENV=${shellQuote(env.map(([name]) => name).join(' '))}`,
+          `export WSLENV="${[...env.map(([name]) => `${name}/u`), 'RR_ENV/u'].join(':')}\${WSLENV:+:$WSLENV}"`,
+        ]
+      : []),
+  ].join('\n  ') || ':';
 
 const outTar = (runId) => `ethlete-rr/out-${runId}.tar`;
 
@@ -95,12 +139,12 @@ echo "[remote-run] install $((SECONDS - started))s"
 started=$SECONDS
 `;
 
-const linuxRun = (suite, slot, fetch, runId) => `  export PATH="/usr/local/bin:$PATH"
+const linuxRun = (suite, slot, fetch, runId, env) => `  export PATH="/usr/local/bin:$PATH"
   docker image inspect ${LINUX_IMAGE} >/dev/null 2>&1 || docker pull --quiet ${LINUX_IMAGE} || return 1
   docker run --rm --init --ipc=host -v "$work:$work" -w "$work" -v "$mirror:$mirror" \\
     -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="*" \\
     -v ethlete-rr-yarn-${slot}:/root/.yarn/berry -v ethlete-rr-tools:/opt/tools --label ethlete-rr-slot=${slot} \\
-    -e CI=1 -e NX_NO_CLOUD=true -e NX_DAEMON=false \\
+    -e CI=1 -e NX_NO_CLOUD=true -e NX_DAEMON=false ${env.map(([name]) => `-e ${name} `).join('')}\\
     ${LINUX_IMAGE} bash -c ${shellQuote(`${containerSetup}${suite}
 code=$?
 echo "[remote-run] suite exit $code after $((SECONDS - started))s"
@@ -116,7 +160,7 @@ const rackLinuxRun = (
   runId,
 ) => `  cat > "$HOME/ethlete-rr/rack-docker-run.sh" <<'REMOTE_RUN_HELPER'
 ${helper}REMOTE_RUN_HELPER
-  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete -- bash /mnt/c/Users/trbor/ethlete-rr/remote-guard.sh ${shellQuote(slot)} -- \\
+  MSYS_NO_PATHCONV=1 wsl.exe -d ethlete --exec bash /mnt/c/Users/trbor/ethlete-rr/remote-guard.sh ${shellQuote(slot)} -- \\
     bash /mnt/c/Users/trbor/ethlete-rr/rack-docker-run.sh "$sha" ${shellQuote(slot)} -- ${shellQuote(suite)}
   local code=$?${
     fetch.length
@@ -136,19 +180,24 @@ export const remoteScript = ({
   rackHelper,
   fetch = [],
   runId = 'run',
+  env = [],
+  forward = [],
+  caller,
   guard = readFileSync(GUARD, 'utf8'),
 }) => {
-  const run = !linux
-    ? nativeRun(suite, fetch, runId)
-    : host === 'rack'
-      ? rackLinuxRun(suite, slot, rackHelper, fetch, runId)
-      : linuxRun(suite, slot, fetch, runId);
+  const wrapped = withForward(suite, forward, caller);
   const rackLinux = linux && host === 'rack';
+  const run = !linux
+    ? nativeRun(wrapped, fetch, runId)
+    : rackLinux
+      ? rackLinuxRun(wrapped, slot, rackHelper, fetch, runId)
+      : linuxRun(wrapped, slot, fetch, runId, env);
   return `suite_run() {
 ${run}
 }
 main() {
   local mirror="$HOME/ethlete-mirror.git" work="$HOME/ethlete-rr/${slot}${linux ? '-linux' : ''}" sha=${shellQuote(sha)}
+  ${envExports(env, rackLinux)}
   ${
     bundle
       ? `git -C "$mirror" fetch --quiet --force "$HOME/${bundle}" "refs/remote-run/$sha:refs/heads/remote-run-$sha" || return 1
@@ -187,6 +236,7 @@ export const initScript = () => `main() {
   git -C "$mirror" config core.autocrlf false
   git -C "$mirror" config core.longpaths true
   git -C "$mirror" for-each-ref --format='have %(objectname)'
+  echo "client \${SSH_CLIENT%% *}"
 }
 main </dev/null
 `;
@@ -219,6 +269,11 @@ export const remoteRun = async (opts) => {
     return 2;
   }
   const sha = resolved.stdout.trim();
+  const unset = (opts.env ?? []).filter((name) => process.env[name] === undefined);
+  if (unset.length) {
+    process.stderr.write(`[remote-run] --env ${unset.join(', ')} is not set here\n`);
+    return 2;
+  }
   const log = opts.log ?? join(tmpdir(), 'remote-run', `${opts.host}-${sha.slice(0, 12)}-${Date.now()}.log`);
   mkdirSync(dirname(log), { recursive: true });
   const file = createWriteStream(log);
@@ -241,6 +296,8 @@ export const remoteRun = async (opts) => {
   });
   if (init !== 0) return end(init, 'mirror init failed');
 
+  const caller = haves.match(/^client (\S+)\s*$/m)?.[1];
+  if (opts.forward?.length && !caller) return end(1, '--forward: the remote side does not report the caller address');
   const known = [...haves.matchAll(/^have ([0-9a-f]{40})\s*$/gm)].map((m) => m[1]);
   const reachable = known.some((have) => have === sha || git(['merge-base', '--is-ancestor', sha, have]).status === 0);
   let bundle;
@@ -259,10 +316,17 @@ export const remoteRun = async (opts) => {
   }
 
   const runId = `${Date.now().toString(36)}-${process.pid}`;
+  if (opts.yarnCache) {
+    const seeded = await seedYarnCache(host, opts.slot, runId, tee);
+    if (seeded !== 0) return end(seeded, 'yarn cache seed failed');
+  }
   const code = await runSsh(
     host,
     remoteScript({
       fetch: opts.fetch,
+      env: (opts.env ?? []).map((name) => [name, process.env[name]]),
+      forward: opts.forward ?? [],
+      caller,
       runId,
       sha,
       slot: opts.slot,
@@ -276,6 +340,69 @@ export const remoteRun = async (opts) => {
   );
   if (opts.fetch?.length) await fetchOutputs(host, runId, tee);
   return end(code);
+};
+
+/** The yarn cache files the repo's lockfile needs, from `yarn info -A -R --cache --json` output, that exist here. */
+export const neededCacheFiles = (infoJson, exists = existsSync) =>
+  infoJson
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line).children?.Cache?.Path)
+    .filter((path) => path && exists(path));
+
+const RACK_YARN_CACHE = (slot) => `$HOME/rack-linux/.cache/yarn-${slot}/cache`;
+
+const wslScript = (body, ...args) =>
+  `MSYS_NO_PATHCONV=1 wsl.exe -d ethlete --exec bash -c ${shellQuote(body)} _ ${args.map(shellQuote).join(' ')} </dev/null\n`;
+
+/**
+ * Copies the yarn cache files of this repo that the rack slot's container cache lacks, so `yarn install` there
+ * needs no access to private git hosts or registries that only this machine can reach.
+ */
+const seedYarnCache = async (host, slot, runId, tee) => {
+  const info = spawnSync('yarn', ['info', '-A', '-R', '--cache', '--json'], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  if (info.status !== 0) {
+    tee(`[remote-run] yarn-cache: yarn info failed: ${info.stderr.trim()}\n`, process.stderr);
+    return 1;
+  }
+  const needed = neededCacheFiles(info.stdout);
+  let listing = '';
+  const listed = await runSsh(host, wslScript(`ls "${RACK_YARN_CACHE('$1')}" 2>/dev/null; exit 0`, slot), {
+    onData: (chunk, stream) => (stream === process.stdout ? (listing += chunk) : tee(chunk, stream)),
+  });
+  if (listed !== 0) return listed;
+  const have = new Set(listing.split(/\r?\n/));
+  const missing = needed.filter((path) => !have.has(basename(path)));
+  tee(`[remote-run] yarn-cache: ${needed.length} needed, ${missing.length} to copy\n`, process.stdout);
+  if (!missing.length) return 0;
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-yarn-'));
+  const tar = join(dir, 'cache.tar');
+  const remoteTar = `ethlete-rr/yarn-${runId}.tar`;
+  try {
+    const packed = spawnSync('tar', ['-cf', tar, '-C', dirname(missing[0]), ...missing.map((p) => basename(p))], {
+      encoding: 'utf8',
+    });
+    if (packed.status !== 0) {
+      tee(`[remote-run] yarn-cache: tar failed: ${packed.stderr.trim()}\n`, process.stderr);
+      return 1;
+    }
+    const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, tar, `${host.ssh}:${remoteTar}`], { encoding: 'utf8' });
+    if (copy.status !== 0) {
+      tee(`[remote-run] yarn-cache: scp failed: ${copy.stderr.trim()}\n`, process.stderr);
+      return copy.status ?? 1;
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+  return runSsh(
+    host,
+    wslScript(
+      `mkdir -p "${RACK_YARN_CACHE('$1')}" && tar -C "${RACK_YARN_CACHE('$1')}" -xf "$2"; c=$?; rm -f "$2"; exit $c`,
+      slot,
+      `/mnt/c/Users/trbor/${remoteTar}`,
+    ),
+    { onData: tee },
+  );
 };
 
 const fetchOutputs = async (host, runId, tee) => {
