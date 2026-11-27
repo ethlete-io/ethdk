@@ -25,7 +25,7 @@ const productOf = (target: string) =>
 const BARE_COMMENT_DRAFT = `import { commentDraft } from '@system/components/comment-draft';
 
 const CARD =
-  'rounded-md border border-(--et-surface-border-solid) bg-(--et-surface-background-solid) p-space-3 shadow-lg';
+  'rounded-md border border-(--et-surface-border) bg-(--et-surface-background) p-space-3 shadow-lg';
 
 export const bareCommentDraft = async (text: string) => {
   const draft = await commentDraft({ text });

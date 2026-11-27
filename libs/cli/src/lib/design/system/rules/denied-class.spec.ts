@@ -97,7 +97,7 @@ describe('deniedClassesOf', { timeout: 30_000 }, () => {
   it('reports what the product stylesheet defines that exposes a denied class or var()', () => {
     const target = acme({
       stylesheet: [
-        '@theme { --color-surface-raised: oklch(0.3 0 0); --color-et-surface-background: var(--et-surface-bg-solid); }',
+        '@theme { --color-surface-raised: oklch(0.3 0 0); --color-et-surface-background: var(--et-surface-background); }',
         ':root { --accent-hover: red; }',
         '@utility bg-surface { background: black; }',
         '.text-surface { color: white; }',
