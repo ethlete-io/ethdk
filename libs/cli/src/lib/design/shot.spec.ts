@@ -579,6 +579,25 @@ describe('createPartShooter', () => {
     expect(fresh[0]?.drawnAt).toBeGreaterThanOrEqual(askedAt);
   });
 
+  it('opens the frame once for states of one part asked at once and switches the others in place', async () => {
+    const { shots } = acme();
+    const address = (state: string) => ({
+      product: 'acme',
+      part: 'components/card',
+      state,
+      preset: null,
+      width: null,
+      sketch: null,
+      interaction: null,
+      params: new URLSearchParams(),
+    });
+
+    await Promise.all(['long', 'short', 'empty'].map((state) => shots.pictureOf(address(state))));
+
+    expect(drawnUrls()).toHaveLength(1);
+    expect(switchedStates()).toHaveLength(2);
+  });
+
   it('loads the frame again instead of switching in place after a change to the drawn part', async () => {
     const { shots } = acme();
     const address = {

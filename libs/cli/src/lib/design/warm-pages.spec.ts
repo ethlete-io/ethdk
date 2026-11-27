@@ -79,6 +79,33 @@ describe('createWarmPages', () => {
     expect(a?.goto).not.toHaveBeenCalled();
   });
 
+  it('draws asked-at-once draws with one boot one after another on one page, so only the first opens it', async () => {
+    const { browser, contexts } = fakeBrowser();
+    const warm = createWarmPages();
+    const lent: [unknown, boolean][] = [];
+    let drawing = 0;
+    let most = 0;
+    const draw = () =>
+      warm.run({ browser, context: phone, boot: 'a' }, async (page, booted) => {
+        most = Math.max(most, ++drawing);
+        await new Promise((done) => setTimeout(done, 5));
+        lent.push([page, booted]);
+        drawing--;
+      });
+
+    await Promise.all([draw(), draw(), draw()]);
+
+    const [page] = contexts.map((context) => context.pages[0]);
+
+    expect(contexts).toHaveLength(1);
+    expect(most).toBe(1);
+    expect(lent).toEqual([
+      [page, false],
+      [page, true],
+      [page, true],
+    ]);
+  });
+
   it('closes the page of a failed draw and draws the next one on a new page', async () => {
     const { browser, contexts } = fakeBrowser();
     const warm = createWarmPages();

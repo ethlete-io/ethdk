@@ -23,6 +23,31 @@ const BLANK = 'about:blank';
 export const createWarmPages = (options: { idleLimit?: number; parkLimitMs?: number } = {}) => {
   const idleLimit = options.idleLimit ?? IDLE_LIMIT;
   const idleByBrowser = new WeakMap<Browser, Idle[]>();
+  const bootingByBrowser = new WeakMap<Browser, Map<string, Promise<void>>>();
+
+  const bootingOf = (browser: Browser) => {
+    const booting = bootingByBrowser.get(browser) ?? new Map<string, Promise<void>>();
+
+    bootingByBrowser.set(browser, booting);
+
+    return booting;
+  };
+
+  const turnOf = async (browser: Browser, slot: string) => {
+    const booting = bootingOf(browser);
+
+    for (let before = booting.get(slot); before; before = booting.get(slot)) await before;
+
+    let release = () => undefined as void;
+    const turn = new Promise<void>((done) => (release = done));
+
+    booting.set(slot, turn);
+
+    return () => {
+      if (booting.get(slot) === turn) booting.delete(slot);
+      release();
+    };
+  };
 
   const idleOf = (browser: Browser) => {
     const kept = idleByBrowser.get(browser) ?? [];
@@ -76,59 +101,79 @@ export const createWarmPages = (options: { idleLimit?: number; parkLimitMs?: num
     return (await idle.parked) && !idle.warm.dropped ? idle.warm : borrow(lent, { key, boot });
   };
 
+  const drawOn = async <T>(
+    on: {
+      browser: Browser;
+      lent: Lent & { limit?: { ms: number; what: string } };
+      key: string;
+      boot: string | null;
+      signal: AbortSignal | null;
+    },
+    draw: (page: Page, booted: boolean) => Promise<T>,
+  ) => {
+    const { browser, lent, key, boot, signal } = on;
+
+    if (signal?.aborted) throw new RunAbortedError();
+
+    const warm = await borrow({ browser, context: lent.context }, { key, boot });
+
+    if (signal?.aborted) {
+      drop(warm);
+      throw new RunAbortedError();
+    }
+
+    const booted = boot !== null && warm.booted === boot;
+    const aborting: Subscription | null = signal
+      ? fromEvent(signal, 'abort')
+          .pipe(
+            take(1),
+            tap(() => drop(warm)),
+          )
+          .subscribe()
+      : null;
+
+    warm.booted = null;
+
+    try {
+      const drawing = draw(warm.page, booted);
+      const drawn = await (lent.limit ? withinLimit(drawing, lent.limit) : drawing);
+      const kept = idleOf(browser);
+
+      warm.booted = boot;
+
+      kept.push({ warm, parked: park(warm) });
+      kept.splice(0, Math.max(0, kept.length - idleLimit)).forEach((idle) => drop(idle.warm));
+
+      return drawn;
+    } catch (error) {
+      drop(warm);
+      throw error;
+    } finally {
+      aborting?.unsubscribe();
+    }
+  };
+
   return {
     /**
      * Runs `draw` on an idle page of `browser` opened with the same `context` options, or on a new one. With `limit`,
      * a draw still running after `limit.ms` rejects with a `WaitTimeoutError` and its page closes. With `boot`, an idle
-     * page left on a drawing with the same `boot` goes first, and `draw` gets `booted: true` for it. A `closingOnAbort`
+     * page left on a drawing with the same `boot` goes first, and `draw` gets `booted: true` for it; draws with the same
+     * `boot` and `context` run one after another, so only the first of them opens a cold page. A `closingOnAbort`
      * browser shares the idle pages of the browser it wraps, and closes the page of a draw whose run aborts.
      */
-    run: async <T>(
+    run: <T>(
       lent: Lent & { limit?: { ms: number; what: string }; boot?: string },
       draw: (page: Page, booted: boolean) => Promise<T>,
-    ) => {
+    ): Promise<T> => {
       const { browser, signal } = abortingOf(lent.browser);
-
-      if (signal?.aborted) throw new RunAbortedError();
-
       const key = JSON.stringify(lent.context);
       const boot = lent.boot ?? null;
-      const warm = await borrow({ browser, context: lent.context }, { key, boot });
 
-      if (signal?.aborted) {
-        drop(warm);
-        throw new RunAbortedError();
-      }
+      if (boot === null) return drawOn({ browser, lent, key, boot, signal }, draw);
 
-      const booted = boot !== null && warm.booted === boot;
-      const aborting: Subscription | null = signal
-        ? fromEvent(signal, 'abort')
-            .pipe(
-              take(1),
-              tap(() => drop(warm)),
-            )
-            .subscribe()
-        : null;
-
-      warm.booted = null;
-
-      try {
-        const drawing = draw(warm.page, booted);
-        const drawn = await (lent.limit ? withinLimit(drawing, lent.limit) : drawing);
-        const kept = idleOf(browser);
-
-        warm.booted = boot;
-
-        kept.push({ warm, parked: park(warm) });
-        kept.splice(0, Math.max(0, kept.length - idleLimit)).forEach((idle) => drop(idle.warm));
-
-        return drawn;
-      } catch (error) {
-        drop(warm);
-        throw error;
-      } finally {
-        aborting?.unsubscribe();
-      }
+      return turnOf(browser, JSON.stringify([key, boot])).then((done) =>
+        drawOn({ browser, lent, key, boot, signal }, draw).finally(done),
+      );
     },
   };
 };
