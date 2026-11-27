@@ -5898,10 +5898,20 @@ const CASES = [
             const canvas = [...document.querySelectorAll(CANVAS)].sort(
               (a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width,
             )[0];
-            const rect = canvas?.querySelector(`${FRAME}, figure`)?.getBoundingClientRect();
+            const frame = canvas?.querySelector(`${FRAME}, figure`);
+            const rect = frame?.getBoundingClientRect();
 
             return rect
-              ? { left: rect.left, top: rect.top, width: rect.width, canvasLeft: canvas.getBoundingClientRect().left }
+              ? {
+                  left: rect.left,
+                  top: rect.top,
+                  width: rect.width,
+                  canvasLeft: canvas.getBoundingClientRect().left,
+                  cell: (({ firstElementChild: inner }) =>
+                    inner instanceof HTMLElement
+                      ? `${inner.style.width} ${inner.style.transform}${inner.querySelector('[data-loading]') ? ' loading' : ''}`
+                      : '')(frame),
+                }
               : null;
           },
           { CANVAS, FRAME },
@@ -5945,9 +5955,11 @@ const CASES = [
         Math.abs(after.top - before.top) <= 1 &&
         Math.abs(after.width - before.width) <= 1;
 
+      const later = kept ? null : await page.waitForTimeout(SETTLE_MS * 5).then(screenRect);
+
       return {
         ok: kept,
-        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}`,
+        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}${later ? `; cell width and scale before the zoom w ${unwheeled?.width} (${unwheeled?.cell}), before the hide (${before?.cell}), after (${after?.cell}), ${(SETTLE_MS * 5) / 1000} s later w ${later.width} (${later.cell})` : ''}`,
       };
     },
   },
