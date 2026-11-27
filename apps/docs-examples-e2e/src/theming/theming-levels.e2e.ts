@@ -17,6 +17,11 @@ const TARGETS: { name: string; find: (level: Locator) => Locator }[] = [
   { name: 'filled button', find: (level) => level.locator(':scope > .app-theming-level-buttons > button').nth(0) },
   { name: 'outline button', find: (level) => level.locator(':scope > .app-theming-level-buttons > button').nth(1) },
   { name: 'transparent button', find: (level) => level.locator(':scope > .app-theming-level-buttons > button').nth(2) },
+  { name: 'tint row', find: (level) => level.locator(':scope > .app-theming-level-rows [data-row="tint"]') },
+  {
+    name: 'next background row',
+    find: (level) => level.locator(':scope > .app-theming-level-rows [data-row="next-background"]'),
+  },
   { name: 'menu trigger', find: (level) => level.locator(':scope > .app-theming-level-buttons [etmenutrigger]') },
 ];
 
@@ -82,8 +87,6 @@ for (const scheme of SCHEMES) {
   test(`${scheme} B-65: accordion hover with "hover = next level" stays visible on the surface level`, async ({
     page,
   }) => {
-    test.fail(true, 'B-65: an absolute next-level colour on the root equals the surface level; green after step 3');
-
     await openDemo(page, scheme);
     await page.locator('[data-switch="hover-next-level"]').click();
     await expect(page.locator('[data-switch="hover-next-level"]')).toHaveAttribute('aria-pressed', 'true');

@@ -73,6 +73,15 @@ import { ROWS, SCHEMES, SURFACE_VALUES, ThemingLevelRow, TONES } from './theming
 
     <et-table [data]="ROWS" [columns]="COLUMNS" [rowKey]="rowKey" rowInteractive />
 
+    <ul class="app-theming-level-rows">
+      <li class="hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15" data-row="tint">
+        <code>hover:bg-et-surface-tint/9</code>
+      </li>
+      <li class="hover:bg-et-surface-next-background" data-row="next-background">
+        <code>hover:bg-et-surface-next-background</code>
+      </li>
+    </ul>
+
     <et-tab-group>
       <et-tab label="Active tab">Tab content</et-tab>
       <et-tab label="Other tab">Other content</et-tab>
@@ -153,7 +162,7 @@ export class ThemingLevelsOverlayButtonComponent {
       [etProvideSurface]="rootSurface()"
       [etProvideColor]="tone()"
       [style.color-scheme]="scheme()"
-      [style.--et-accordion-header-hover-background]="nextLevelBackground()"
+      [attr.data-hover-next-level]="hoverNextLevel() || null"
       class="app-theming-stage"
     >
       <div class="app-theming-switches">
@@ -234,7 +243,7 @@ export class ThemingLevelsOverlayButtonComponent {
       color: var(--et-surface-text);
     }
 
-    app-theming-level > :is(header, dl, div, app-theming-level) {
+    app-theming-level > :is(header, dl, div, ul, app-theming-level) {
       grid-column: 1 / -1;
     }
 
@@ -269,6 +278,24 @@ export class ThemingLevelsOverlayButtonComponent {
       }
     }
 
+    .app-theming-stage[data-hover-next-level] et-accordion-group {
+      --et-accordion-header-hover-background: var(--et-surface-next-background);
+    }
+
+    .app-theming-level-rows {
+      display: grid;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 1.2rem;
+
+      li {
+        padding: 6px 8px;
+        border-radius: 6px;
+      }
+    }
+
     .app-theming-level-buttons {
       display: flex;
       flex-wrap: wrap;
@@ -284,12 +311,6 @@ export class ThemingLevelsExampleComponent {
   protected hoverNextLevel = signal(false);
 
   protected rootSurface = computed(() => resolveSurfaceByElevation(this.themes, this.scheme(), 0)?.name ?? null);
-
-  protected nextLevelBackground = computed(() => {
-    const next = resolveSurfaceByElevation(this.themes, this.scheme(), 1);
-
-    return this.hoverNextLevel() && next ? `rgb(${next.background})` : null;
-  });
 
   protected toggleScheme() {
     this.scheme.set(SCHEMES.find((scheme) => scheme !== this.scheme()) ?? 'dark');

@@ -16,10 +16,11 @@ top level. Every level shows its theme name and its five values as the browser r
 components, so hover and pressed show on each level without any setting. The switches change the scheme, the tone
 (`etProvideColor`), and "hover = next level".
 
-@example theming/theming-levels 1730px
+@example theming/theming-levels 2030px
 
-"Hover = next level" sets the accordion hover token to the background of elevation 1 on the root, the way an app does
-it today. On the surface level that is the background itself, so the hover disappears there.
+"Hover = next level" sets the accordion hover token to `var(--et-surface-next-background)` on each accordion, so every
+level hovers with the background one level up; the topmost level has none and mixes the tint. The two rows under
+each table use the [state utilities](#state-utilities).
 
 The dark levels the demo renders, as this docs app registers them:
 
@@ -121,8 +122,36 @@ Inside any surface scope (and on `:root` - see [The root surface](#the-root-surf
 - `--et-surface-border`
 - `--et-surface-tint`, when a theme sets `tint`
 - `--et-surface-control-text`, `--et-surface-control-text-{hover,focus,active,disabled}`, when a theme sets `controlText`
+- `--et-surface-next-background`, the background of the next level: the registered surface with
+  `elevation + 1` in the same `type`, the one `etAutoSurface` would pick. On the topmost level, with no
+  next surface, it is the tint mixed 9% over the background.
 
 Each also has a Tailwind utility, such as `text-et-surface-control-text-hover`.
+
+### State utilities
+
+Hover and pressed feedback on an app's own element comes from one of two utilities. Both resolve
+against the nearest surface, so the same classes work on every level:
+
+| Utility                                                   | Use it for                                                       |
+| --------------------------------------------------------- | ---------------------------------------------------------------- |
+| `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15` | A translucent tint over whatever lies below; set the strength.   |
+| `hover:bg-et-surface-next-background`                     | "Hover = next level": the row takes the background one level up. |
+
+```html
+<li class="hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15">Tinted row</li>
+<li class="hover:bg-et-surface-next-background">Next-level row</li>
+```
+
+To give an SDK component's hover the next level, set its token to `var(--et-surface-next-background)`
+on the component's element (or a descendant of its surface), not on `:root`: a `var()` resolves where it
+is declared, so on `:root` every level would get the root's next level.
+
+```css
+.my-panel et-accordion-group {
+  --et-accordion-header-hover-background: var(--et-surface-next-background);
+}
+```
 
 ### The root surface
 

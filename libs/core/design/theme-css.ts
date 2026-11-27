@@ -102,7 +102,7 @@ export const surfaceThemeCss = (themes: ThemeCssSurfaceTheme[], options: ThemeCs
       themeVars.push(`.${runtimePrefix}-surface--${name} {`);
     }
 
-    pushSurfaceVars(themeVars, runtimePrefix, theme, '  ');
+    pushSurfaceVars(themeVars, runtimePrefix, theme, '  ', themes);
 
     themeVars.push('}\n');
   }
@@ -111,14 +111,14 @@ export const surfaceThemeCss = (themes: ThemeCssSurfaceTheme[], options: ThemeCs
   const defaultDark = themes.find((t) => t.isDefault && t.type === 'dark');
 
   if (defaultLight && defaultDark) {
-    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
-    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
-    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
-    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
+    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight, themes);
+    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark, themes);
+    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight, themes);
+    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark, themes);
   } else {
     // Behind prefers-color-scheme, a lone surface type would leave every variable undefined for a
     // user whose OS asks for the scheme the app lacks.
-    pushRootSurfaceVars(themeVars, runtimePrefix, defaultLight ?? defaultDark);
+    pushRootSurfaceVars(themeVars, runtimePrefix, defaultLight ?? defaultDark, themes);
   }
 
   const aliasBlock = `/* Dynamic Tailwind surface colors - re-declared per surface scope so that
@@ -269,6 +269,7 @@ const buildDynamicSurfaceColors = (utilityPrefix: string, runtimePrefix: string)
     (token) => `--color-${utilityPrefix}-surface-${token}: var(--${runtimePrefix}-surface-${token});`,
   ),
   `--color-${utilityPrefix}-surface-tint: var(--${runtimePrefix}-surface-tint, var(--${runtimePrefix}-surface-text));`,
+  `--color-${utilityPrefix}-surface-next-background: var(--${runtimePrefix}-surface-next-background);`,
   ...STATE_SUFFIXES.map(
     (suffix) =>
       `--color-${utilityPrefix}-surface-control-text${suffix}: var(--${runtimePrefix}-surface-control-text${suffix});`,
@@ -303,19 +304,29 @@ const pushRuntimeStateVars = (vars: string[], name: string, map: StateMap<Rgb>, 
   }
 };
 
-const pushRootSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssSurfaceTheme | undefined) => {
+const pushRootSurfaceVars = (
+  vars: string[],
+  runtimePrefix: string,
+  theme: ThemeCssSurfaceTheme | undefined,
+  themes: ThemeCssSurfaceTheme[],
+) => {
   if (!theme) return;
 
   vars.push(`:root {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
+  pushSurfaceVars(vars, runtimePrefix, theme, '  ', themes);
   vars.push(`  color-scheme: ${theme.type};`);
   vars.push(`}\n`);
 };
 
-const pushSchemeSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssSurfaceTheme) => {
+const pushSchemeSurfaceVars = (
+  vars: string[],
+  runtimePrefix: string,
+  theme: ThemeCssSurfaceTheme,
+  themes: ThemeCssSurfaceTheme[],
+) => {
   vars.push(`@media (prefers-color-scheme: ${theme.type}) {`);
   vars.push(`  :root {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '    ');
+  pushSurfaceVars(vars, runtimePrefix, theme, '    ', themes);
   vars.push(`    color-scheme: ${theme.type};`);
   vars.push(`  }`);
   vars.push(`}\n`);
@@ -323,14 +334,29 @@ const pushSchemeSurfaceVars = (vars: string[], runtimePrefix: string, theme: The
 
 // `:root.<prefix>-scheme--<type>` must out-specify the `:root` inside the media query above, so the
 // class set by `provideColorScheme()` overrides the OS preference regardless of source order.
-const pushForcedSchemeSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssSurfaceTheme) => {
+const pushForcedSchemeSurfaceVars = (
+  vars: string[],
+  runtimePrefix: string,
+  theme: ThemeCssSurfaceTheme,
+  themes: ThemeCssSurfaceTheme[],
+) => {
   vars.push(`:root.${runtimePrefix}-scheme--${theme.type} {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
+  pushSurfaceVars(vars, runtimePrefix, theme, '  ', themes);
   vars.push(`  color-scheme: ${theme.type};`);
   vars.push(`}\n`);
 };
 
-const pushSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssSurfaceTheme, indent: string) => {
+// Matches `resolveSurfaceByElevation`, so the next level is the surface `etAutoSurface` would pick.
+const nextLevelOf = (theme: ThemeCssSurfaceTheme, themes: ThemeCssSurfaceTheme[]) =>
+  themes.find((candidate) => candidate.type === theme.type && candidate.elevation === theme.elevation + 1);
+
+const pushSurfaceVars = (
+  vars: string[],
+  runtimePrefix: string,
+  theme: ThemeCssSurfaceTheme,
+  indent: string,
+  themes: ThemeCssSurfaceTheme[],
+) => {
   vars.push(`${indent}--${runtimePrefix}-surface-background: ${colorOf(theme.background)};`);
   vars.push(`${indent}--${runtimePrefix}-surface-text: ${colorOf(theme.color)};`);
   vars.push(`${indent}--${runtimePrefix}-surface-text-muted: ${colorOf(theme.colorMuted)};`);
@@ -356,6 +382,13 @@ const pushSurfaceVars = (vars: string[], runtimePrefix: string, theme: ThemeCssS
   if (theme.controlText) {
     pushRuntimeStateVars(vars, `--${runtimePrefix}-surface-control-text`, theme.controlText, indent);
   }
+
+  const next = nextLevelOf(theme, themes);
+  const nextBackground = next
+    ? colorOf(next.background)
+    : `color-mix(in srgb, var(--${runtimePrefix}-surface-tint, var(--${runtimePrefix}-surface-text)) 9%, var(--${runtimePrefix}-surface-background))`;
+
+  vars.push(`${indent}--${runtimePrefix}-surface-next-background: ${nextBackground};`);
 };
 
 type ToneStates = Record<(typeof TONE_STATE_SUFFIXES)[number], ThemeColorValue>;

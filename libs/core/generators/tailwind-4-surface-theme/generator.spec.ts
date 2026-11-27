@@ -387,6 +387,89 @@ describe('tailwind-4-surface-theme generator', () => {
     });
   });
 
+  describe('state utilities for apps', () => {
+    const LADDER = `
+      export const GROUND = {
+        name: 'ground',
+        type: 'light',
+        elevation: 0,
+        isDefault: true,
+        background: '245 245 245',
+        color: '0 0 0',
+        colorMuted: '100 100 100',
+        colorSubtle: '200 200 200',
+        border: '220 220 220',
+      } as const;
+
+      export const RAISED = {
+        name: 'raised',
+        type: 'light',
+        elevation: 1,
+        background: '255 255 255',
+        color: '0 0 0',
+        colorMuted: '100 100 100',
+        colorSubtle: '200 200 200',
+        border: '220 220 220',
+      } as const;
+
+      export const NIGHT = {
+        name: 'night',
+        type: 'dark',
+        elevation: 0,
+        isDefault: true,
+        background: '10 10 10',
+        color: '255 255 255',
+        colorMuted: '180 180 180',
+        colorSubtle: '80 80 80',
+        border: '40 40 40',
+      } as const;
+
+      export const SURFACE_THEMES = [GROUND, RAISED, NIGHT] satisfies SurfaceTheme[];
+    `;
+
+    const scopeOf = (content: string, selector: string) => {
+      const start = content.indexOf(`${selector} {`);
+
+      return content.slice(start, content.indexOf('}', start));
+    };
+
+    const generate = async () => {
+      await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });
+
+      return tree.read('src/styles/tw.css', 'utf-8') ?? '';
+    };
+
+    beforeEach(() => {
+      tree.write('src/surface-themes.ts', LADDER);
+    });
+
+    it('declares the tint and the next level background as utilities of the nearest surface', async () => {
+      const themeBlock = (await generate()).split('@layer base')[0] ?? '';
+
+      expect(themeBlock).toContain('--color-et-surface-tint: var(--et-surface-tint, var(--et-surface-text));');
+      expect(themeBlock).toContain('--color-et-surface-next-background: var(--et-surface-next-background);');
+    });
+
+    it('writes the background of the next elevation of the same type into each surface scope', async () => {
+      const content = await generate();
+
+      expect(scopeOf(content, '.et-surface--default-light, .et-surface--ground')).toContain(
+        '--et-surface-next-background: rgb(255 255 255);',
+      );
+    });
+
+    it('mixes the tint over the background on a surface without a next level', async () => {
+      const content = await generate();
+      const topmost =
+        'color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text)) 9%, var(--et-surface-background))';
+
+      expect(scopeOf(content, '.et-surface--raised')).toContain(`--et-surface-next-background: ${topmost};`);
+      expect(scopeOf(content, '.et-surface--default-dark, .et-surface--night')).toContain(
+        `--et-surface-next-background: ${topmost};`,
+      );
+    });
+  });
+
   describe('real app themes after migrate-surface-roles', () => {
     const generate = async () => {
       await migrate(tree, { themesPath: 'src/surface-themes.ts', outputPath: 'src/styles/tw.css', skipFormat: true });

@@ -26,6 +26,7 @@
   --color-aa-surface-text-subtle: var(--et-surface-text-subtle);
   --color-aa-surface-border: var(--et-surface-border);
   --color-aa-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+  --color-aa-surface-next-background: var(--et-surface-next-background);
   --color-aa-surface-control-text: var(--et-surface-control-text);
   --color-aa-surface-control-text-hover: var(--et-surface-control-text-hover);
   --color-aa-surface-control-text-focus: var(--et-surface-control-text-focus);
@@ -48,6 +49,7 @@
   --et-surface-control-text-focus: rgb(219 223 234);
   --et-surface-control-text-active: rgb(255 255 255);
   --et-surface-control-text-disabled: rgb(75 85 99);
+  --et-surface-next-background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text)) 9%, var(--et-surface-background));
 }
 
 .et-surface--app-a-dark-inset {
@@ -58,6 +60,7 @@
   --et-surface-border: rgb(31 41 55);
   --et-surface-type: dark;
   --et-surface-elevation: -1;
+  --et-surface-next-background: rgb(18 23 30);
 }
 
 :root {
@@ -74,6 +77,7 @@
   --et-surface-control-text-focus: rgb(219 223 234);
   --et-surface-control-text-active: rgb(255 255 255);
   --et-surface-control-text-disabled: rgb(75 85 99);
+  --et-surface-next-background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text)) 9%, var(--et-surface-background));
   color-scheme: dark;
 }
 
@@ -90,6 +94,7 @@
     --color-aa-surface-text-subtle: var(--et-surface-text-subtle);
     --color-aa-surface-border: var(--et-surface-border);
     --color-aa-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+    --color-aa-surface-next-background: var(--et-surface-next-background);
     --color-aa-surface-control-text: var(--et-surface-control-text);
     --color-aa-surface-control-text-hover: var(--et-surface-control-text-hover);
     --color-aa-surface-control-text-focus: var(--et-surface-control-text-focus);
