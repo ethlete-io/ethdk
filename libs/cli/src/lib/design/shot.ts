@@ -565,6 +565,7 @@ export const createPartShooter = (options: {
     drawQueue.join(kept.waiting?.queued ?? kept.shot, want);
   };
   const drawStarts = new WeakMap<Picture, number>();
+  const drawSteps = new WeakMap<Picture, string>();
   const motions = new Map<string, { drawn: Drawn; pictures: Promise<MotionPictures> }>();
   const boxes = new Map<string, Promise<ChangedBox[]>>();
   const shown = new Map<string, string>();
@@ -595,11 +596,16 @@ export const createPartShooter = (options: {
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');
+        const lentAt = performance.now();
+        const switched = booted && state !== null && (await switchFrame(page, state));
 
-        if (!booted || state === null || !(await switchFrame(page, state)))
-          await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
+        if (!switched) await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
+
+        const loadedAt = performance.now();
 
         await settleFrames(page);
+
+        const settledAt = performance.now();
 
         if (frame.emptySlots) await page.evaluate(emptySlotsScriptOf(frame.emptySlots, frame.slotFill));
         if (frame.pan) await page.evaluate(panScriptOf(frame.pan));
@@ -694,8 +700,7 @@ export const createPartShooter = (options: {
             : "document.getElementById('root')?.innerHTML ?? null",
         );
         const ambient: unknown = await page.evaluate(AMBIENT_SCRIPT);
-
-        return {
+        const picture: Picture = {
           png,
           ...(note ? { note } : {}),
           marks: Array.isArray(marks) ? (marks as PartMark[]) : [],
@@ -703,6 +708,14 @@ export const createPartShooter = (options: {
           ...(typeof markup === 'string' ? { markup } : {}),
           ...(ambient && typeof ambient === 'object' ? { ambient: ambient as TextAmbient } : {}),
         };
+        const ms = (from: number, to: number) => Math.round(to - from);
+
+        drawSteps.set(
+          picture,
+          `${switched ? 'switch' : 'open'} load=${ms(lentAt, loadedAt)} settle=${ms(loadedAt, settledAt)} shot=${ms(settledAt, performance.now())}`,
+        );
+
+        return picture;
       },
     );
 
@@ -1149,6 +1162,9 @@ export const createPartShooter = (options: {
         response,
         noteFailure(
           shot.then((picture) => {
+            const steps = drawSteps.get(picture);
+
+            if (steps !== undefined && !response.headersSent) response.setHeader('x-design-shot-draw', steps);
             if (sketchVariant && want.priority === 'high') viewed({ product, ...sketchVariant, png: picture.png });
 
             return { png: picture.png, ...(picture.note ? { note: picture.note } : {}) };

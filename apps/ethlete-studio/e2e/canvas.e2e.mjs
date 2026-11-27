@@ -1701,7 +1701,7 @@ const CASES = [
             const timing = response.request().timing();
 
             queued.push(
-              `${params.get('variant') ?? '-'}/${params.get('state') ?? params.get('part') ?? '-'} q${response.headers()['x-design-shot-queue'] ?? '-'} total ${Math.round(Date.now() - timing.startTime)}`,
+              `${params.get('variant') ?? '-'}/${params.get('state') ?? params.get('part') ?? '-'} q${response.headers()['x-design-shot-queue'] ?? '-'}${response.headers()['x-design-shot-draw'] ? ` ${response.headers()['x-design-shot-draw']}` : ''} total ${Math.round(Date.now() - timing.startTime)}`,
             );
           };
 
