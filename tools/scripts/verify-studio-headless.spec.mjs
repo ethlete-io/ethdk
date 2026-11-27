@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import {
   buildStudio,
   designChildState,
   designProject,
+  linkWorkspaceDist,
   missingBuildInputs,
   serveOnlyAnswer,
   startDesignServer,
@@ -52,6 +53,37 @@ test('answers nothing when both builds exist', () => {
   writeFileSync(join(checkout, 'dist/libs/components/package.json'), '{}');
 
   assert.deepEqual(missingBuildInputs(checkout, entry), []);
+});
+
+const linkedCopy = () => {
+  const workspace = tempDir('studio-headless-workspace-');
+  const checkout = tempDir('studio-headless-linked-');
+
+  writeFileSync(join(workspace, 'nx.json'), '{}');
+  symlinkSync(join(workspace, 'nx.json'), join(checkout, 'nx.json'));
+
+  return { workspace, checkout };
+};
+
+test('links the workspace dist into a linked copy made before dist existed', () => {
+  const { workspace, checkout } = linkedCopy();
+
+  mkdirSync(join(workspace, 'dist/libs/cli'), { recursive: true });
+  linkWorkspaceDist(checkout, workspace);
+
+  assert.equal(realpathSync(join(checkout, 'dist')), realpathSync(join(workspace, 'dist')));
+});
+
+test('links no dist into a checkout that is not a linked copy of the workspace', () => {
+  const workspace = tempDir('studio-headless-workspace-');
+  const checkout = tempDir('studio-headless-own-');
+
+  writeFileSync(join(workspace, 'nx.json'), '{}');
+  writeFileSync(join(checkout, 'nx.json'), '{}');
+  mkdirSync(join(workspace, 'dist'));
+  linkWorkspaceDist(checkout, workspace);
+
+  assert.equal(existsSync(join(checkout, 'dist')), false);
 });
 
 test('calls a WebKit run blind, not failed, when only the wheel control got no event', () => {

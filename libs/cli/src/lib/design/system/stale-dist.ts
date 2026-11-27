@@ -59,11 +59,7 @@ const checkoutLibsOf = (options: { target: string; config: DesignConfig | null }
   return libs;
 };
 
-/**
- * The checkout lib build folders the render modules map to that do not exist, each with the command that builds it.
- * A checkout with a source `libs/<name>` but no `dist/libs/<name>` cannot render its drawings.
- */
-export const missingDistOf = (options: { target: string; config: DesignConfig | null }) => {
+const missingLibsOf = (options: { target: string; config: DesignConfig | null }) => {
   const { target, config } = options;
   const packages = renderPackagesOf({ target, config });
 
@@ -76,9 +72,18 @@ export const missingDistOf = (options: { target: string; config: DesignConfig | 
 
     return existsSync(join(mapped.dir, 'package.json')) || !existsSync(resolve(target, 'libs', name, 'src'))
       ? []
-      : [`${relative(target, mapped.dir)} is missing - run ${libBuildCommandOf(name)}`];
+      : [{ name, dir: mapped.dir }];
   });
 };
+
+/**
+ * The checkout lib build folders the render modules map to that do not exist, each with the command that builds it.
+ * A checkout with a source `libs/<name>` but no `dist/libs/<name>` cannot render its drawings.
+ */
+export const missingDistOf = (options: { target: string; config: DesignConfig | null }) =>
+  missingLibsOf(options).map(
+    ({ name, dir }) => `${relative(options.target, dir)} is missing - run ${libBuildCommandOf(name)}`,
+  );
 
 export const staleLibsOf = (options: { target: string; config: DesignConfig | null }) =>
   checkoutLibsOf(options).filter(({ source, dir }) => newestMtimeOf(source) > newestMtimeOf(dir));
@@ -240,6 +245,56 @@ export const rebuildStaleDist = (options: { target: string; config: DesignConfig
     console.error(
       `REFUSED STALE BUILD ${lib.specifier} - ${relative(target, lib.dir)} is still older than ${relative(target, lib.source)} after the rebuild; run ${libBuildCommandOf(lib.name)}`,
     );
+
+  return still.length === 0;
+};
+
+export type MissingLibBuildRunner = (options: { workspace: string; names: string[] }) => boolean;
+
+const existingAncestorOf = (path: string): string => (existsSync(path) ? path : existingAncestorOf(dirname(path)));
+
+const runMissingLibBuild: MissingLibBuildRunner = ({ workspace, names }) => {
+  const result = spawnSync('npx', ['nx', 'run-many', '-t', 'build', '-p', names.join(',')], {
+    cwd: workspace,
+    env: { ...process.env, NX_NO_CLOUD: 'true' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}${result.error ? `\n${result.error.message}` : ''}`;
+
+  process.stderr.write(output);
+
+  if (result.status !== 0)
+    console.error(buildFailureLineOf({ name: names.join(','), output, status: result.status, signal: result.signal }));
+
+  return result.status === 0;
+};
+
+/**
+ * Builds every checkout lib build folder the render modules map to that does not exist yet, with the libs it depends
+ * on, in the Nx workspace that owns the build folder. Answers whether none is missing afterwards.
+ */
+export const buildMissingDist = (options: {
+  target: string;
+  config: DesignConfig | null;
+  build?: MissingLibBuildRunner;
+}) => {
+  const { target, config, build = runMissingLibBuild } = options;
+  const missing = missingLibsOf({ target, config });
+
+  if (missing.length === 0) return true;
+
+  const names = missing.map(({ name }) => name);
+
+  console.error(
+    `MISSING BUILD ${names.join(', ')} - building: NX_NO_CLOUD=true npx nx run-many -t build -p ${names.join(',')}`,
+  );
+  build({ workspace: workspaceOwning({ dir: existingAncestorOf(missing[0]?.dir ?? target), target }), names });
+
+  const still = missingDistOf({ target, config });
+
+  still.forEach((line) => console.error(`REFUSED MISSING BUILD ${line}`));
 
   return still.length === 0;
 };

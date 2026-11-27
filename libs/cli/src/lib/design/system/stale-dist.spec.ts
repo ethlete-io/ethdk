@@ -3,7 +3,14 @@ import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, utimesSync, writeFil
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { buildFailureLineOf, libBuildArgsOf, missingDistOf, rebuildStaleDist, staleDistWarningsOf } from './stale-dist';
+import {
+  buildFailureLineOf,
+  buildMissingDist,
+  libBuildArgsOf,
+  missingDistOf,
+  rebuildStaleDist,
+  staleDistWarningsOf,
+} from './stale-dist';
 
 vi.mock('child_process', async (importOriginal) => ({ ...(await importOriginal<object>()), spawnSync: vi.fn() }));
 
@@ -194,5 +201,53 @@ describe('missingDistOf', () => {
 
   it('answers nothing when the build folder exists', () => {
     expect(missingDistOf({ target: checkout({ coreSource: 1_000, coreBuild: 2_000 }), config })).toEqual([]);
+  });
+});
+
+describe('buildMissingDist', () => {
+  const linkedCheckout = () => {
+    const workspace = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-missing-workspace-')));
+    const linked = mkdtempSync(join(tmpdir(), 'cli-design-missing-linked-'));
+
+    file(join(workspace, 'nx.json'), '{}', 1_000);
+    file(join(workspace, 'libs/core/src/index.ts'), 'export {};', 1_000);
+    mkdirSync(join(workspace, 'dist/libs'), { recursive: true });
+
+    for (const entry of ['nx.json', 'libs', 'dist']) symlinkSync(join(workspace, entry), join(linked, entry));
+
+    return { workspace, linked };
+  };
+
+  it('builds a missing render module in the workspace its linked build folder belongs to', () => {
+    const { workspace, linked } = linkedCheckout();
+    const build = vi.fn(({ workspace: at }: { workspace: string; names: string[] }) => {
+      file(join(at, 'dist/libs/core/package.json'), '{}', 2_000);
+
+      return true;
+    });
+
+    expect(buildMissingDist({ target: linked, config, build })).toBe(true);
+    expect(build).toHaveBeenCalledWith({ workspace, names: ['core'] });
+    expect(missingDistOf({ target: linked, config })).toEqual([]);
+  });
+
+  it('answers false when the build leaves the folder missing', () => {
+    expect(buildMissingDist({ target: linkedCheckout().linked, config, build: () => false })).toBe(false);
+  });
+
+  it('runs nx with the build dependencies of the missing libs', () => {
+    const { linked } = linkedCheckout();
+
+    vi.mocked(spawnSync).mockReturnValueOnce({ status: 0, stdout: '', stderr: '' } as never);
+    buildMissingDist({ target: linked, config });
+
+    expect(vi.mocked(spawnSync).mock.lastCall?.[1]).toEqual(['nx', 'run-many', '-t', 'build', '-p', 'core']);
+  });
+
+  it('builds nothing when no build folder is missing', () => {
+    const build = vi.fn(() => true);
+
+    expect(buildMissingDist({ target: checkout({ coreSource: 1_000, coreBuild: 2_000 }), config, build })).toBe(true);
+    expect(build).not.toHaveBeenCalled();
   });
 });

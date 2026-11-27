@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, lstatSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -118,6 +118,21 @@ export const missingBuildInputs = (checkout, entry = cliEntry) =>
   ]
     .filter(([path]) => !existsSync(path))
     .map(([path, command]) => `${path} is missing - run ${command}`);
+
+/**
+ * Links the `dist` of `workspace` into `checkout` when the checkout is a linked copy of it made before `dist` existed,
+ * so the design server finds the lib builds `ensureCli` and its own missing-build step write there.
+ */
+export const linkWorkspaceDist = (checkout, workspace = root) => {
+  const linkedNx = join(checkout, 'nx.json');
+  const dist = join(workspace, 'dist');
+
+  if (!existsSync(linkedNx) || !lstatSync(linkedNx).isSymbolicLink()) return;
+  if (realpathSync(linkedNx) !== realpathSync(join(workspace, 'nx.json'))) return;
+  if (existsSync(join(checkout, 'dist')) || !existsSync(dist)) return;
+
+  symlinkSync(dist, join(checkout, 'dist'));
+};
 
 export const WEBKIT_BLIND_EXIT = 3;
 
@@ -367,6 +382,7 @@ export const withStudio = async (
 
   try {
     ensureCli();
+    linkWorkspaceDist(checkout);
     ensureDesignHost();
 
     if (build && !built) await buildStudio(scratch, stamp);

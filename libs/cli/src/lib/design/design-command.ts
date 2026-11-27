@@ -34,7 +34,7 @@ import { designTask, TASK_USAGE } from './system/task-command';
 import { designHarness, HARNESS_USAGE } from './system/harness-command';
 import { designReady, READY_USAGE } from './system/ready-command';
 import { designSystem } from './system/system-command';
-import { readFreshDist } from './system/stale-dist';
+import { buildMissingDist, readFreshDist } from './system/stale-dist';
 import { designMocksFresh, guardsDesignMocks } from './system/stale-design-mocks';
 import {
   realResidentClient,
@@ -719,6 +719,7 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
 
   const served = positional ? realOf(resolve(root, positional)) : target;
 
+  buildMissingDist({ target: served, config: readConfig(served) });
   enterDesignServerScope();
 
   return serveDesign({
