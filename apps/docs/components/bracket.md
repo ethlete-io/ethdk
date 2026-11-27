@@ -624,6 +624,22 @@ export class SectionTitleComponent {
 }
 ```
 
+A rule under each title, across every column of its section, is off by default. Set the CSS custom
+properties on the bracket or any ancestor - CSS tokens fit here because the rule is pure styling and
+every other bracket colour is a token already:
+
+```css
+et-bracket {
+  --et-bracket-section-title-rule-width: 2px;
+  --et-bracket-section-title-rule-color: var(--et-surface-border);
+}
+```
+
+| Token                                   | Default               | Purpose                                         |
+| --------------------------------------- | --------------------- | ----------------------------------------------- |
+| `--et-bracket-section-title-rule-width` | `0` (no rule)         | Thickness of the rule under each section title. |
+| `--et-bracket-section-title-rule-color` | `--et-surface-border` | Colour of the rule.                             |
+
 With titles on and no title card registered, the bracket throws [`ET3414`](#error-codes).
 
 @example bracket/bracket-section-titles 560px

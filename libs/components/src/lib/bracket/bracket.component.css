@@ -35,6 +35,16 @@
       top var(--et-bracket-move-duration, 0.2s) var(--et-bracket-move-easing, ease);
   }
 
+  .et-bracket-section-title::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    border-block-end: var(--et-bracket-section-title-rule-width, 0) solid
+      var(--et-bracket-section-title-rule-color, var(--et-surface-border, rgb(255 255 255 / 0.1)));
+    pointer-events: none;
+  }
+
   .et-bracket-section-title-sticky {
     position: sticky;
     inset-inline-start: 0;

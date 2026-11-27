@@ -1,5 +1,5 @@
 import { RoundStageStructureWithMatchesView } from '@ethlete/types';
-import { Meta, StoryFn } from '@storybook/angular';
+import { componentWrapperDecorator, Meta, StoryFn } from '@storybook/angular';
 import { BRACKET_DATA_LAYOUT, BRACKET_FINAL_ALIGNMENT } from '@ethlete/bracket';
 import { BracketDataSource } from '../integrations/base';
 import { generateBracketDataForEthlete } from '../integrations/ethlete';
@@ -172,6 +172,21 @@ export const DoubleEliminationSectionTitles = {
   render: Template,
   args: {
     source: generateDoubleEliminationBracket({ participantCount: 32, includeFinal: true }),
+    showSectionTitles: true,
+  },
+};
+
+/** A rule across every column of each section, set with `--et-bracket-section-title-rule-width`. */
+export const DoubleEliminationSectionTitleRule = {
+  render: Template,
+  decorators: [
+    componentWrapperDecorator(
+      (story) =>
+        `<div style="--et-bracket-section-title-rule-width: 2px; --et-bracket-section-title-rule-color: currentColor">${story}</div>`,
+    ),
+  ],
+  args: {
+    source: generateDoubleEliminationBracket({ participantCount: 16, includeFinal: true }),
     showSectionTitles: true,
   },
 };
