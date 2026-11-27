@@ -107,6 +107,7 @@ const SURFACE_STEPS: [string, number][] = [
   ['text-muted', 0.7],
   ['text-subtle', 0.56],
   ['border', 0.2],
+  ['next-background', 0.06],
   ['tint', 0.62],
   ['control-text', 0.62],
   ['control-text-hover', 0.86],
@@ -232,7 +233,7 @@ const THEMES = ['error', 'warning'];
 const AA = 4.5;
 
 const SURFACE_TOKEN =
-  /^et-(surface-(background|text(-muted|-subtle)?|border|(tint|control-text(-hover|-focus|-active|-disabled)?))|shadow-color)$/u;
+  /^et-(surface-(background|next-background|text(-muted|-subtle)?|border|(tint|control-text(-hover|-focus|-active|-disabled)?))|shadow-color)$/u;
 
 const COLOR_TOKEN = /^et-tone-(fill|on-fill|text)-(rest|hover|focus|active|disabled)$/u;
 

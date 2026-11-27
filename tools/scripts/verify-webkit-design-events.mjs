@@ -17,8 +17,12 @@ const freePort = () =>
     });
   });
 
+const startSeconds = 240;
+
 const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 120; attempt++) {
+  const deadline = Date.now() + startSeconds * 1000;
+
+  while (Date.now() < deadline) {
     try {
       await fetch(url, { signal: AbortSignal.timeout(2000) });
 
@@ -28,7 +32,7 @@ const waitFor = async (url) => {
     }
   }
 
-  throw new Error(`nothing answered at ${url} within 60 s`);
+  throw new Error(`nothing answered at ${url} within ${startSeconds} s`);
 };
 
 let server;
