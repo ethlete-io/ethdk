@@ -74,6 +74,28 @@ describe('settle', () => {
     expect(Date.now() - start).toBeLessThan(SETTLE_TIMEOUT_MS + 1500);
     await page.close();
   });
+
+  it('waits for a page whose main thread runs long tasks, as under machine load', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<div id="box">x</div>`);
+    await page.evaluate(() => {
+      let left = 2;
+      const busy = () => {
+        const end = performance.now() + 1800;
+
+        while (performance.now() < end);
+        if (--left > 0) setTimeout(busy, 0);
+      };
+
+      setTimeout(busy, 0);
+    });
+
+    await settle(page, 15_000);
+    await page.close();
+  }, 30_000);
 }, 30_000);
 
 describe('awaitOutput', () => {

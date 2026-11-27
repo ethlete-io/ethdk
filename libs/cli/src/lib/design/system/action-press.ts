@@ -75,6 +75,8 @@ const SETTLED_FRAMES = 2;
 
 const QUIET_FRAMES = 2;
 
+const MAX_FRAME_MS = 100;
+
 /** An init script that records each key whose keydown default the page prevented in `window.__etPrevented`. */
 export const INIT_SCRIPT = `window.__etPrevented = [];
 window.addEventListener('keydown', (event) => { if (event.defaultPrevented) window.__etPrevented.push(event.key); });`;
@@ -91,30 +93,44 @@ export class SettleTimeoutError extends Error {}
 /**
  * Waits until no finite, time-based animation runs for a few frames, finishing each one that ends within the cap
  * instead of waiting it out. Throws a `SettleTimeoutError` when they still run after `timeout`, capped at
- * `SETTLE_TIMEOUT_MS`.
+ * `SETTLE_TIMEOUT_MS`. Only the time the page spends drawing frames counts towards that cap, each frame at most
+ * `MAX_FRAME_MS`: a main thread stalled by machine load does not use it up. `timeout` itself stays a wall-clock limit.
  */
 export const settle = async (page: Page, timeout: number) => {
   const cap = Math.min(timeout, SETTLE_TIMEOUT_MS);
 
-  await page
+  const outcome = await page
     .waitForFunction(
       `(() => {
+        const now = performance.now();
+        const state = (window.__etSettle ??= { last: now, spent: 0 });
+        const frameMs = Math.min(now - state.last, ${MAX_FRAME_MS});
+        state.last = now;
         for (const animation of document.getAnimations().filter(${UNSETTLED_ANIMATION})) {
           if (animation.effect.getComputedTiming().endTime > ${cap}) continue;
           try { animation.finish(); } catch {}
         }
         const settled = !document.getAnimations().some(${UNSETTLED_ANIMATION});
         window.__etActionFrames = settled ? (window.__etActionFrames ?? 0) + 1 : 0;
-        return window.__etActionFrames >= ${SETTLED_FRAMES};
+        if (window.__etActionFrames >= ${SETTLED_FRAMES}) return 'settled';
+        state.spent += frameMs;
+        return state.spent > ${cap} ? 'spent' : false;
       })()`,
       undefined,
-      { timeout: playwrightTimeoutOf(cap), polling: 'raf' },
+      { timeout: playwrightTimeoutOf(timeout), polling: 'raf' },
     )
+    .then((handle) => handle.jsonValue())
     .catch((error: unknown) => {
       if (error instanceof Error && error.name === 'TimeoutError') {
-        throw new SettleTimeoutError(`the page did not settle its animations within ${cap} ms`);
+        throw new SettleTimeoutError(`the page did not settle its animations within ${timeout} ms`);
       }
     });
+
+  await page.evaluate('delete window.__etSettle');
+
+  if (outcome === 'spent') {
+    throw new SettleTimeoutError(`the page did not settle its animations within ${cap} ms`);
+  }
 };
 
 /** Starts recording DOM changes on the page, for `awaitOutput`. Call it right before the press. */
