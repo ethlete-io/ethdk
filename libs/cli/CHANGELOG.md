@@ -1,5 +1,28 @@
 # @ethlete/cli
 
+## 3.0.0-next.52
+
+### Minor Changes
+
+- `design check` and `sketch check` report `TRUNCATED` for text cut by an ellipsis or line clamp; a deliberate cut carries `data-et-skip="TRUNCATED"`.
+
+### Patch Changes
+
+- The design server now closes every shared headless Chromium when it stops or reloads, even while a shot holds a lease, and its status log reports live, zombie, root and orphan Chrome processes.
+- The design server and Studio compare the served project with the checkout by real path, so a checkout reached through a symlink (macOS `/var` -> `/private/var`) no longer reads as another project.
+- The design server builds the checkout lib build folders its drawings need when they do not exist yet (for example `dist/libs/components` in a fresh checkout), instead of answering every system read with 503.
+- `et design` runs a call in its own process when the resident design process stays busy for more than 5 s (`ETHLETE_DESIGN_BUSY_WAIT_S` changes the wait), instead of queueing behind it.
+- A design-server shot that fails with a drawn error frame now answers with an `x-et-error` header holding the failure text, so the client-run judge names the real cause.
+- `et design sketch check` compares the drawn variants for identical pictures even when another variant of the sketch fails to load.
+- The colors foundation skeleton of `et design sketch` declares `--et-surface-next-background` like the theme generator.
+- `design check` draws the old variant of a direct edit and the edited part side by side during auto-accept.
+- `design check` draws the states of a part side by side during auto-accept, and no longer draws a changed state a second time when its picture was just drawn.
+- `et design --request-log <file>` (or `DE_REQUEST_LOG`) appends one JSON line per finished request: start, method, url, status, ms, bytes and the requests open at its start.
+- A `source=app` shot draws every `data-et-projected` region as filled by the app instead of the app's fallback.
+- The sketch compare reads only the size of each stored picture it sizes a frame from, not the whole picture, so a heavy edit sketch shows its compare sooner.
+- `design serve` loads the part modules of every product and open sketch in the background after it starts listening, so the first sketch compare a page asks for no longer pays for their cold transform.
+- A heavy sketch compare checks stored design shots without reading their pictures; older store entries keep working.
+
 ## 3.0.0-next.51
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.60
+
+### Patch Changes
+
+- The migrate-from-cdk generator lists `et-pagination-arrow` among the components classes.
+
 ## 5.0.0-next.59
 
 ### Major Changes

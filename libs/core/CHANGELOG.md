@@ -1,5 +1,15 @@
 # @ethlete/core
 
+## 5.0.0-next.81
+
+### Major Changes
+
+- Removed the runtime color theming (`provideColorThemes`, `createThemeStyle`, `createTailwind*`), `inject{Error,Warning,Success}Theme` and `SurfaceTheme.colorTheme`/`semanticColorThemes`; `et update` migrates each.
+
+### Minor Changes
+
+- The surface theme CSS now writes `--et-surface-next-background` (the background one level up, the tint mix on the topmost level) and its `bg-et-surface-next-background` utility; regenerate your surface theme CSS to use it.
+
 ## 5.0.0-next.80
 
 ### Major Changes

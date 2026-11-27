@@ -1,5 +1,18 @@
 # ethlete-studio
 
+## 0.2.0-next.40
+
+### Minor Changes
+
+- The Sketches page retry after a failed listing is an icon button with a name in the shared toolbar, and a spec fails when a page head holds a button or the toolbar a text button.
+
+### Patch Changes
+
+- The generated surface theme CSS carries `--et-surface-next-background`.
+- The design server and Studio compare the served project with the checkout by real path, so a checkout reached through a symlink (macOS `/var` -> `/private/var`) no longer reads as another project.
+- A sketch an agent is still drawing, with no frame yet, shows on the canvas who draws which part, since when and that the frame fills when the first view stands.
+- The wheel-zoom row-size e2e case now measures the preview only once the last wheel is painted and repeats the gesture when a loaded runner skips that paint.
+
 ## 0.2.0-next.39
 
 ### Patch Changes
