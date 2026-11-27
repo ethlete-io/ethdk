@@ -13,6 +13,9 @@ as_root=(sudo)
 conf_dir="${ETHLETE_APT_CONF_DIR:-/etc/apt/apt.conf.d}"
 echo 'Acquire::Retries "3";' | "${as_root[@]}" tee "$conf_dir/80-ci-retries" >/dev/null
 
+# The runner image ships a Microsoft apt source that currently answers 403 "no longer signed" and fails every apt-get update; no job installs from it.
+"${as_root[@]}" rm -f /etc/apt/sources.list.d/microsoft-prod.* /etc/apt/sources.list.d/microsoft*.list /etc/apt/sources.list.d/microsoft*.sources
+
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
