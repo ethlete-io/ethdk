@@ -91,7 +91,40 @@ if (!valueOf('--project')) {
   );
 }
 
+// WebKit takes longer than the 150 ms wheel idle to screenshot, so the preview settles before its shot unless
+// timers that come due while the shot is taken wait until it is done.
+const holdableTimers = () => {
+  if (window.__timerHold) return;
+  const hold = { on: false, due: new Map() };
+  const setTimer = window.setTimeout;
+  const clearTimer = window.clearTimeout;
+
+  window.__timerHold = hold;
+  window.setTimeout = (callback, delay, ...rest) => {
+    const run = () => (typeof callback === 'function' ? callback(...rest) : undefined);
+    const id = setTimer(() => (hold.on ? hold.due.set(id, run) : run()), delay);
+
+    return id;
+  };
+  window.clearTimeout = (id) => {
+    hold.due.delete(id);
+    clearTimer(id);
+  };
+};
+
+const holdTimers = (page, on) =>
+  page.evaluate((on) => {
+    const hold = window.__timerHold;
+    const due = [...hold.due.values()];
+
+    hold.on = on;
+    if (on) return;
+    hold.due.clear();
+    due.forEach((run) => run());
+  }, on);
+
 const openView = async ({ page, studioUrl }) => {
+  await page.addInitScript(holdableTimers);
   await page.goto(studioUrl);
   await page.evaluate(
     ({ view, checkout }) => {
@@ -453,6 +486,7 @@ const chromeHoldsWhenWheelZoomSettles = async (
   if (onSideLabel && !sideLabel) return { ok: false, detail: 'no side label to point at' };
   if (sideLabel) await page.mouse.move(sideLabel.x + sideLabel.width / 2, sideLabel.y + sideLabel.height / 2);
   else await page.mouse.move(list.x + list.width / 2, list.y + Math.min(list.height / 2, 300));
+  await holdTimers(page, true);
   await page.keyboard.down('Control');
   for (let step = 0; step < steps; step++) {
     await page.mouse.wheel(0, -120);
@@ -462,6 +496,7 @@ const chromeHoldsWhenWheelZoomSettles = async (
   const previewInk = await inkOf(page);
 
   if (shots) await page.screenshot({ path: `${shots}${tag}-preview.png` });
+  await holdTimers(page, false);
   await page.waitForTimeout(AFTER_WHEEL_MS);
   const settledInk = await inkOf(page);
 
