@@ -26,7 +26,10 @@ The start setup is `tools/scripts/clean-slate-run/overlays/tomflix` plus `et des
 
 `yarn client-run --if-due` runs only when a run is due: no run yet, the last one is 7 days old (`--max-age-days`),
 or a commit since its SDK commit (`run.json` in the run dir) touches the design cli, the skills, the order or the
-sandbox. Otherwise it prints `client-run: not due` and exits 0. The doc session calls it before each Tomflix session
+sandbox. It is not due while an open `plans/QUEUE.md` row (table row or `Geparkt:` line) cites the last run's id
+(`2026-11-25-0236`): it prints `client-run: not due - N findings of run <id> still open (B..., B...)`, because a new run
+would only reproduce the queued defects. Cite the run id in the row text when a finding becomes a row. Otherwise it
+prints `client-run: not due` and exits 0. The doc session calls it before each Tomflix session
 with the human; a run without `run.json` (before B687 recorded it, or `--sdk`) counts by its age only.
 
 Each run uses Claude usage and leaves its run dir (about 1 GB with `node_modules`) under `~/dev/client-runs`.

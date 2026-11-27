@@ -60,3 +60,11 @@ export const dueReasonOf = ({ last, now, maxAgeDays = DEFAULT_MAX_AGE_DAYS, clie
 
   return null;
 };
+
+/** The ids of the open QUEUE.md rows (table rows and `Geparkt:` lines) whose text cites the run `runName`. */
+export const openRowsOfRun = ({ queue, runName }) =>
+  queue
+    .split('\n')
+    .filter((line) => line.includes(runName))
+    .map((line) => /^\|\s*([A-Z]\d+)\s*\|/.exec(line)?.[1] ?? /^Geparkt: ([A-Z]\d+)/.exec(line)?.[1])
+    .filter(Boolean);

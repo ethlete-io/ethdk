@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { CLIENT_PATHS, clientCommitsSince, dueReasonOf, lastRunOf, RUN_RECORD } from './due.mjs';
+import { CLIENT_PATHS, clientCommitsSince, dueReasonOf, lastRunOf, openRowsOfRun, RUN_RECORD } from './due.mjs';
 
 const now = new Date(2026, 10, 27, 10, 0);
 const run = (overrides = {}) => ({
@@ -97,5 +97,23 @@ describe('clientCommitsSince', () => {
     const repo = join(import.meta.dirname, '../..');
     assert.equal(clientCommitsSince({ repo, sdkCommit: 'HEAD' }), 0);
     assert.ok(clientCommitsSince({ repo, sdkCommit: 'HEAD~200' }) > 0);
+  });
+});
+
+describe('openRowsOfRun', () => {
+  const queue = [
+    '| ID | Zeile |',
+    '| B900 | Button-Befund | Ziel | Befund aus Lauf 2026-11-25-0236 | Builder |',
+    '| B901 | Anderer Lauf 2026-11-20-1000 | Ziel | Stand | Builder |',
+    '| B902 | Ohne Lauf | Ziel | Stand | Builder |',
+    'Geparkt: B903 Shell-Befund (Lauf 2026-11-25-0236): Text',
+  ].join('\n');
+
+  it('lists the open rows that cite the last run, table and parked', () => {
+    assert.deepEqual(openRowsOfRun({ queue, runName: '2026-11-25-0236' }), ['B900', 'B903']);
+  });
+
+  it('lists nothing when no row cites the run', () => {
+    assert.deepEqual(openRowsOfRun({ queue, runName: '2026-11-26-0100' }), []);
   });
 });

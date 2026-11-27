@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { referenceAccentOf } from './accent.mjs';
-import { clientCommitsSince, DEFAULT_MAX_AGE_DAYS, dueReasonOf, lastRunOf, RUN_RECORD } from './due.mjs';
+import { clientCommitsSince, DEFAULT_MAX_AGE_DAYS, dueReasonOf, lastRunOf, openRowsOfRun, RUN_RECORD } from './due.mjs';
 import { writeImageSet } from './image-set.mjs';
 import { SDK_LIBS } from './sdk-skew.mjs';
 import { registerInStudio, registrationOutcomeOf } from './studio-register.mjs';
@@ -97,6 +97,13 @@ if (values.judge) {
 if (values['if-due']) {
   const last = lastRunOf(resolve(values.out));
   const clientCommits = last?.sdkCommit ? clientCommitsSince({ repo, sdkCommit: last.sdkCommit }) : null;
+  const queuePath = join(repo, 'plans', 'QUEUE.md');
+  const open =
+    last && existsSync(queuePath) ? openRowsOfRun({ queue: readFileSync(queuePath, 'utf8'), runName: last.name }) : [];
+  if (open.length) {
+    console.log(`client-run: not due - ${open.length} findings of run ${last.name} still open (${open.join(', ')})`);
+    process.exit(0);
+  }
   const reason = dueReasonOf({ last, now: new Date(), maxAgeDays: Number(values['max-age-days']), clientCommits });
   if (!reason) {
     console.log(`client-run: not due - ${last.name} shows the current tool`);
