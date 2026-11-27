@@ -41,26 +41,34 @@ describe('e2e-progress parse', () => {
 });
 
 describe('e2e-progress registry', () => {
-  it('lists only runs launched within the session project', async () => {
+  it('lists only runs of the session and its project', async () => {
     const registry = '/tmp/ethlete-runs';
     const now = 100_000;
     const sdk = '/home/tom/dev/ethlete-sdk';
     const fifagg = '/home/tom/dev/fut-frontend';
     const entries = [
       { cwd: sdk + '/libs/agent-rules', pid: 1001 },
+      { cwd: sdk, pid: 1007, sessionId: 'other-session' },
+      { cwd: sdk, pid: 1008, sessionId: undefined },
       { cwd: fifagg, pid: 1002 },
       { cwd: sdk + '-other', pid: 1003 },
       { cwd: sdk, pid: 1004, endedAt: now - 1000 },
       { cwd: fifagg, pid: 1005, endedAt: now - 1000 },
       { pid: 1006 },
-    ].map((entry) => ({ ...entry, log: `${registry}/${entry.pid}.log`, machine: 'tank', label: 'playwright' }));
+    ].map((entry) => ({
+      sessionId: 'mine',
+      ...entry,
+      log: `${registry}/${entry.pid}.log`,
+      machine: 'tank',
+      label: 'playwright',
+    }));
     const fs = {
       list: async () => entries.map(({ pid }) => ({ name: `${pid}.json`, kind: 'file' })),
       read: async (path: string) => JSON.stringify(entries.find(({ pid }) => path === `${registry}/${pid}.json`)),
       stat: async () => ({ mtimeMs: now }),
     };
     const runPids = async (projectRoot: string) =>
-      (await registryRuns(fs, { nowMs: now, projectRoot })).map(({ entry }) => entry.pid);
+      (await registryRuns(fs, { nowMs: now, projectRoot, sessionId: 'mine' })).map(({ entry }) => entry.pid);
 
     expect(await runPids(sdk)).toEqual([1001, 1004]);
     expect(await runPids(fifagg)).toEqual([1002, 1005]);

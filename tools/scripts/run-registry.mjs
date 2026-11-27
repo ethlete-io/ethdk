@@ -74,7 +74,18 @@ export const registerRun = ({
   listRuns({ env });
   const startedAt = Date.now();
   const id = `${machine}-${process.pid}-${startedAt}`;
-  const entry = { id, machine, label, command, cwd, log: log ?? join(dir, `${id}.log`), pid: process.pid, startedAt };
+  const sessionId = env['CLAUDE_CODE_SESSION_ID'];
+  const entry = {
+    id,
+    machine,
+    label,
+    command,
+    cwd,
+    log: log ?? join(dir, `${id}.log`),
+    pid: process.pid,
+    startedAt,
+    ...(sessionId ? { sessionId } : {}),
+  };
   writeEntry(dir, entry);
   return {
     ...entry,

@@ -296,7 +296,7 @@ async function tick($: EngineInterface) {
     next.push(await withRecords($, parsed, text));
   }
   if (!pinned) {
-    const root = await $.session.root();
+    const [root, sessionId] = await Promise.all([$.session.root(), $.session.id()]);
     const stat = await $.fs.stat(root, { resolve: true }).catch(() => undefined);
     const projectRoot = stat?.realPath ?? root;
     const known = new Set(next.map((p) => p.path));
@@ -306,7 +306,7 @@ async function tick($: EngineInterface) {
         read: (path) => $.fs.read(path),
         stat: (path) => $.fs.stat(path),
       },
-      { nowMs, projectRoot },
+      { nowMs, projectRoot, sessionId },
     )) {
       if (known.has(run.entry.log)) continue;
       next.push(await progressOfRegistryRun($, run, last.get(run.entry.log), nowMs));

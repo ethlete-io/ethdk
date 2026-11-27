@@ -103,3 +103,13 @@ test('run-registry.mjs track registers a light run', () => {
   assert.equal(entry.exitCode, 0);
   assert.equal(readFileSync(entry.log, 'utf8'), 'ok 1 - a\n');
 });
+
+test('registerRun records the Claude session id of the starting session, and none for a plain shell', () => {
+  const dir = tempDir('run-registry-');
+  registerRun({ label: 'a', command: 'a', env: { RUN_REGISTRY_DIR: dir, CLAUDE_CODE_SESSION_ID: 'sess-1' } });
+  assert.equal(entriesIn(dir)[0].sessionId, 'sess-1');
+
+  const plain = tempDir('run-registry-');
+  registerRun({ label: 'b', command: 'b', env: { RUN_REGISTRY_DIR: plain } });
+  assert.equal('sessionId' in entriesIn(plain)[0], false);
+});

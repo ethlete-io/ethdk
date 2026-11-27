@@ -120,14 +120,22 @@ type RegistryFileSystem = {
   stat(path: string): Promise<{ mtimeMs: number }>;
 };
 
-type RegistryEntry = { log: string; machine: string; label: string; pid: number; cwd?: string; endedAt?: number };
+type RegistryEntry = {
+  log: string;
+  machine: string;
+  label: string;
+  pid: number;
+  cwd?: string;
+  sessionId?: string;
+  endedAt?: number;
+};
 export type RegistryRun = { entry: RegistryEntry; mtimeMs: number };
 
-type RegistryScope = { nowMs: number; projectRoot: string };
+type RegistryScope = { nowMs: number; projectRoot: string; sessionId: string };
 
 export async function registryRuns(
   fs: RegistryFileSystem,
-  { nowMs, projectRoot }: RegistryScope,
+  { nowMs, projectRoot, sessionId }: RegistryScope,
 ): Promise<RegistryRun[]> {
   const root = projectRoot.replace(/\/+$/, '');
   const files = await fs.list(REGISTRY).catch(() => []);
@@ -139,7 +147,7 @@ export async function registryRuns(
           (t) => JSON.parse(t) as RegistryEntry,
           () => undefined,
         );
-        if (!entry?.log || typeof entry.cwd !== 'string') return undefined;
+        if (!entry?.log || typeof entry.cwd !== 'string' || entry.sessionId !== sessionId) return undefined;
         if (entry.cwd !== root && !entry.cwd.startsWith(`${root}/`)) return undefined;
         if (entry.endedAt === undefined && !(await fs.stat(`/proc/${entry.pid}`).catch(() => undefined)))
           return undefined;
