@@ -1,4 +1,5 @@
 import { Browser, DRAW_TIMEOUT_MS } from '../thumb';
+import { WaitTimeoutError, withinLimit } from '../wait';
 
 type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
 type Locator = ReturnType<Page['locator']>;
@@ -109,21 +110,22 @@ const CONTROL_SELECTOR = [
   ].map((role) => `[role="${role}"]`),
 ].join(', ');
 
-export const RING_PROBE_TIMEOUT_MS = 1000;
-
 export class RingProbeTimeoutError extends Error {}
 
 /**
  * Reads the ring probe of the element a locator names; `null` when it is not one the check visits or is gone from the
- * page. Throws a `RingProbeTimeoutError` when the element does not answer within `timeout`.
+ * page. It does not wait for a gone element to come back, only for the page to answer: a `RingProbeTimeoutError` when
+ * the page does not answer within `timeout`.
  */
-export const readRingProbe = async (locator: Locator, timeout = RING_PROBE_TIMEOUT_MS): Promise<RingProbe | null> => {
-  if ((await locator.count()) === 0) return null;
+export const readRingProbe = async (locator: Locator, timeout = DRAW_TIMEOUT_MS): Promise<RingProbe | null> =>
+  withinLimit(
+    locator.evaluateAll(
+      (elements, { selector, textFree, control }) => {
+        if (elements.length > 1) throw new Error(`the locator names ${elements.length} elements, not one`);
 
-  return (
-    locator.evaluate(
-      (element, { selector, textFree, control }) => {
-        if (!element.matches(selector)) return null;
+        const element = elements[0];
+
+        if (!element || !element.matches(selector)) return null;
 
         const style = getComputedStyle(element);
         const type = element instanceof HTMLInputElement ? element.type : '';
@@ -148,15 +150,14 @@ export const readRingProbe = async (locator: Locator, timeout = RING_PROBE_TIMEO
         };
       },
       { selector: POINTER_FOCUS_SELECTOR, textFree: TEXT_FREE_INPUTS, control: CONTROL_SELECTOR },
-      { timeout },
-    ) as Promise<RingProbe | null>
+    ) as Promise<RingProbe | null>,
+    { ms: timeout, what: 'the focus ring probe' },
   ).catch((error: unknown) => {
-    if (error instanceof Error && error.name === 'TimeoutError')
+    if (error instanceof WaitTimeoutError)
       throw new RingProbeTimeoutError(`the element did not answer the focus ring probe within ${timeout} ms`);
 
     throw error;
   });
-};
 
 /** `readRingProbe`, with `null` for any failure except a `RingProbeTimeoutError`. */
 export const ringProbeOrNullOf = (locator: Locator) =>
@@ -185,14 +186,14 @@ export const tabAwayFrom = async (page: Page, locator: Locator) => {
         return { focused: element.ownerDocument.activeElement === element, inOverlay };
       },
       undefined,
-      { timeout: RING_PROBE_TIMEOUT_MS },
+      { timeout: DRAW_TIMEOUT_MS },
     );
 
     if (!state.focused) return;
 
     if (state.inOverlay) {
       await locator.evaluate((element) => (element as HTMLElement).blur(), undefined, {
-        timeout: RING_PROBE_TIMEOUT_MS,
+        timeout: DRAW_TIMEOUT_MS,
       });
 
       return;

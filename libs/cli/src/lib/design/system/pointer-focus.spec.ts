@@ -5,7 +5,6 @@ import {
   pointerFocusVerdictOf,
   probePointerFocus,
   readRingProbe,
-  RING_PROBE_TIMEOUT_MS,
   RingProbe,
   ringProbeOrNullOf,
   RingStyle,
@@ -160,10 +159,32 @@ describe('readRingProbe', () => {
     const start = Date.now();
 
     expect(await ringProbeOrNullOf(locator)).toBeNull();
-    expect(Date.now() - start).toBeLessThan(RING_PROBE_TIMEOUT_MS);
+    expect(Date.now() - start).toBeLessThan(1000);
     expect((await readRingProbe(page.locator('#kept')))?.control).toBe(true);
     await page.close();
   }, 10_000);
+
+  it('waits for a page whose main thread runs long tasks, as under machine load', async (context) => {
+    if (!browser) return context.skip('no browser');
+
+    const page = await browser.newPage();
+
+    await page.setContent(`<button id="item">Item</button>`);
+    await page.evaluate(() => {
+      let left = 3;
+      const busy = () => {
+        const end = performance.now() + 1200;
+
+        while (performance.now() < end);
+        if (--left > 0) setTimeout(busy, 0);
+      };
+
+      setTimeout(busy, 0);
+    });
+
+    expect((await readRingProbe(page.locator('#item')))?.control).toBe(true);
+    await page.close();
+  }, 20_000);
 }, 30_000);
 
 describe('tabAwayFrom', () => {
