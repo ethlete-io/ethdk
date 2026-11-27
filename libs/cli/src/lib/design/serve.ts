@@ -142,6 +142,7 @@ import { watchModuleFetches } from './fetch-watch';
 import { skipCoveredAdds } from './covered-watch';
 import { relaunch, RELOAD_EXIT_CODE, superviseReloads, SUPERVISED_ENV, watchBuild } from './build-watch';
 import { FRAME_FIT_PADDING } from './frame-fit-padding';
+import { warmPartModules } from './system/warm-part-modules';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
 
@@ -1418,13 +1419,17 @@ export const createDesignServer = async (options: {
     Object.values(server.environments).forEach((environment) => environment.moduleGraph.invalidateAll());
   };
   const closing = server.close.bind(server);
+  const closed = new AbortController();
 
-  server.close = () =>
-    closing().finally(async () => {
+  server.close = () => {
+    closed.abort();
+
+    return closing().finally(async () => {
       cache?.release();
       await appShots?.close();
       await appDraws?.close();
     });
+  };
 
   const listening = server.listen.bind(server);
 
@@ -1463,6 +1468,8 @@ export const createDesignServer = async (options: {
     },
     /** Forgets every loaded part, sketch and module, so the next draw reads the files as they are now: a server started with `port` does not watch them, and forgets on its own only when a frame is asked for after a loaded source changed. */
     forgetDrawn,
+    /** Loads the part modules of every product and open sketch in the background, so the first page does not pay for them. */
+    warmPartModules: () => warmPartModules({ system, load: (id) => server.ssrLoadModule(id), signal: closed.signal }),
   });
 
   return designServer;
@@ -1555,6 +1562,8 @@ export const serveDesign = async (options: {
   const listening = server.httpServer?.address();
 
   if (listening && typeof listening === 'object') crashPort = listening.port;
+
+  void timedPhase('warm-part-modules', () => server.warmPartModules()).catch(() => undefined);
 
   console.log(`design-explore: drawing ${target}`);
   if (freePort) console.log(terminalPortLine(portOf(config), freePort));
