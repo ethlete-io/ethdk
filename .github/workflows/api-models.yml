@@ -131,7 +131,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '24.11.0'
+          node-version-file: '.node-version'
           package-manager-cache: false
 
       - run: yarn install --immutable
@@ -215,7 +215,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '24.11.0'
+          node-version-file: '.node-version'
           package-manager-cache: false
 
       - run: |
@@ -294,7 +294,7 @@ jobs:
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '24.11.0'
+          node-version-file: '.node-version'
           package-manager-cache: false
 
       - run: yarn install --immutable
@@ -347,9 +347,14 @@ jobs:
       TARBALL: ${{ needs.package.outputs.tarball }}
       SHA256: ${{ needs.package.outputs.sha256 }}
     steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          sparse-checkout: .node-version
+          sparse-checkout-cone-mode: false
+
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: '24.11.0'
+          node-version-file: '.node-version'
           package-manager-cache: false
           registry-url: ${{ vars.CI_SELF_HOSTED == 'true' && vars.VERDACCIO_URL || 'https://registry.npmjs.org' }}
 
