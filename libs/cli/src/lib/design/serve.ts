@@ -115,6 +115,7 @@ import { CheckSketches, createSketchChecker } from './system/sketch/sketch-check
 import { defaultFrameOf, forgetUnchangedStates } from './system/sketch/unchanged-states';
 import { inventoryOf } from './system/inventory';
 import { SHOT_VIEW_PATH } from './shot-board';
+import { logRequests } from './request-log';
 import { STUDIO_LIST_WIDTH_PATH, studioListWidthMiddleware } from './studio-list-width';
 import { createAppStateShots } from './system/app-state-shot';
 import { ChromiumOf, sharedChromiumOf } from './shared-chromium';
@@ -1502,6 +1503,7 @@ const installedStampOf = () => buildStampOf(installedAssetRoot()).build;
 export const serveDesign = async (options: {
   target: string;
   host?: string;
+  requestLog?: string;
   reloadOnRebuild?: boolean;
   checkSketches?: CheckSketches;
   /** Hosts the resident design process on the started server; the server then draws with one shared Chromium. */
@@ -1541,6 +1543,8 @@ export const serveDesign = async (options: {
     checkSketches,
     chromiumOf,
   });
+
+  if (options.requestLog && server.httpServer) logRequests(server.httpServer, options.requestLog);
 
   try {
     await server.listen();

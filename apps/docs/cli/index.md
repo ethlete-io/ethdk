@@ -58,6 +58,8 @@ A running `et design` watches the cli it was started from. Once a rebuild or rei
 
 Running `et` with no command, `--help` or an unknown command prints the command list.
 
+`et design --request-log <file>` (or `DE_REQUEST_LOG=<file>`) appends one JSON line per finished HTTP request of the design server: `start` (ISO time), `method`, `url`, `status`, `ms`, `bytes` and `open` (the requests open when it started). It is off by default and appends only, so a slow page open can be read from the log afterwards.
+
 ## Design product configuration
 
 In `.ethlete/design/config.json`, a product can hide parts inherited from its base:

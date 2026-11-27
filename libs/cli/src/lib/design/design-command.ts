@@ -12,6 +12,7 @@ import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
 import { designStudio } from './studio-open';
+import { REQUEST_LOG_ENV } from './request-log';
 import { serveDesign } from './serve';
 import { enterDesignServerScope } from './system/own-scope';
 import { ASSET_SHOT_USAGE, designAssetShot, designToken, TOKEN_USAGE } from './asset-shot';
@@ -63,9 +64,11 @@ const splitCheckout = (argv: string[], root: string) => {
 
 const helpOf = (invocation: string) =>
   [
-    `${invocation} [checkout] [--host <address>]`,
+    `${invocation} [checkout] [--host <address>] [--request-log <file>]`,
     '  Serve the variant frames of a checkout. The checkout defaults to the working directory. The server listens on',
     '  localhost; --host (or DE_HOST) names another address, e.g. 0.0.0.0 to reach it over the LAN.',
+    '  --request-log <file> (or DE_REQUEST_LOG) appends one JSON line per finished request: start, method, url, status,',
+    '  ms, bytes and the requests open at its start. Off by default.',
     '',
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]] [--receipt <path>]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames. --tsconfig also types each variant',
@@ -700,8 +703,11 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
   const { target, rest: afterCheckout } = splitCheckout(argv, root);
   const hostIndex = afterCheckout.indexOf('--host');
   const host = hostIndex === -1 ? undefined : afterCheckout[hostIndex + 1];
-  const rest =
+  const withoutHost =
     hostIndex === -1 ? afterCheckout : [...afterCheckout.slice(0, hostIndex), ...afterCheckout.slice(hostIndex + 2)];
+  const logIndex = withoutHost.indexOf('--request-log');
+  const requestLog = (logIndex === -1 ? undefined : withoutHost[logIndex + 1]) || process.env[REQUEST_LOG_ENV];
+  const rest = logIndex === -1 ? withoutHost : [...withoutHost.slice(0, logIndex), ...withoutHost.slice(logIndex + 2)];
   const positional = rest[0];
 
   if (positional && !existsSync(resolve(root, positional))) {
@@ -718,6 +724,7 @@ const dispatchDesign = async (options: { root: string; argv: string[]; invocatio
   return serveDesign({
     target: served,
     host,
+    requestLog,
     reloadOnRebuild: !startedByStudio(),
     ...(sharedServeWanted(process.env)
       ? {
