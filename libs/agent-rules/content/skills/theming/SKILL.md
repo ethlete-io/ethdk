@@ -87,7 +87,7 @@ level" row instead of a tint.
 - **Detached overlay panes (menu, dialog, tooltip…) do not inherit DOM context.**
   Re-apply it: inject `COLOR_PROVIDER` / `SURFACE_PROVIDER` with
   `{ optional: true, skipSelf: true }`, then `ownProvider.syncWithProvider(ctx)` for
-  color and `resolveSurfaceByElevation(themes, type, elevation + 1)` for the surface.
+  color, and re-apply the surface one elevation above the trigger's for the surface.
 - **Semantic colors come through DI, not CSS.** There is no global "error color"
   variable - error/warning/success are just color themes. To render something in the
   error color, `injectSemanticColorTheme('error')` (reading it throws if the app
