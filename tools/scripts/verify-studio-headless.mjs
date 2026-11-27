@@ -62,6 +62,19 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
   });
 
 const EXIT_GRACE_MS = 500;
+const STOP_TIMEOUT_MS = 10_000;
+
+const stopDesignChild = async (child) => {
+  if (!child) return;
+  child.removeAllListeners('exit');
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise((done) => {
+    const timer = setTimeout(() => child.kill('SIGKILL'), STOP_TIMEOUT_MS);
+
+    child.once('exit', () => (clearTimeout(timer), done()));
+    child.kill('SIGTERM');
+  });
+};
 
 export const designChildState = async (child, tailLines = 40) => {
   if (child?.exitCode === null && child.signalCode === null)
@@ -417,8 +430,7 @@ export const withStudio = async (
   } finally {
     await browser?.close();
     servers.forEach((server) => server.close());
-    design?.child.removeAllListeners('exit');
-    design?.child.kill('SIGTERM');
+    await stopDesignChild(design?.child);
     rmSync(scratch, { recursive: true, force: true });
   }
 };
