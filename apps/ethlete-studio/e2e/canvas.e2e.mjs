@@ -1040,6 +1040,39 @@ const withChangedUiThenRestart = () => {
 const listingCounts = { requested: 0, outstanding: 0 };
 let listingHoldOn = true;
 
+const designRequestsOf = (page) => {
+  const startedAt = performance.now();
+  const at = () => Math.round(performance.now() - startedAt);
+  const requests = new Map();
+  const onRequest = (request) =>
+    request.url().includes('/__design/') &&
+    requests.set(request, {
+      path: request
+        .url()
+        .replace(/^.*\/__design/u, '')
+        .slice(0, 60),
+      start: at(),
+      end: null,
+    });
+  const onDone = (request) => requests.has(request) && (requests.get(request).end = at());
+
+  page.on('request', onRequest);
+  page.on('requestfinished', onDone);
+  page.on('requestfailed', onDone);
+
+  return {
+    at,
+    stop: () => {
+      page.off('request', onRequest);
+      page.off('requestfinished', onDone);
+      page.off('requestfailed', onDone);
+    },
+    lines: () =>
+      [...requests.values()].map(({ path, start, end }) => `${path} @${start}-${end ?? 'pending'}`).join(', ') ||
+      'none',
+  };
+};
+
 const listingAnswered = async (page) => {
   const deadline = Date.now() + FULL_COMPARE_MS;
   let wait;
@@ -4019,8 +4052,21 @@ const CASES = [
       const shown = (cells) => new Set(cells.filter((cell) => cell.visible && cell.shows).map((cell) => cell.key));
       const faults = [];
 
-      await page.reload();
-      await page.waitForSelector('ethlete-sketch-view [data-shot]');
+      const reloadRequests = designRequestsOf(page);
+      let cellAt;
+
+      try {
+        await page.reload();
+        await page.waitForSelector('ethlete-sketch-view [data-shot]');
+        cellAt = reloadRequests.at();
+      } catch (error) {
+        return {
+          ok: false,
+          detail: `${String(error).split('\n')[0]}: no cell ${reloadRequests.at()} ms after the reload; design requests: ${reloadRequests.lines()}`,
+        };
+      } finally {
+        reloadRequests.stop();
+      }
       await listingAnswered(page);
       await showAllStates(page);
       const settledCount = await count();
@@ -4077,7 +4123,7 @@ const CASES = [
         ok: faults.length === 0,
         detail: faults.length
           ? `${faults.join('; ')}${await log.lines()}`
-          : `${settledCount} frames through the edit, ${pictured.size} pictures kept`,
+          : `${settledCount} frames through the edit, ${pictured.size} pictures kept, first cell ${cellAt} ms after the reload`,
       };
     },
   },
