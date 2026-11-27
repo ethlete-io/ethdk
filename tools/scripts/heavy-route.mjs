@@ -11,6 +11,15 @@ export const MACHINES = {
   mac: { slots: 1 },
 };
 
+// Slot 1 is the old lock file, so a bare `flock /tmp/fifagg-heavy.lock` caller counts as one holder.
+export const slotFile = (machine, n, prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy') =>
+  machine !== 'tank' ? `${prefix}.${machine}-${n}.lock` : n === 1 ? `${prefix}.lock` : `${prefix}.slot-${n}.lock`;
+
+export const tankHasFreeSlot = (prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy') =>
+  Array.from({ length: Number(process.env.HEAVY_SLOTS ?? MACHINES.tank.slots) }, (_, i) =>
+    slotFile('tank', i + 1, prefix),
+  ).some((file) => spawnSync('flock', ['-n', '-E', '200', file, 'true'], { stdio: 'ignore' }).status !== 200);
+
 const WRITES_FILES = /^(--fix|--write|-u|--update|--update-snapshots)(=|$)/;
 const PICTURE = /visual|screenshot|golden|baseline/i;
 const WEBKIT = /webkit/i;

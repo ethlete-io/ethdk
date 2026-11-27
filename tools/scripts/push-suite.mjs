@@ -12,16 +12,37 @@ const WORKSPACE_PARENTS = ['apps', 'libs', 'tools'];
 export const STEPS = ['lint', 'tools', 'coverage'];
 export const COVERAGE_LIBS = ['query', 'core', 'components'];
 
-export const parseArgs = (argv) => {
-  const at = argv.indexOf('--only');
-  const only = at === -1 ? undefined : argv[at + 1];
-  const loadAt = argv.indexOf('--max-load');
-  const maxLoad = loadAt === -1 ? undefined : Number(argv[loadAt + 1]);
-  const range = argv.find(
-    (arg, index) => !arg.startsWith('--') && (at === -1 || index !== at + 1) && (loadAt === -1 || index !== loadAt + 1),
-  );
+const VALUE_FLAGS = ['--only', '--max-load', '--on'];
 
-  return { only, range: range ?? '@{upstream}..HEAD', ...(maxLoad === undefined ? {} : { maxLoad }) };
+const listFlag = (argv, flag) => {
+  const arg = argv.find((candidate) => candidate.startsWith(`${flag}=`));
+  return arg === undefined
+    ? undefined
+    : arg
+        .slice(flag.length + 1)
+        .split(',')
+        .filter(Boolean);
+};
+
+export const parseArgs = (argv) => {
+  const valueOf = (flag) => {
+    const at = argv.indexOf(flag);
+    return at === -1 ? undefined : argv[at + 1];
+  };
+  const maxLoad = valueOf('--max-load');
+  const on = valueOf('--on');
+  const lintProjects = listFlag(argv, '--lint-projects');
+  const coverage = listFlag(argv, '--coverage-libs');
+  const range = argv.find((arg, index) => !arg.startsWith('--') && !VALUE_FLAGS.includes(argv[index - 1]));
+
+  return {
+    only: valueOf('--only'),
+    range: range ?? '@{upstream}..HEAD',
+    ...(maxLoad === undefined ? {} : { maxLoad: Number(maxLoad) }),
+    ...(on === undefined ? {} : { on }),
+    ...(lintProjects === undefined ? {} : { lintProjects }),
+    ...(coverage === undefined ? {} : { coverageLibs: coverage }),
+  };
 };
 
 export const LOAD_SAMPLE_MS = 5_000;
@@ -205,6 +226,84 @@ export const reexecCommand = (exportDir, repo, { only, range, maxLoad }, env = p
   env: { ...env, PUSH_SUITE_REPO: repo, PUSH_SUITE_EXPORT: exportDir },
 });
 
+/**
+ * The machine the steps run on: `on` (flag `--on` or env `PUSH_SUITE_MACHINE`) wins, else tank while it is free and
+ * rack while it is not. rack falls back to tank when it does not answer.
+ */
+export const pushSuiteMachine = ({ on, tankIsFree, rackIsUp, log }) => {
+  if ((on ?? (tankIsFree() ? 'tank' : 'rack')) === 'tank') return 'tank';
+  if (rackIsUp()) return 'rack';
+  log('push-suite: rack does not answer, running on tank');
+  return 'tank';
+};
+
+/** The suite line for a remote checkout: it carries the planned projects, since a shallow checkout has no range base. */
+export const remoteSuiteLine = ({ chosen, lintProjects, coverageLibs }) =>
+  [
+    'PUSH_SUITE_EXPORT="$PWD" node tools/scripts/push-suite.mjs --only',
+    chosen.join(','),
+    `--lint-projects=${lintProjects.join(',')}`,
+    `--coverage-libs=${coverageLibs.join(',')}`,
+    'HEAD',
+  ].join(' ');
+
+export const remoteRunArgv = (sha, line, script) => [
+  script,
+  '--host',
+  'rack',
+  '--linux',
+  '--ref',
+  sha,
+  '--slot',
+  'push-suite',
+  '--yarn-cache',
+  '--',
+  line,
+];
+
+export const plannedLine = (lintProjects, coverage) =>
+  `push-suite: planned lint (${lintProjects?.join(', ') ?? 'from the range'}), coverage (${coverage?.join(', ') ?? 'from the range'})`;
+
+/**
+ * The exit code of a remote run, or undefined when it ended without a suite verdict (ssh, docker, install) or the
+ * commit's push-suite ignored the planned projects.
+ */
+export const remoteVerdict = (code, output) => {
+  if (!/^push-suite: planned /m.test(output) || !/^push-suite: (ok|blocked) /m.test(output)) return undefined;
+  return code === 0 && /^push-suite: ok [0-9a-f]+/m.test(output) ? 0 : code || 1;
+};
+
+const heavyRunHeld = (holder) => {
+  if (!holder) return false;
+  try {
+    process.kill(holder.pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+};
+
+const runRemote = (argv, cwd) =>
+  new Promise((done) => {
+    const child = spawn(process.execPath, argv, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const forward = (signal) => child.kill(signal);
+    for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, forward);
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+      process.stdout.write(chunk);
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+      process.stderr.write(chunk);
+    });
+    child.on('error', (error) => (output += error.message));
+    child.on('close', (code) => {
+      for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.off(signal, forward);
+      done({ code: code ?? 1, output });
+    });
+  });
+
 /** Runs a step; when it fails with a load peak above `limit`, waits for the load to drop and runs it once more. */
 export const runStepUnderLoad = async ({ name, run, limit, log, loadProbe = {}, waitOptions }) => {
   const attempt = async () => {
@@ -316,7 +415,11 @@ const warnAboutOtherProcesses = async (log) => {
   if (found.length > 0) for (const line of otherProcessWarningLines(found, root)) log(line);
 };
 
-export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loadProbe = {}) => {
+export const pushSuite = async (
+  { only, range, maxLoad, on = process.env['PUSH_SUITE_MACHINE'] || undefined, lintProjects, coverageLibs: coverage },
+  log = console.log,
+  loadProbe = {},
+) => {
   const sha = git('rev-parse', range.split('..')[1] || 'HEAD').stdout.trim();
   const chosen = only ? only.split(',') : STEPS;
   let slot;
@@ -341,13 +444,6 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
   const unknown = chosen.find((step) => !STEPS.includes(step));
   if (unknown) return finish(`blocked unknown step ${unknown}, expected one of ${STEPS.join(', ')}`);
 
-  if (!INNER_EXPORT) {
-    const { holderLine, takeHeavyLock } = await import('./heavy-run-lock.mjs');
-    const lock = await takeHeavyLock('push-suite', { log });
-    if (!lock.ok) return finish(`blocked ${holderLine(lock.holder)}`);
-    heavyLock = lock;
-  }
-
   if (!INNER_EXPORT && !only) {
     await warnAboutOtherProcesses(log);
     const { claimSlot, heldLine, releaseSlot } = await import('./push-slot.mjs');
@@ -371,8 +467,46 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
     log(`push-suite: checks ok in ${seconds(performance.now() - startedAt)}`);
   }
 
+  const changed = () => {
+    const run = git('diff', '--name-only', range);
+    return run.status === 0
+      ? { files: run.stdout.split('\n').filter(Boolean) }
+      : { error: run.stderr || 'git diff failed' };
+  };
+
   if (!INNER_EXPORT) {
-    await waitForLowLoad({ limit: loadLimitOf(maxLoad), log, ...loadProbe });
+    if (on !== undefined && !['tank', 'rack'].includes(on))
+      return finish(`blocked unknown machine ${on}, expected tank or rack`);
+    const { machineIsUp, tankHasFreeSlot } = await import('./heavy-route.mjs');
+    const { holderLine, readHolder, takeHeavyLock } = await import('./heavy-run-lock.mjs');
+    const limit = loadLimitOf(maxLoad);
+    const machine = pushSuiteMachine({
+      on,
+      tankIsFree: () =>
+        !heavyRunHeld(readHolder()) && tankHasFreeSlot() && (loadProbe.load ?? oneMinuteLoad)() <= limit,
+      rackIsUp: () => machineIsUp('rack'),
+      log,
+    });
+    if (machine === 'rack') {
+      const { files, error: diffError } = changed();
+      if (diffError !== undefined) return finish(`blocked git diff ${range} failed: ${diffError.trim()}`);
+      const line = remoteSuiteLine({ chosen, lintProjects: lintedProjects(files), coverageLibs: coverageLibs(files) });
+      const script = process.env['PUSH_SUITE_REMOTE_RUN'] ?? join(import.meta.dirname, 'remote-run.mjs');
+      log(`push-suite: running ${chosen.join(', ')} of ${sha.slice(0, 12)} on rack`);
+      const startedAt = performance.now();
+      const { code, output } = await runRemote(remoteRunArgv(sha, line, script), root);
+      const status = remoteVerdict(code, output);
+      if (status !== undefined) {
+        log(`push-suite: rack run ${status === 0 ? 'ok' : 'failed'} in ${seconds(performance.now() - startedAt)}`);
+        if (status !== 0) release();
+        return status;
+      }
+      log(`push-suite: rack run ended without a verdict (exit ${code}), running on tank`);
+    }
+    const lock = await takeHeavyLock('push-suite', { log });
+    if (!lock.ok) return finish(`blocked ${holderLine(lock.holder)}`);
+    heavyLock = lock;
+    await waitForLowLoad({ limit, log, ...loadProbe });
   }
 
   Object.assign(process.env, { NX_NO_CLOUD: 'true', NX_DAEMON: 'false' });
@@ -391,15 +525,19 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
 
   const steps = {
     lint: () => {
-      const changed = git('diff', '--name-only', range);
-      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
-      return lintStep(lintedProjects(changed.stdout.split('\n').filter(Boolean)), dir);
+      if (lintProjects) return lintStep(lintProjects, dir);
+      const { files, error: diffError } = changed();
+      return diffError === undefined
+        ? lintStep(lintedProjects(files), dir)
+        : Promise.resolve({ status: 1, output: diffError });
     },
     tools: () => runStep('yarn', ['test:tools'], dir, toolsStepEnv(root)),
     coverage: () => {
-      const changed = git('diff', '--name-only', range);
-      if (changed.status !== 0) return Promise.resolve({ status: 1, output: changed.stderr });
-      return coverageStep(coverageLibs(changed.stdout.split('\n').filter(Boolean)), dir);
+      if (coverage) return coverageStep(coverage, dir);
+      const { files, error: diffError } = changed();
+      return diffError === undefined
+        ? coverageStep(coverageLibs(files), dir)
+        : Promise.resolve({ status: 1, output: diffError });
     },
   };
 
@@ -413,6 +551,7 @@ export const pushSuite = async ({ only, range, maxLoad }, log = console.log, loa
       return status;
     }
     await warnStaleDesignServers(log);
+    if (lintProjects || coverage) log(plannedLine(lintProjects, coverage));
     for (const name of chosen) {
       const { status, output } = await runStepUnderLoad({
         name,

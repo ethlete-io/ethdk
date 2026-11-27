@@ -14,6 +14,9 @@ import {
   otherTestProcessesOf,
   parseArgs,
   pushSuite,
+  pushSuiteMachine,
+  remoteSuiteLine,
+  remoteVerdict,
   reexecCommand,
   runStepUnderLoad,
   sampleMaxLoad,
@@ -30,6 +33,43 @@ test('defaults the range to the upstream and reads --only', () => {
     only: 'lint,tools',
     range: 'origin/next..HEAD',
   });
+});
+
+test('reads the machine and the planned projects a remote checkout runs without a range', () => {
+  assert.deepEqual(
+    parseArgs(['--only', 'lint', '--on', 'rack', '--lint-projects=a,b', '--coverage-libs=', '--max-load', '9', 'HEAD']),
+    { only: 'lint', range: 'HEAD', maxLoad: 9, on: 'rack', lintProjects: ['a', 'b'], coverageLibs: [] },
+  );
+});
+
+test('runs on tank while it is free, on rack while it is not, and on tank when rack does not answer', () => {
+  const lines = [];
+  const pick = (on, tankFree, rackUp) =>
+    pushSuiteMachine({ on, tankIsFree: () => tankFree, rackIsUp: () => rackUp, log: (line) => lines.push(line) });
+
+  assert.equal(pick(undefined, true, true), 'tank');
+  assert.equal(pick(undefined, false, true), 'rack');
+  assert.equal(pick('rack', true, true), 'rack');
+  assert.equal(pick('tank', false, true), 'tank');
+  assert.equal(pick(undefined, false, false), 'tank');
+  assert.deepEqual(lines, ['push-suite: rack does not answer, running on tank']);
+});
+
+test('a remote run counts as red unless its suite says ok, and as no verdict when the suite never ran', () => {
+  const planned = 'push-suite: planned lint (), coverage ()\n';
+  assert.equal(remoteVerdict(0, `x\n${planned}push-suite: ok 0123abcd\n`), 0);
+  assert.equal(remoteVerdict(1, `${planned}push-suite: blocked tools failed at 0123abcd\n`), 1);
+  assert.equal(remoteVerdict(0, `${planned}push-suite: blocked lint failed at 0123abcd\n`), 1);
+  assert.equal(
+    remoteVerdict(0, 'push-suite: lint ok in 0 s (no linted project touched)\npush-suite: ok 0123abcd\n'),
+    undefined,
+  );
+  assert.equal(remoteVerdict(255, 'ssh: connect to host rack: No route to host\n'), undefined);
+  assert.equal(remoteVerdict(1, '[rack-linux] yarn install failed\n'), undefined);
+  assert.match(
+    remoteSuiteLine({ chosen: ['lint', 'tools'], lintProjects: [], coverageLibs: ['core'] }),
+    /--only lint,tools --lint-projects= --coverage-libs=core HEAD$/,
+  );
 });
 
 test('--only refuses a step outside the fast set before it takes any lock', async () => {
@@ -250,7 +290,7 @@ const sh = (cwd, command, args) => {
   return run;
 };
 
-const checksFixture = () => {
+const checksFixture = ({ workflow = true } = {}) => {
   const repo = mkdtempSync(join(tmpdir(), 'push-suite-checks-'));
   const here = import.meta.dirname;
   const scripts = Object.fromEntries(CHECKS.map((check) => [check, 'node -e 0']));
@@ -271,6 +311,7 @@ const checksFixture = () => {
   sh(repo, 'git', ['config', 'user.name', 't']);
   sh(repo, 'git', ['add', '.']);
   sh(repo, 'git', ['commit', '-q', '-m', 'base']);
+  if (!workflow) return repo;
   writeFileSync(
     join(repo, '.github/workflows/ci.yml'),
     'jobs:\n  a:\n    steps:\n      - run: cat /proc/self/cgroup\n',
@@ -356,4 +397,130 @@ test('the warning is one header and one line per process', () => {
   assert.equal(lines[0], 'push-suite: warning: 2 other test or build process(es) of this checkout run:');
   assert.equal(lines.length, 3);
   assert.match(lines[1], /^ {2}200 {3}55\.0 % cpu {2}node node_modules\/vitest\/vitest\.mjs run$/);
+});
+
+const rackFixture = () => {
+  const repo = checksFixture({ workflow: false });
+  mkdirSync(join(repo, 'libs/demo'), { recursive: true });
+  writeFileSync(join(repo, 'libs/demo/project.json'), '{ "name": "demo" }\n');
+  writeFileSync(join(repo, 'libs/demo/eslint.config.mjs'), 'export default [];\n');
+  sh(repo, 'git', ['add', '.']);
+  sh(repo, 'git', ['commit', '-q', '-m', 'demo']);
+  mkdirSync(join(repo, 'libs/core'), { recursive: true });
+  writeFileSync(join(repo, 'libs/core/a.ts'), 'export const a = 1;\n');
+  sh(repo, 'git', ['add', '.']);
+  sh(repo, 'git', ['commit', '-q', '-m', 'core']);
+  writeFileSync(join(repo, 'libs/demo/b.ts'), 'export const b = 1;\n');
+  sh(repo, 'git', ['add', '.']);
+  sh(repo, 'git', ['commit', '-q', '-m', 'demo b']);
+  return repo;
+};
+
+const runOnFakeRack = ({ out, code, ssh = 'true', machine = 'rack', lockHolder }) => {
+  const repo = rackFixture();
+  const dir = mkdtempSync(join(tmpdir(), 'push-suite-rack-'));
+  const fake = join(dir, 'remote-run.mjs');
+  writeFileSync(
+    fake,
+    `import { writeFileSync } from 'node:fs';
+writeFileSync(${JSON.stringify(join(dir, 'argv.json'))}, JSON.stringify(process.argv.slice(2)));
+console.log(${JSON.stringify(out)});
+process.exit(${code});
+`,
+  );
+  if (lockHolder)
+    writeFileSync(join(dir, 'heavy.lock'), JSON.stringify({ pid: lockHolder, name: 'studio:e2e', started: 0 }));
+  try {
+    const run = spawnSync(
+      process.execPath,
+      [join(import.meta.dirname, 'push-suite.mjs'), '--only', 'lint,coverage', 'HEAD~3..HEAD'],
+      {
+        encoding: 'utf8',
+        env: gitEnv({
+          PUSH_SUITE_REPO: repo,
+          PUSH_SUITE_MAX_LOAD: '1000',
+          PUSH_SUITE_EXPORT: '',
+          PUSH_SUITE_MACHINE: machine,
+          PUSH_SUITE_REMOTE_RUN: fake,
+          HEAVY_SSH: ssh,
+          ETHLETE_HEAVY_LOCK_FILE: join(dir, 'heavy.lock'),
+        }),
+        timeout: 120_000,
+      },
+    );
+    let argv;
+    try {
+      argv = JSON.parse(readFileSync(join(dir, 'argv.json'), 'utf8'));
+    } catch {
+      argv = undefined;
+    }
+    return {
+      status: run.status,
+      output: `${run.stdout}${run.stderr}`,
+      argv,
+      sha: sh(repo, 'git', ['rev-parse', 'HEAD']).stdout.trim(),
+      base: sh(repo, 'git', ['rev-parse', 'HEAD~3']).stdout.trim(),
+    };
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
+
+test('on rack the suite runs the pushed commit with its planned projects, since a depth-2 checkout has no base', () => {
+  const run = runOnFakeRack({
+    out: 'push-suite: planned lint (demo), coverage (core)\npush-suite: ok 0123abcd',
+    code: 0,
+  });
+
+  assert.equal(run.status, 0, run.output);
+  assert.deepEqual(run.argv.slice(0, 9), [
+    '--host',
+    'rack',
+    '--linux',
+    '--ref',
+    run.sha,
+    '--slot',
+    'push-suite',
+    '--yarn-cache',
+    '--',
+  ]);
+  assert.match(run.argv[9], /--only lint,coverage --lint-projects=demo --coverage-libs=core HEAD$/);
+  assert.doesNotMatch(run.argv[9], new RegExp(run.base));
+  assert.doesNotMatch(run.output, /push-suite: exported/);
+});
+
+test('a red suite on rack blocks the push like a red local run', () => {
+  const run = runOnFakeRack({
+    out: 'push-suite: planned lint (demo), coverage (core)\npush-suite: blocked lint failed at 0123abcd',
+    code: 1,
+  });
+
+  assert.equal(run.status, 1, run.output);
+  assert.match(run.output, /push-suite: rack run failed/);
+  assert.doesNotMatch(run.output, /push-suite: exported/);
+});
+
+test('a rack run without a verdict and an unreachable rack both fall back to tank', () => {
+  const broken = runOnFakeRack({ out: 'ssh: connect to host rack: No route to host', code: 255 });
+  assert.match(broken.output, /rack run ended without a verdict \(exit 255\), running on tank/);
+  assert.match(broken.output, /push-suite: exported/);
+
+  const down = runOnFakeRack({ out: 'unused', code: 0, ssh: 'false' });
+  assert.equal(down.argv, undefined);
+  assert.match(down.output, /rack does not answer, running on tank/);
+  assert.match(down.output, /push-suite: exported/);
+});
+
+test('without --on the suite goes to rack instead of waiting while another heavy run holds tank', () => {
+  const run = runOnFakeRack({
+    out: 'push-suite: planned lint (demo), coverage (core)\npush-suite: ok 0123abcd',
+    code: 0,
+    machine: '',
+    lockHolder: process.pid,
+  });
+
+  assert.equal(run.status, 0, run.output);
+  assert.equal(run.argv[4], run.sha);
+  assert.doesNotMatch(run.output, /heavy run lock held/);
 });

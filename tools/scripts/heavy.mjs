@@ -2,7 +2,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { jobMachine, machineIsUp, MACHINES, remoteSuite, snapshotWorkingTree } from './heavy-route.mjs';
+import {
+  jobMachine,
+  machineIsUp,
+  MACHINES,
+  remoteSuite,
+  slotFile as slotFileOf,
+  snapshotWorkingTree,
+} from './heavy-route.mjs';
 import { localMachine, registerRun, teeRun } from './run-registry.mjs';
 
 const prefix = process.env.HEAVY_LOCK_PREFIX ?? '/tmp/fifagg-heavy';
@@ -15,9 +22,7 @@ const signalNumber = { SIGHUP: 1, SIGINT: 2, SIGKILL: 9, SIGTERM: 15 };
 const usage =
   'usage: heavy.mjs run [--on tank|rack|mac] [--fetch <path>]... [--env <name>]... [--forward <port>]... [--yarn-cache] -- <command>';
 
-// Slot 1 is the old lock file, so a bare `flock /tmp/fifagg-heavy.lock` caller counts as one holder.
-const slotFile = (machine, n) =>
-  machine !== 'tank' ? `${prefix}.${machine}-${n}.lock` : n === 1 ? `${prefix}.lock` : `${prefix}.slot-${n}.lock`;
+const slotFile = (machine, n) => slotFileOf(machine, n, prefix);
 
 const slotName = (machine, n) => (machine === 'tank' ? `slot ${n}` : `${machine} slot ${n}`);
 
