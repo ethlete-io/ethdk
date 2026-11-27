@@ -67,7 +67,7 @@ export type PartPictures = { record?: AcceptedPictures };
 
 /**
  * Draws every state of each part as `design compare` draws its design side, and answers per part with the picture
- * hash of each state or why it could not be drawn. A state that differs from `expected` is drawn once more, fresh.
+ * hash of each state or why it could not be drawn. A state that differs from `expected` with a kept picture is drawn once more, fresh.
  * `sizes` gets the size of each drawn picture per part.
  */
 export type DrawStates = (options: {
@@ -247,9 +247,8 @@ const drawPartsWith = async (options: {
         default?: { states?: unknown };
       };
       const states = await drawnStateNamesOf(module.default, found?.cssSource ?? null);
-      const sized: StateSizes = {};
       const pictureOf = async (state: string, fresh: boolean) => {
-        const { png } = await pictures.pictureOf({
+        const { png, source } = await pictures.pictureOf({
           product: product.name,
           part,
           state,
@@ -264,23 +263,32 @@ const drawPartsWith = async (options: {
           fresh,
         });
 
-        sized[state] = pngSizeOf(png);
-
-        return sha16(png);
+        return { hash: sha16(png), size: pngSizeOf(png), drawnNow: source === 'drawn' };
       };
       if (states.length === 0) {
         drawn.set(part, `${part} has no states`);
         continue;
       }
 
+      const pictured = await Promise.all(
+        states.map(async (state) => {
+          const first = await pictureOf(state, false);
+          const want = expected?.[part]?.[state];
+
+          return want !== undefined && want !== first.hash && !first.drawnNow ? pictureOf(state, true) : first;
+        }),
+      );
       const hashes: StatePictures = {};
+      const sized: StateSizes = {};
 
-      for (const state of states) {
-        const first = await pictureOf(state, false);
-        const want = expected?.[part]?.[state];
+      states.forEach((state, at) => {
+        const picture = pictured[at];
 
-        hashes[state] = want !== undefined && want !== first ? await pictureOf(state, true) : first;
-      }
+        if (!picture) return;
+
+        hashes[state] = picture.hash;
+        sized[state] = picture.size;
+      });
 
       drawn.set(part, hashes);
       options.sizes?.set(part, sized);
