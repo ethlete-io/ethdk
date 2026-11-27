@@ -74,6 +74,10 @@ interactive element itself, never on a wrapper. Neutral hover and pressed feedba
 full-strength text colour, so in dark mode it gives a light row with near-white text. Mix
 the tint instead: `hover:bg-et-surface-tint/9 active:bg-et-surface-tint/15`.
 
+`--et-surface-next-background` / `bg-et-surface-next-background` is the background of the next
+level (the tint mixed over the background on the topmost level): use it for a "hover = next
+level" row instead of a tint.
+
 ## Providing context
 
 - `[etProvideSurface]="surfaceThemeName"` / `[etAutoSurface]` (auto-picks the next

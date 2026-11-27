@@ -80,6 +80,7 @@
   --color-et-surface-text-subtle: var(--et-surface-text-subtle);
   --color-et-surface-border: var(--et-surface-border);
   --color-et-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+  --color-et-surface-next-background: var(--et-surface-next-background);
   --color-et-surface-control-text: var(--et-surface-control-text);
   --color-et-surface-control-text-hover: var(--et-surface-control-text-hover);
   --color-et-surface-control-text-focus: var(--et-surface-control-text-focus);
@@ -103,6 +104,7 @@
     --et-surface-control-text-focus: rgb(220 220 220);
     --et-surface-control-text-active: rgb(250 250 250);
     --et-surface-control-text-disabled: rgb(100 100 100);
+    --et-surface-next-background: rgb(27 34 43);
   }
 
   .et-surface--dark-elevated {
@@ -119,6 +121,7 @@
     --et-surface-control-text-focus: rgb(220 220 220);
     --et-surface-control-text-active: rgb(250 250 250);
     --et-surface-control-text-disabled: rgb(100 100 100);
+    --et-surface-next-background: rgb(36 45 56);
   }
 
   .et-surface--dark-elevated-2 {
@@ -135,6 +138,11 @@
     --et-surface-control-text-focus: rgb(220 220 220);
     --et-surface-control-text-active: rgb(250 250 250);
     --et-surface-control-text-disabled: rgb(100 100 100);
+    --et-surface-next-background: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text)) 9%,
+      var(--et-surface-background)
+    );
   }
 
   .et-surface--default-light,
@@ -152,6 +160,7 @@
     --et-surface-control-text-focus: rgb(64 64 64);
     --et-surface-control-text-active: rgb(23 23 23);
     --et-surface-control-text-disabled: rgb(180 180 180);
+    --et-surface-next-background: rgb(250 250 250);
   }
 
   .et-surface--light-elevated {
@@ -168,6 +177,11 @@
     --et-surface-control-text-focus: rgb(64 64 64);
     --et-surface-control-text-active: rgb(23 23 23);
     --et-surface-control-text-disabled: rgb(180 180 180);
+    --et-surface-next-background: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text)) 9%,
+      var(--et-surface-background)
+    );
   }
 
   @media (prefers-color-scheme: light) {
@@ -185,6 +199,7 @@
       --et-surface-control-text-focus: rgb(64 64 64);
       --et-surface-control-text-active: rgb(23 23 23);
       --et-surface-control-text-disabled: rgb(180 180 180);
+      --et-surface-next-background: rgb(250 250 250);
       color-scheme: light;
     }
   }
@@ -204,6 +219,7 @@
       --et-surface-control-text-focus: rgb(220 220 220);
       --et-surface-control-text-active: rgb(250 250 250);
       --et-surface-control-text-disabled: rgb(100 100 100);
+      --et-surface-next-background: rgb(27 34 43);
       color-scheme: dark;
     }
   }
@@ -222,6 +238,7 @@
     --et-surface-control-text-focus: rgb(64 64 64);
     --et-surface-control-text-active: rgb(23 23 23);
     --et-surface-control-text-disabled: rgb(180 180 180);
+    --et-surface-next-background: rgb(250 250 250);
     color-scheme: light;
   }
 
@@ -239,6 +256,7 @@
     --et-surface-control-text-focus: rgb(220 220 220);
     --et-surface-control-text-active: rgb(250 250 250);
     --et-surface-control-text-disabled: rgb(100 100 100);
+    --et-surface-next-background: rgb(27 34 43);
     color-scheme: dark;
   }
 }
@@ -255,6 +273,7 @@
     --color-et-surface-text-subtle: var(--et-surface-text-subtle);
     --color-et-surface-border: var(--et-surface-border);
     --color-et-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+    --color-et-surface-next-background: var(--et-surface-next-background);
     --color-et-surface-control-text: var(--et-surface-control-text);
     --color-et-surface-control-text-hover: var(--et-surface-control-text-hover);
     --color-et-surface-control-text-focus: var(--et-surface-control-text-focus);

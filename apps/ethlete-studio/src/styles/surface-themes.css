@@ -54,6 +54,7 @@
   --color-et-surface-text-subtle: var(--et-surface-text-subtle);
   --color-et-surface-border: var(--et-surface-border);
   --color-et-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+  --color-et-surface-next-background: var(--et-surface-next-background);
   --color-et-surface-control-text: var(--et-surface-control-text);
   --color-et-surface-control-text-hover: var(--et-surface-control-text-hover);
   --color-et-surface-control-text-focus: var(--et-surface-control-text-focus);
@@ -77,6 +78,7 @@
     --et-surface-control-text-focus: rgb(235 235 235);
     --et-surface-control-text-active: rgb(235 235 235);
     --et-surface-control-text-disabled: rgb(111 111 111);
+    --et-surface-next-background: rgb(32 32 32);
   }
 
   .et-surface--dark-elevated {
@@ -93,6 +95,7 @@
     --et-surface-control-text-focus: rgb(235 235 235);
     --et-surface-control-text-active: rgb(235 235 235);
     --et-surface-control-text-disabled: rgb(111 111 111);
+    --et-surface-next-background: rgb(43 43 43);
   }
 
   .et-surface--dark-elevated-2 {
@@ -109,6 +112,11 @@
     --et-surface-control-text-focus: rgb(235 235 235);
     --et-surface-control-text-active: rgb(235 235 235);
     --et-surface-control-text-disabled: rgb(111 111 111);
+    --et-surface-next-background: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text)) 9%,
+      var(--et-surface-background)
+    );
   }
 
   :root {
@@ -125,6 +133,7 @@
     --et-surface-control-text-focus: rgb(235 235 235);
     --et-surface-control-text-active: rgb(235 235 235);
     --et-surface-control-text-disabled: rgb(111 111 111);
+    --et-surface-next-background: rgb(32 32 32);
     color-scheme: dark;
   }
 }
@@ -141,6 +150,7 @@
     --color-et-surface-text-subtle: var(--et-surface-text-subtle);
     --color-et-surface-border: var(--et-surface-border);
     --color-et-surface-tint: var(--et-surface-tint, var(--et-surface-text));
+    --color-et-surface-next-background: var(--et-surface-next-background);
     --color-et-surface-control-text: var(--et-surface-control-text);
     --color-et-surface-control-text-hover: var(--et-surface-control-text-hover);
     --color-et-surface-control-text-focus: var(--et-surface-control-text-focus);
