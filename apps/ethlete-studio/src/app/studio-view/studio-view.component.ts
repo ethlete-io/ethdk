@@ -662,13 +662,14 @@ const serverUrlOf = (port: number) => `http://localhost:${port}`;
 const sameRoot = (a: string, b: string) => a.replace(/[\\/]+$/, '') === b.replace(/[\\/]+$/, '');
 
 const answerOf = (stamp: unknown, checkout: string): ServerAnswer => {
-  const root = (stamp as { projectRoot?: unknown } | null)?.projectRoot;
+  const { projectRoot: root, rootMatches } = (stamp ?? {}) as { projectRoot?: unknown; rootMatches?: unknown };
+  const matches = typeof rootMatches === 'boolean' ? rootMatches : typeof root === 'string' && sameRoot(root, checkout);
 
-  return typeof root === 'string' && !sameRoot(root, checkout) ? { otherRoot: root } : 'answers';
+  return typeof root === 'string' && !matches ? { otherRoot: root } : 'answers';
 };
 
 const serverAnswers$ = (port: number, checkout: string) => {
-  const answers$ = fromFetch(`${serverUrlOf(port)}${DESIGN_STAMP_PATH}`).pipe(
+  const answers$ = fromFetch(`${serverUrlOf(port)}${DESIGN_STAMP_PATH}?root=${encodeURIComponent(checkout)}`).pipe(
     switchMap((response) => {
       if (response.status >= 500) throw new Error(`${response.status}`);
 

@@ -668,7 +668,7 @@ describe('StudioViewComponent', () => {
 
       expect(element(fixture).textContent).toContain('Design-Server startet');
       expect(system(fixture)).toBeUndefined();
-      expect(probed).toContain('http://localhost:4402/__design/stamp');
+      expect(probed.some((url) => url.startsWith('http://localhost:4402/__design/stamp'))).toBe(true);
       expect(probed.filter((url) => url.includes('/__design/system'))).toEqual([]);
 
       answer = () => Promise.resolve(new Response('[]', { status: 200 }));
@@ -786,7 +786,7 @@ describe('StudioViewComponent', () => {
         : { ...RUNNING, managed: served === checkout, foreign: served !== checkout };
 
     vi.stubGlobal('fetch', (url: string) =>
-      url.endsWith('/__design/stamp') && served === null
+      url.includes('/__design/stamp') && served === null
         ? Promise.reject(new TypeError('refused'))
         : Promise.resolve(new Response(JSON.stringify({ projectRoot: served, pid: 1 }), { status: 200 })),
     );
@@ -890,5 +890,21 @@ describe('StudioViewComponent', () => {
     expect(system(fixture)).toBeUndefined();
     expect(element(fixture).textContent).toContain('/somewhere/else');
     expect(sent.some((call) => call.command === 'design_server_stop')).toBe(false);
+  });
+
+  it('shows the system view when the server reports its root as the same folder through a symlink', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve(
+        new Response(JSON.stringify({ projectRoot: `/private${CHECKOUT}`, rootMatches: true, pid: 1 }), {
+          status: 200,
+        }),
+      ),
+    );
+    stubHost({ design_server_state: () => RUNNING });
+
+    const fixture = await mount();
+
+    expect(system(fixture)).toBeDefined();
+    expect(element(fixture).textContent).not.toContain('serves another project');
   });
 });

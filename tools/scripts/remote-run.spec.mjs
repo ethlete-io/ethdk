@@ -240,6 +240,14 @@ test('a native run installs and runs the suite inside its slot checkout', () => 
   }
 });
 
+test('a mac run appends ~/.cargo/bin to PATH, a rack run leaves it out', () => {
+  const mac = remoteScript({ sha: SHA, slot: 'w1', suite: 'x', host: 'mac', linux: false });
+  const rack = remoteScript({ sha: SHA, slot: 'w1', suite: 'x', host: 'rack', linux: false });
+
+  assert.match(mac, /export PATH="\$HOME\/\.local\/node\/bin:\$HOME\/\.local\/bin:\$PATH:\$HOME\/\.cargo\/bin"/);
+  assert.doesNotMatch(rack, /\.cargo/);
+});
+
 test('a native run refuses a node that is not the pinned version and cannot be replaced', () => {
   const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'node --test a.spec.mjs', host: 'mac', linux: false });
   const work = mkdtempSync(join(tmpdir(), 'remote-run-node-pin-'));

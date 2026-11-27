@@ -127,7 +127,8 @@ const nativeRun = (
   suite,
   fetch,
   runId,
-) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
+  host,
+) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH${host === 'mac' ? ':$HOME/.cargo/bin' : ''}" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
   cd "$work" || return 1
   ${nodePin('"$HOME/.local/node-pin"', 'return 1')}
   local started=$SECONDS
@@ -201,7 +202,7 @@ export const remoteScript = ({
   const wrapped = withForward(suite, forward, caller);
   const rackLinux = linux && host === 'rack';
   const run = !linux
-    ? nativeRun(wrapped, fetch, runId)
+    ? nativeRun(wrapped, fetch, runId, host)
     : rackLinux
       ? rackLinuxRun(wrapped, slot, rackHelper, fetch, runId)
       : linuxRun(wrapped, slot, fetch, runId, env);

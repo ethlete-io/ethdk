@@ -1,3 +1,4 @@
+import { realpathSync } from 'fs';
 import { createRequire } from 'module';
 import { dirname, join } from 'path';
 import { lastCrashOf } from './crash-log';
@@ -15,6 +16,8 @@ export type ServerIdentity = {
   apiLevel: number;
   builtAt: number;
   projectRoot: string;
+  /** Whether `projectRoot` and the asked-for root are one folder, symlinks resolved; absent when no root was asked. */
+  rootMatches?: boolean;
   installed: ServerBuild | null;
   /** The process that serves; a server restarted from a new build answers with a new one. */
   pid: number;
@@ -35,11 +38,24 @@ const installedPackageRootOf = (projectRoot: string) => {
   }
 };
 
+const realPathOf = (path: string) => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+};
+
+const trimmed = (path: string) => path.replace(/[\\/]+$/, '');
+
+/** True when both paths name one folder, also through a symlink such as macOS `/var` -> `/private/var`. */
+export const sameProjectRoot = (a: string, b: string) => trimmed(realPathOf(a)) === trimmed(realPathOf(b));
+
 /** Takes the running build once at start; the returned function builds the answer for a request. */
 export const serverIdentityOf = (projectRoot: string) => {
   const running = buildInfoOf();
 
-  return (): ServerIdentity => {
+  return (root?: string): ServerIdentity => {
     const packageRoot = installedPackageRootOf(projectRoot);
     const installed = packageRoot ? installedBuildInfoOf(packageRoot) : null;
 
@@ -48,6 +64,7 @@ export const serverIdentityOf = (projectRoot: string) => {
       apiLevel: STUDIO_API_LEVEL,
       builtAt: running.builtAt,
       projectRoot,
+      ...(root ? { rootMatches: sameProjectRoot(projectRoot, root) } : {}),
       installed,
       pid: process.pid,
       owner: startedByStudio() ? 'studio' : 'terminal',

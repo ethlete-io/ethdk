@@ -999,9 +999,11 @@ const designExplore = ({
             .pipe(tap(() => next()))
             .subscribe(),
         );
-      vite.middlewares.use(STAMP_PATH, (_request: unknown, response: ServerResponse) => {
+      vite.middlewares.use(STAMP_PATH, (request: { url?: string }, response: ServerResponse) => {
+        const root = new URL(request.url ?? '/', 'http://localhost').searchParams.get('root');
+
         response.setHeader('content-type', 'application/json');
-        response.end(JSON.stringify({ ...stamp, ...identityOf() }));
+        response.end(JSON.stringify({ ...stamp, ...identityOf(root ?? undefined) }));
       });
       vite.middlewares.use(QUEUE_PATH, (_request: unknown, response: ServerResponse) =>
         sendJson(response, { status: 200, body: ledger.report() }),

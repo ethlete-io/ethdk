@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -115,6 +115,21 @@ describe('serverIdentityOf', () => {
     resolution.missing = true;
 
     expect(serverIdentityOf(project)().installed).toBeNull();
+  });
+});
+
+describe('rootMatches', () => {
+  it('matches a root that reaches the project through a symlink, and no other folder', () => {
+    const project = mkdtempSync(join(tmpdir(), 'identity-'));
+    const other = mkdtempSync(join(tmpdir(), 'identity-'));
+    const link = `${project}-link`;
+    roots.push(project, other, link);
+    symlinkSync(project, link);
+    const identityOf = serverIdentityOf(realpathSync(project));
+
+    expect(identityOf(link).rootMatches).toBe(true);
+    expect(identityOf(other).rootMatches).toBe(false);
+    expect(identityOf().rootMatches).toBeUndefined();
   });
 });
 
