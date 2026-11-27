@@ -1,5 +1,22 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.51
+
+### Minor Changes
+
+- A `mods` list in `ethlete-agents.config.local.json` enables Claude Code mods on this machine only: `sync` writes them into the gitignored `.claude/settings.local.json`, never the committed `settings.json`.
+- Add the opt-in `human-wait-check` hook and `waiting-on-the-human` rule: a coordinator that asks the human starts the next independent slice first.
+
+### Patch Changes
+
+- The theming skill no longer points consumers at the internal `resolveSurfaceByElevation` helper.
+- Removed the runtime color theming (`provideColorThemes`, `createThemeStyle`, `createTailwind*`), `inject{Error,Warning,Success}Theme` and `SurfaceTheme.colorTheme`/`semanticColorThemes`; `et update` migrates each.
+- The `theming` skill names `--et-surface-tint` with its surface-text fallback instead of the removed `--et-surface-interaction`.
+- The builder-idle-check hook no longer reports a queue row as open while a running subagent's description names its ID.
+- `design check` and `sketch check` report `TRUNCATED` for text cut by an ellipsis or line clamp; a deliberate cut carries `data-et-skip="TRUNCATED"`.
+- The e2e-progress mod shows only the runs that its own Claude session or its subagents started; run records carry the session id.
+- The theming skill describes the next level background surface token.
+
 ## 0.1.0-next.50
 
 ### Minor Changes

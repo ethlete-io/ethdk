@@ -1,5 +1,12 @@
 # timetrack-app
 
+## 0.2.0-next.27
+
+### Patch Changes
+
+- The generated surface theme CSS carries `--et-surface-next-background`.
+- Read the surface tint with an opacity so the break block and the settings row hover are no longer a solid light grey.
+
 ## 0.2.0-next.26
 
 ### Patch Changes

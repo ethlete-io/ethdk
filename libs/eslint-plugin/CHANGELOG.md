@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.34
+
+### Minor Changes
+
+- Add the opt-in `no-hand-mixed-state` rule: CSS interaction states mix the surface tint with the surface text fallback, not the control text, a static colour or a bare tint.
+
 ## 1.0.0-next.33
 
 ### Minor Changes

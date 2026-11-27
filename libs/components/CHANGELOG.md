@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.0-next.104
+
+### Major Changes
+
+- Renamed the component state tokens to one pattern, `--et-<component>[-<part>][-<variant>]-<state>[-<property>]` (e.g. `--et-select-option-background-hover` is now `--et-select-option-hover`); `et update` renames them.
+
+### Minor Changes
+
+- Add `--et-bracket-section-title-rule-width` and `--et-bracket-section-title-rule-color` to draw a rule across every column of a bracket section under its title.
+
+### Patch Changes
+
+- Form control hover and pressed states fall back to the surface text when a theme sets no `tint`; the multi-language editor's language trigger shows them again.
+- Menu, select, cascader, command palette, tree and mention-popup items tint hover and pressed with the surface tint, falling back to the surface text when a theme sets no `tint`.
+- Calendar, breadcrumb overflow, chip, chart, carousel, scrollbar, bracket pick card and other neutral tints fall back to
+  the surface text when a theme sets no tint, so their hover shows on light surfaces.
+- Table, accordion, standings and match hover and pressed states follow the surface tint everywhere, and fall back to the surface text when a theme sets no tint.
+- A stuck bracket section title now sits just past the `<et-scrollable>` start fade, so it stays opaque; the scroll container exposes the fade width as `--et-scrollable-start-fade`.
+- Under `dir="rtl"` the breadcrumb separators and carousel arrows now point in reading direction, the switch thumb sits at the start edge, and the menu item shortcut stays left-to-right.
+- Mirror pagination arrows, scrollable buttons and fade, and the progress bar under `dir="rtl"`.
+
 ## 1.0.0-next.103
 
 ### Patch Changes
