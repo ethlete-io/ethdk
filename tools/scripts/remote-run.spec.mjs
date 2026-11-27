@@ -559,3 +559,45 @@ test('the remote script stores the lfs list of the commit and fills the checkout
   assert.match(rack, /REMOTE_RUN_LFS/);
   assert.ok(helper.indexOf('rr_lfs "$work"') > helper.indexOf('checkout --quiet --force'));
 });
+
+test('a native run takes the slot lock before it touches the slot checkout', () => {
+  for (const host of ['rack', 'mac']) {
+    const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'true', host, linux: false, guard: '' });
+    assert.match(script, /rr_guard 'w1' checkout_and_run/);
+    assert.match(
+      script.slice(0, script.indexOf('main() {')),
+      /checkout_and_run\(\) \{[\s\S]*worktree add[\s\S]*suite_run\n\}/,
+    );
+    assert.doesNotMatch(script.slice(script.indexOf('main() {')), /worktree add|checkout --quiet/);
+  }
+});
+
+test('a native run on Windows finds the pinned node.exe that npm installs under node_modules', () => {
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'node -v', host: 'rack', linux: false });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-node-exe-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), '24.17.0\n');
+  const exeDir = join(home, '.local', 'node-pin', 'node_modules', 'node', 'bin');
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\necho v24.19.0\n');
+  writeFileSync(
+    join(bin, 'npm'),
+    `#!/usr/bin/env bash\nmkdir -p ${exeDir}\necho 'text placeholder' > ${exeDir}/node\nprintf '#!/bin/sh\\necho v24.17.0\\n' > ${exeDir}/node.exe\nchmod +x ${exeDir}/node.exe\n`,
+  );
+  for (const name of ['git', 'yarn', 'npm', 'node']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.doesNotMatch(result.stdout + result.stderr, /not the pinned/);
+    assert.match(result.stdout, /^v24\.17\.0$/m);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});

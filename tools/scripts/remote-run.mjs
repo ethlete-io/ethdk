@@ -120,7 +120,8 @@ const outTar = (runId) => `ethlete-rr/out-${runId}.tar`;
 
 export const nodePin = (prefix, fail) => `pin=$(tr -d 'v \\r\\n' < .node-version) || ${fail}
 [ "$(node --version 2>/dev/null)" = "v$pin" ] || npm install --global --silent --prefix ${prefix} node@$pin >/dev/null || { echo "[remote-run] cannot install node $pin" >&2; ${fail}; }
-export PATH=${prefix}/bin:$PATH
+export PATH=${prefix}/bin:${prefix}/node_modules/node/bin:$PATH
+[ ! -f ${prefix}/node_modules/node/bin/node.exe ] || { printf '#!/bin/sh\\nexec "%s" "$@"\\n' ${prefix}/node_modules/node/bin/node.exe > ${prefix}/node_modules/node/bin/node && chmod +x ${prefix}/node_modules/node/bin/node; }
 [ "$(node --version)" = "v$pin" ] || { echo "[remote-run] node $(node --version) is not the pinned v$pin" >&2; ${fail}; }`;
 
 const nativeRun = (
@@ -209,7 +210,25 @@ export const remoteScript = ({
   return `suite_run() {
 ${run}
 }
-main() {
+${
+  rackLinux
+    ? ''
+    : `checkout_and_run() {
+  if [ -e "$work/.git" ]; then
+    git -C "$work" checkout --quiet --force --detach "$sha" || return 1
+    git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
+  else
+    git -C "$mirror" worktree prune
+    git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
+  fi
+  if [ -f "$HOME/ethlete-rr/lfs-lists/$sha" ]; then
+    rr_lfs "$work" "$HOME/ethlete-rr/lfs" "$HOME/ethlete-rr/lfs-lists/$sha"
+  fi
+  echo "[remote-run] $(hostname) $work at $(git -C "$work" rev-parse --short HEAD)"
+  suite_run
+}
+`
+}main() {
   local mirror="$HOME/ethlete-mirror.git" work="$HOME/ethlete-rr/${slot}${linux ? '-linux' : ''}" sha=${shellQuote(sha)}
   ${envExports(env, rackLinux)}
   ${
@@ -229,26 +248,10 @@ ${lfsList}REMOTE_RUN_LFS`
       : ':'
   }
   ${
-    !rackLinux
-      ? `if [ -e "$work/.git" ]; then
-    git -C "$work" checkout --quiet --force --detach "$sha" || return 1
-    git -C "$work" clean -ffdxq -e node_modules -e .nx || return 1
-  else
-    git -C "$mirror" worktree prune
-    git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
-  fi
-  if [ -f "$HOME/ethlete-rr/lfs-lists/$sha" ]; then
-    . "$HOME/ethlete-rr/remote-guard.sh"
-    rr_lfs "$work" "$HOME/ethlete-rr/lfs" "$HOME/ethlete-rr/lfs-lists/$sha"
-  fi
-  echo "[remote-run] $(hostname) $work at $(git -C "$work" rev-parse --short HEAD)"`
-      : 'echo "[remote-run] $(hostname) WSL ethlete container run"'
-  }
-  ${
     rackLinux
-      ? 'suite_run'
+      ? 'echo "[remote-run] $(hostname) WSL ethlete container run"\n  suite_run'
       : `. "$HOME/ethlete-rr/remote-guard.sh"
-  rr_guard ${shellQuote(slot)} suite_run`
+  rr_guard ${shellQuote(slot)} checkout_and_run`
   }
 }
 main </dev/null
