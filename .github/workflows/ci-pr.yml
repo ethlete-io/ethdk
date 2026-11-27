@@ -25,3 +25,13 @@ jobs:
       deploy: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
       storybook_target: storybook-next
     secrets: inherit
+
+  ci-apps:
+    if: >-
+      ${{ !(github.event.pull_request.user.login == 'nziermann' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.title, ' from API (')) }}
+    uses: ./.github/workflows/ci-apps.yml
+    permissions:
+      contents: read
+    secrets: inherit

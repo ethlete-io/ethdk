@@ -31,6 +31,13 @@ jobs:
       channel_id: live
     secrets: inherit
 
+  ci-apps:
+    if: ${{ !inputs.skip_ci }}
+    uses: ./.github/workflows/ci-apps.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
   publish:
     needs: ci
     if: ${{ always() && github.ref == 'refs/heads/next' && (needs.ci.result == 'success' || inputs.skip_ci) }}
@@ -44,4 +51,12 @@ jobs:
       commit_message: 'chore(repo): Update prereleases'
       title: 'Release prerelease packages'
       slack_title: '*New Next Release*'
+    secrets: inherit
+
+  release-apps:
+    needs: [ci, ci-apps]
+    if: ${{ always() && github.ref == 'refs/heads/next' && ((needs.ci.result == 'success' && needs.ci-apps.result == 'success') || inputs.skip_ci) }}
+    uses: ./.github/workflows/release-apps.yml
+    permissions:
+      contents: write
     secrets: inherit

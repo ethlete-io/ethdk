@@ -22,6 +22,12 @@ jobs:
       channel_id: live
     secrets: inherit
 
+  ci-apps:
+    uses: ./.github/workflows/ci-apps.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
   publish:
     needs: ci
     uses: ./.github/workflows/publish.yml
@@ -34,4 +40,11 @@ jobs:
       commit_message: 'chore(repo): Update versions'
       title: 'Release packages'
       slack_title: '*New Release*'
+    secrets: inherit
+
+  release-apps:
+    needs: [ci, ci-apps]
+    uses: ./.github/workflows/release-apps.yml
+    permissions:
+      contents: write
     secrets: inherit

@@ -1,0 +1,239 @@
+name: CI (Apps)
+
+# The checks of the private apps (Studio, Timetrack), called next to ci.yml by ci-pr, ci-next and
+# ci-main. A red job here holds back only the app releases, never the SDK publish.
+on:
+  workflow_call:
+
+# Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
+# is off; everything else about the run is unchanged. Delete this to re-enable.
+env:
+  NX_NO_CLOUD: 'true'
+  APP_PROJECTS: ethlete-studio,timetrack-app,timetrack,timetrack-e2e,timetrack-vscode
+
+jobs:
+  apps:
+    name: App checks
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: apps
+
+      # Tailwind classes in apps/ethlete-studio/src must be written in their canonical form.
+      - run: yarn studio:classes:check
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+      - run: yarn nx run-many -t typecheck -p "$APP_PROJECTS"
+      - run: yarn nx run-many -t lint -p "$APP_PROJECTS"
+      - run: yarn nx run-many -t test -p "$APP_PROJECTS" --output-style=static --parallel 1
+      - run: yarn nx run-many -t build -p "$APP_PROJECTS"
+
+  timetrack-e2e:
+    name: Timetrack e2e
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: timetrack-e2e
+
+      - run: yarn nx run timetrack-app:build:e2e --exclude-task-dependencies
+
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+
+      - run: yarn nx e2e timetrack-e2e
+        env:
+          TIMETRACK_E2E_DIST: dist/apps/timetrack-e2e/browser
+
+  studio-e2e:
+    name: Studio e2e (${{ matrix.shard }}/10)
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: studio-e2e
+
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+
+      # The design server answers 503 on /__design/system until the render packages of
+      # .ethlete/design/config.json (dist/libs/components, dist/libs/core) exist.
+      - run: yarn nx run-many -t build -p cli,components,core
+
+      - run: set -o pipefail; yarn studio:e2e 2>&1 | tee "$RUNNER_TEMP/studio-e2e.log"
+        timeout-minutes: 40
+        env:
+          STUDIO_E2E_WORKERS: 2
+          STUDIO_E2E_BUDGET_ENFORCE: 1
+          STUDIO_E2E_SHARD: ${{ matrix.shard }}/10
+
+      - name: Name the failing specs
+        if: failure()
+        run: |
+          grep -E '✘|^ *[0-9]+ failed|over budget|ELIFECYCLE' "$RUNNER_TEMP/studio-e2e.log" \
+            | cut -c1-900 | sed 's/%/%25/g; s/^/::error title=e2e::/' | head -40 || true
+
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: studio-e2e-log-${{ matrix.shard }}
+          path: ${{ runner.temp }}/studio-e2e.log
+          retention-days: 7
+
+  rust:
+    name: Rust host
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+    env:
+      # Full debug info makes the cached dependencies several GB, and the restore then costs more
+      # than the build it saves.
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: rust
+
+      # Before the build dependencies: rustfmt needs no toolchain beyond the one the image ships,
+      # so a badly formatted crate fails the job in seconds rather than after a cargo build.
+      - run: yarn nx run timetrack-app:format-rust
+
+      - run: yarn nx run ethlete-studio:format-rust
+
+      - name: Install the Tauri Linux build dependencies
+        run: |
+          bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-4-dev ninja-build libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: |
+            apps/timetrack/src-tauri -> target
+            apps/ethlete-studio/src-tauri -> target
+
+      - uses: ./.github/actions/cef
+
+      # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
+      - run: yarn nx run timetrack-app:lint-rust
+
+      - run: yarn nx run timetrack-app:test-rust
+
+      - run: yarn nx run ethlete-studio:lint-rust
+
+      - run: yarn nx run ethlete-studio:test-rust
+
+      - run: cargo build
+        working-directory: apps/ethlete-studio/src-tauri
+        timeout-minutes: 20
+
+      # cef-dll-sys copies the CEF runtime next to the binary only when its build script runs, and a
+      # restored rust-cache keeps that build fresh without the copied files, so the host exits 127.
+      - name: Place the CEF runtime next to the host
+        working-directory: apps/ethlete-studio/src-tauri
+        timeout-minutes: 2
+        run: |
+          version=$(awk '$0 == "name = \"cef\"" { getline; gsub(/version = |"/, ""); print; exit }' Cargo.lock)
+          cef_dir="$CEF_PATH/${version#*+}/cef_linux_x86_64"
+          mkdir -p target/debug/locales
+          find "$cef_dir" -maxdepth 1 -type f -exec cp -t target/debug {} +
+          find "$cef_dir/locales" -maxdepth 1 -type f -exec cp -t target/debug/locales {} +
+          # Ubuntu's AppArmor blocks the user namespace sandbox, so Chromium falls back to the SUID
+          # helper and aborts unless it is root-owned with mode 4755.
+          sudo chown root:root target/debug/chrome-sandbox
+          sudo chmod 4755 target/debug/chrome-sandbox
+
+      - run: bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends xvfb xauth
+        timeout-minutes: 5
+
+      - run: xvfb-run -a yarn studio:e2e:host-signal
+        timeout-minutes: 5
+
+  design-changes:
+    name: Design server changes
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BASE^{commit}"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$BASE" HEAD -- apps/ethlete-studio libs/cli/src/lib/design; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  webkit-design-events:
+    name: WebKit design event stream
+    needs: design-changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/next' && needs.design-changes.outputs.changed == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: webkit-design-events
+
+      - run: yarn nx build cli
+
+      # WKWebView drops an SSE response that sends no bytes for 60 s; Chromium does not.
+      - run: node tools/scripts/verify-webkit-design-events.mjs
+
+  apps-verified:
+    name: Apps verified
+    # The single check an app release waits for. Skipped jobs pass.
+    if: always()
+    needs: [apps, timetrack-e2e, studio-e2e, rust, webkit-design-events]
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

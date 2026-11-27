@@ -76,7 +76,7 @@ Every change to a workspace package needs a changeset: every `@ethlete/*` lib, a
 `none`; `yarn lint:changesets` fails the push otherwise. `plans/**` needs none. Use
 the **`changeset`** skill and write the file directly, not via the interactive CLI.
 
-Before a publish, run `yarn release:smoke`. `publish.yml`, the Tauri bundles, signing, the updater key and the
+Before a publish, run `yarn release:smoke`. `publish.yml`, `release-apps.yml`, the Tauri bundles, signing, the updater key and the
 CEF runtime are in the **`app-releases`** skill: read it before touching any of them.
 
 ## Documentation

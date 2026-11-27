@@ -1,6 +1,6 @@
 ---
 name: app-releases
-description: "How the Tauri apps and the SDK are released: publish.yml, signing, updater key, CEF runtime. Read before touching publish.yml, tools/changesets-action, tauri.conf.json, Cargo files, release scripts or the updater."
+description: "How the Tauri apps and the SDK are released: publish.yml, release-apps.yml, signing, updater key, CEF runtime. Read before touching publish.yml, release-apps.yml, ci-apps.yml, tools/changesets-action, tauri.conf.json, Cargo files, release scripts or the updater."
 ---
 
 # App and SDK releases
@@ -15,7 +15,12 @@ never publishes it, and `yarn versions:sync` copies the new version into `tauri.
 `package.json`, or write a changeset, and run `yarn versions:sync`. `yarn versions:check`
 fails CI on drift.
 
-When `publish.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm),
+The SDK publish and the app releases are separate. `ci.yml` checks the SDK and gates `publish.yml`;
+`ci-apps.yml` checks Studio and Timetrack (app lint, tests, builds, e2e, Rust, WebKit) and gates only
+`release-apps.yml`, so a red app never holds back an SDK publish. An app project added to the workspace
+goes into `APP_PROJECTS` in `ci.yml` and `ci-apps.yml` and the `--exclude` list in `publish.yml`.
+
+When `release-apps.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm),
 macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. The Linux bundles carry CEF
 and are built by `@tauri-apps/cli-cef`, so they are deb and rpm only - a CEF AppImage is broken
 upstream (tauri-apps/tauri#16204). The macOS bundle is
@@ -35,12 +40,12 @@ elrond's real host): the plugin tries the next endpoint when one fails or answer
 self-hosted one takes over once the repo is private. Keep that order until every installed app has it.
 elrond pulls: `apps-release` uploads `latest-elrond.json` next to `latest.json`, with each url
 rewritten to `$MIRROR_BASE/<app>/<tag>/<file>`; elrond mirrors those files and serves it as `<app>/latest.json`.
-`MIRROR_BASE` in publish.yml and the second endpoint change together.
+`MIRROR_BASE` in release-apps.yml and the second endpoint change together.
 
 Studio on every OS, and Timetrack on Linux, run on Tauri's CEF (Chromium) runtime from its `feat/cef`
 branch; Timetrack on macOS and Windows runs on wry. The Studio macOS and Windows bundles
 are built by `@tauri-apps/cli-cef` too: the dmg is about 147 MiB larger, the NSIS installer is about 142 MiB.
-On Windows, cef-dll-sys needs CMake and Ninja on `PATH`; `publish.yml` takes both from the Visual Studio install.
+On Windows, cef-dll-sys needs CMake and Ninja on `PATH`; `release-apps.yml` takes both from the Visual Studio install.
 Studio's `tauri`, `tauri:dev` and `tauri:build` targets go through `tools/scripts/studio-tauri.mjs`, which
 always picks cli-cef: the plain CLI starts a bare binary that cannot find the CEF framework. The branch's `tauri` has no runtime of its own, so each app's `lib.rs` names its runtime, and
 a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
