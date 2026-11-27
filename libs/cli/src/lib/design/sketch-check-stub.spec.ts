@@ -4,6 +4,17 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { designSketch } from './sketch-command';
 
+vi.mock('./typecheck', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./typecheck')>()),
+  typecheckAsync: async () => ({ kind: 'ok' }),
+}));
+
+vi.mock('./ready-shots', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./ready-shots')>()),
+  sketchRenderLines: async () => ({ refusals: [], warnings: [] }),
+  variantsThatDoNotLoad: async (): Promise<string[]> => [],
+}));
+
 const dirs: string[] = [];
 
 afterEach(() => {
