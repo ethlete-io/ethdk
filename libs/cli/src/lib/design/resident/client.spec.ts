@@ -5,7 +5,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ResidentClient, runThroughResident, SCRATCH_MARKER, stopResident, takeResidentForServe } from './client';
+import {
+  ResidentClient,
+  runThroughResident,
+  sendRun,
+  SCRATCH_MARKER,
+  stopResident,
+  takeResidentForServe,
+} from './client';
 import { isAlive, processStartOf, readDiscovery, writeDiscovery } from './discovery';
 import { ResidentRun, startResidentServer } from './server';
 
@@ -213,6 +220,79 @@ describe('runThroughResident', () => {
     expect(err).toEqual([
       `the resident design process (pid ${fake.pid}) ended without an answer - running in-process\n`,
     ]);
+  });
+});
+
+describe('runThroughResident with a busy resident', () => {
+  const holdOne = async (target: string) => {
+    let release: () => void = vi.fn();
+    const held = new Promise<void>((done) => (release = done));
+    const seen: string[][] = [];
+    const fake = await startFake({
+      target,
+      run: async ({ argv }) => {
+        seen.push(argv);
+        if (argv[1] === 'held') await held;
+
+        return 0;
+      },
+    });
+    const holding = sendRunOf(fake.server.port, target);
+
+    for (let tries = 0; tries < 50 && seen.length === 0; tries++) await delay(20);
+
+    return { release, seen, holding };
+  };
+
+  const sendRunOf = (port: number, target: string) => {
+    const found = readDiscovery(target);
+
+    return found
+      ? sendRun({
+          found,
+          asked: { argv: ['compare', 'held'], invocation: 'et design', env: {} },
+          client: clientOf().client,
+        })
+      : Promise.resolve(null);
+  };
+
+  it('runs in-process after the busy wait instead of queueing behind the earlier request', async () => {
+    const target = checkoutOf();
+    const { release, seen, holding } = await holdOne(target);
+    const { client, err } = clientOf({ busyWaitMs: 300 });
+    const began = Date.now();
+    const code = await runThroughResident({ target, argv: ['compare', 'a/b'], invocation: 'et design', client });
+
+    expect(code).toBe(null);
+    expect(Date.now() - began).toBeLessThan(1_500);
+    expect(seen).toEqual([['compare', 'held']]);
+    expect(err.join('')).toMatch(/is busy - running in-process/);
+    release();
+    await holding;
+  });
+
+  it('reads the busy wait from ETHLETE_DESIGN_BUSY_WAIT_S', async () => {
+    const target = checkoutOf();
+    const { release, holding } = await holdOne(target);
+    const { client, err } = clientOf({ busyWaitMs: 60_000, env: { ETHLETE_DESIGN_BUSY_WAIT_S: '0' } });
+
+    expect(await runThroughResident({ target, argv: ['compare', 'a/b'], invocation: 'et design', client })).toBe(null);
+    expect(err.join('')).toMatch(/is busy - running in-process/);
+    release();
+    await holding;
+  });
+
+  it('still uses an idle resident', async () => {
+    const target = checkoutOf();
+    const { seen, release, holding } = await holdOne(target);
+
+    release();
+    await holding;
+
+    const { client } = clientOf({ busyWaitMs: 300 });
+
+    expect(await runThroughResident({ target, argv: ['compare', 'a/b'], invocation: 'et design', client })).toBe(0);
+    expect(seen.at(-1)).toEqual(['compare', 'a/b']);
   });
 });
 

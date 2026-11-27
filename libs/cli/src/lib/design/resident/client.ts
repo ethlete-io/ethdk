@@ -18,6 +18,9 @@ import {
 } from './discovery';
 import { FORWARDED_ENV, ResidentFrame, ResidentRequest, TOKEN_HEADER } from './server';
 
+/** Seconds a call waits for a busy resident design process before it runs in its own process. */
+export const BUSY_WAIT_ENV = 'ETHLETE_DESIGN_BUSY_WAIT_S';
+
 /** `ETHLETE_DESIGN_RESIDENT=0` keeps every design call in its own process, as `CI` does. */
 export const RESIDENT_ENV = 'ETHLETE_DESIGN_RESIDENT';
 
@@ -44,6 +47,7 @@ export type ResidentClient = {
   pingTimeoutMs: number;
   stopGraceMs: number;
   silenceMs: number;
+  busyWaitMs?: number;
 };
 
 export const residentLogOf = (target: string) => join(residentDirOf(target), 'resident.log');
@@ -86,6 +90,7 @@ export const realResidentClient = (build: string): ResidentClient => ({
   pingTimeoutMs: 5_000,
   stopGraceMs: 5_000,
   silenceMs: 60_000,
+  busyWaitMs: 5_000,
 });
 
 const RESIDENT_SKETCH_COMMANDS = new Set(['check', 'ready']);
@@ -158,6 +163,38 @@ const answers = async (found: Discovery, client: ResidentClient) => {
   } catch {
     return false;
   }
+};
+
+const pendingOf = async (found: Discovery, client: ResidentClient) => {
+  const body = await call({ found, method: 'GET', path: '/ping', timeoutMs: client.pingTimeoutMs });
+
+  try {
+    const { pending } = JSON.parse(body ?? '') as { pending?: unknown };
+
+    return typeof pending === 'number' ? pending : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const busyWaitMsOf = (client: ResidentClient) => {
+  const seconds = Number(client.env[BUSY_WAIT_ENV]);
+
+  return client.env[BUSY_WAIT_ENV] !== undefined && Number.isFinite(seconds) && seconds >= 0
+    ? seconds * 1000
+    : (client.busyWaitMs ?? Infinity);
+};
+
+const staysBusy = async (found: Discovery, client: ResidentClient) => {
+  const until = client.now() + busyWaitMsOf(client);
+
+  while ((await pendingOf(found, client)) > 0) {
+    if (client.now() >= until) return true;
+
+    await client.sleep(250);
+  }
+
+  return false;
 };
 
 const fits = ({ found, target, client }: { found: Discovery; target: string; client: ResidentClient }) =>
@@ -397,6 +434,12 @@ export const runThroughResident = async (options: {
 
   if (typeof found === 'string') {
     client.err(`${found} - running in-process\n`);
+
+    return null;
+  }
+
+  if (await staysBusy(found, client)) {
+    client.err(`the resident design process (pid ${found.pid}) is busy - running in-process\n`);
 
     return null;
   }
