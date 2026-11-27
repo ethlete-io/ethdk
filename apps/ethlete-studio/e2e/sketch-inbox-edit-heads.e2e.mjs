@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { inboxEditCheckout } from './inbox-edit-checkout.mjs';
 
 const args = process.argv.slice(2);
 const value = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
@@ -11,7 +13,10 @@ const only = value('--case');
 assert.ok(!only || name.includes(only), `No case matches ${only}`);
 process.env['DE_PORT'] ??= '4486';
 
-const checkout = resolve(value('--checkout') ?? resolve(import.meta.dirname, '../../..'));
+const ownsCheckout = !args.includes('--checkout');
+const checkout = ownsCheckout
+  ? inboxEditCheckout(resolve(import.meta.dirname, '../../..'), 'studio-inbox-edit-heads-e2e-')
+  : resolve(value('--checkout'));
 const built = value('--built');
 const shots = value('--shots');
 const engine = value('--engine') ?? 'chromium';
@@ -98,3 +103,5 @@ try {
   console.log(`FAIL  ${name}: steps ${steps.join(', ') || 'none'}`);
   process.exitCode = 1;
 }
+
+if (ownsCheckout) rmSync(checkout, { recursive: true, force: true });

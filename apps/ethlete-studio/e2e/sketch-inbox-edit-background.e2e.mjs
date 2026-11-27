@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { inboxEditCheckout } from './inbox-edit-checkout.mjs';
 
 const args = process.argv.slice(2);
 const value = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
 const name = 'inbox@edit backgrounds stay dark at 9 %, 5 % and 2 %';
 const only = value('--case');
-const checkout = resolve(value('--checkout') ?? resolve(import.meta.dirname, '../../..'));
+const ownsCheckout = !args.includes('--checkout');
+const checkout = ownsCheckout
+  ? inboxEditCheckout(resolve(import.meta.dirname, '../../..'), 'studio-inbox-edit-background-e2e-')
+  : resolve(value('--checkout'));
 const built = value('--built');
 const engine = value('--engine') ?? 'chromium';
 const shots = value('--shots');
@@ -135,3 +140,5 @@ try {
   console.error(error);
   process.exitCode = 1;
 }
+
+if (ownsCheckout) rmSync(checkout, { recursive: true, force: true });
