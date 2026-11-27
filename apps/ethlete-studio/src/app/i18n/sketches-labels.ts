@@ -92,6 +92,7 @@ export const SKETCHES_LABELS = {
     `${moved}, dazu ${others === 1 ? '1 weitere Stelle' : `${others} weitere Stellen`} geändert`,
   variantReason: (variant: string, reason: string) => `${variant}: ${reason}`,
   drawingMark: 'zeichnet',
+  drawingPart: (part: string) => `zeichnet ${part}`,
   subParts: 'Unterteile',
   notRebuild: (of: string, difference: string) => `nicht ${of}: ${difference}`,
   drawingVariant: 'zeichnet diese Variante',

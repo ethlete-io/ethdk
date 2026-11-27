@@ -582,6 +582,9 @@ export class SketchesComponent {
   // Opacity, not visibility: Chromium stops rendering a hidden cross-origin frame, so a live frame would never report painted.
   protected editHeld = computed(() => this.partSized() && !this.editDrawn());
   protected editHolding = computed(() => this.isEdit() && this.sizing());
+  protected blankDrawing = computed(
+    () => this.shownStatus() === 'drawing' && this.shownRows().every((row) => row.shots.length === 0),
+  );
   protected headStatus = computed(() =>
     this.shownStatus() === 'waiting' && !this.editDrawn() ? 'drawing' : this.shownStatus(),
   );

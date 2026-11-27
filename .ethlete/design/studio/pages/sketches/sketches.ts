@@ -13,7 +13,7 @@ import anchoredDialog from '@system/components/anchored-dialog';
 import button from '@system/components/button';
 import { icon } from '@system/foundations/icons';
 import { commentPinMark } from '@system/components/comment-pin';
-import { type SketchHeadStatus, sketchHead } from '@system/components/sketch-head';
+import { type SketchHeadStatus, modelName, sketchHead } from '@system/components/sketch-head';
 import { variantCell, variantCellStyles } from '@system/elements/variant-cell';
 import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
@@ -94,6 +94,7 @@ type Props = {
   sameOpen?: boolean;
   withdrawn?: Withdrawn;
   agent?: AgentRun;
+  blank?: boolean;
   port?: 'one' | 'two';
   points?: boolean;
   pointsOpen?: boolean;
@@ -744,6 +745,7 @@ export default definePart<Props>({
     'page-100': { camera: '100' },
     'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
     drawing: { camera: 'fit', status: 'drawing' },
+    'drawing-empty': { camera: 'fit', part: 'narrow', status: 'drawing', agent: 'variant', blank: true },
     paused: { camera: 'fit', status: 'paused' },
     failed: { camera: 'fit', status: 'failed', errored: ['b'], failures: FAILED_REASONS },
     'new-part': { camera: 'fit', fresh: true },
@@ -805,6 +807,8 @@ export default definePart<Props>({
       'The sketch zoomed to 60 % and panned with variant a selected; check that the row heads stay pinned at the left edge, opaque over the cells.',
     drawing:
       'A variant still drawing; check the zeichnet badge in the header, that Übernehmen is missing, and that the drawing variant shows its frames live like a finished one.',
+    'drawing-empty':
+      'A sketch an agent is still drawing with no frame yet; check the calm centred block with the pulsing dot, the model and zeichnet plus the part, seit and the hint that the frame fills when the first view stands.',
     paused: 'A paused sketch; check the Pausiert badge in the header.',
     failed:
       'Variant b failed to render; check the Fehler badge in the toolbar, Render fehlgeschlagen: default: and the error in the head of row b in the error colour, and no Übernehmen in any row.',
@@ -902,7 +906,7 @@ export default definePart<Props>({
     },
     {
       label: 'Status',
-      states: ['drawing', 'paused', 'sketch-only-points', 'sketch-only-points-open', 'live'],
+      states: ['drawing', 'drawing-empty', 'paused', 'sketch-only-points', 'sketch-only-points-open', 'live'],
     },
     {
       label: 'Agent und Runden',
@@ -955,6 +959,7 @@ export default definePart<Props>({
     sameOpen = false,
     withdrawn,
     agent,
+    blank = false,
     port,
     points = false,
     pointsOpen = false,
@@ -1042,6 +1047,7 @@ export default definePart<Props>({
       : transposed
         ? matrix(part, shown, same, view, sameOpen)
         : shown.map((row) => gridRow(part, row, view)).join('') + sameRows(part, same, view, sameOpen);
+    const rowsWorld = blank ? '' : world;
     const folded = screen ? UNCHANGED_COUNT : hidden.length;
     const head = await sketchHead({
       round: ROUNDS[screen ? 'screen' : kind],
@@ -1090,7 +1096,7 @@ export default definePart<Props>({
             data-blocks="${screen || !transposed ? 1 : blockSizesOf(part, columns, LIST_VIEWPORT).length}"
           >
             <div class="flex w-max flex-col gap-space-2" data-sk-grid-span>
-              ${world}
+              ${rowsWorld}
               ${
                 folded > 0
                   ? html`<section
@@ -1106,6 +1112,21 @@ export default definePart<Props>({
           </div>`,
         })}
       </div>
+      ${
+        blank
+          ? html`<div
+              class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-space-1 text-center"
+              data-sk-drawing-empty
+            >
+              <span class="flex items-center gap-space-2 text-(length:--text-sm) text-et-surface-text">
+                <span class="size-1.5 animate-pulse rounded-full bg-(--et-tone-fill)"></span>
+                ${run ? modelName(run.by) : ''} ${SKETCHES_LABELS.drawingPart(PARTS[kind].key)}
+              </span>
+              ${run ? html`<span class="text-ui-sm text-et-surface-text-muted">${run.since}</span>` : ''}
+              <span class="text-ui-sm text-et-surface-text-muted">${SKETCHES_LABELS.drawingHint}</span>
+            </div>`
+          : ''
+      }
       ${head.body} ${chip.body}
       ${live ? html`<div class="pointer-events-none absolute top-space-3 right-space-3 z-3 flex text-ui-sm">${liveBadge}</div>` : ''}
     </div>`;

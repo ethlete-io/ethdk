@@ -2346,4 +2346,25 @@ describe('SketchesComponent', () => {
     expect(toolbar).not.toContain('Runde 3 fehlgeschlagen');
     expect(toolbar).not.toContain('Haiku 5.5');
   });
+  it('shows who draws which part, since when and what comes next while no variant has a frame yet', async () => {
+    const empty = (key: string): SketchRow => ({ key, note: '', width: 280, shots: [] });
+    const fixture = await render({
+      camera: '100',
+      rows: [empty('a'), empty('b')],
+      part: 'components/zoom-chip',
+      status: 'waiting',
+      agent: { by: { short: 'Opus 5.5', id: 'opus', agent: 'claude' }, since: 'seit 2 Min' },
+    });
+    const root: HTMLElement = fixture.nativeElement;
+    const block = () => textOf(root.querySelector('[data-sk-drawing-empty]'));
+
+    expect(block()).toContain('Opus 5.5 zeichnet components/zoom-chip');
+    expect(block()).toContain('seit 2 Min');
+    expect(block()).toContain('Der Rahmen füllt sich');
+
+    fixture.componentRef.setInput('rows', [{ ...empty('a'), shots: [{ state: 'rest', changed: true, height: 46 }] }]);
+    await fixture.whenStable();
+
+    expect(root.querySelector('[data-sk-drawing-empty]')).toBeNull();
+  });
 });

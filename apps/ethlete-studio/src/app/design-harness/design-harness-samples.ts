@@ -353,6 +353,7 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     screen,
     multi,
     agent,
+    blank,
     port,
     comments,
     confirm,
@@ -382,11 +383,12 @@ export const DESIGN_HARNESS_SAMPLES: Record<string, (props: Props) => Props> = {
     }).map((row) =>
       withdrawn && row.key === SKETCH_WITHDRAWN.key ? { ...row, withdrawn: SKETCH_WITHDRAWN.reason } : row,
     );
+    const shown = blank === true ? rows.map((row) => ({ ...row, shots: [] })) : rows;
 
     return {
       ...props,
       ...sample,
-      rows,
+      rows: shown,
       ...(withdrawn ? { withdrawn } : {}),
       ...(points ? { openPoints: SKETCH_POINTS_SAMPLE, pointsClosed: pointsOpen !== true } : {}),
       ...(multi === 'three' || multi === 'many' ? sketchMultiSampleOf(multi) : {}),

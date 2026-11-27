@@ -344,6 +344,26 @@
           >
         </div>
       }
+      @if (!editHolding() && blankDrawing()) {
+        <div
+          class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-space-1 text-center"
+          data-sk-drawing-empty
+        >
+          <span class="flex items-center gap-space-2 text-(length:--text-sm) text-et-surface-text">
+            <span class="size-1.5 animate-pulse rounded-full bg-(--et-tone-fill)"></span>
+            @if (agent(); as run) {
+              <span class="flex items-center gap-space-1"
+                ><svg [agent]="run.by.agent" class="size-3 flex-none" ethlete-agent-logo></svg>{{ run.by.short }}</span
+              >
+            }
+            {{ LABELS.drawingPart(part()) }}
+          </span>
+          @if (agent()?.since; as since) {
+            <span class="text-ui-sm text-et-surface-text-muted" data-sk-drawing-since>{{ since }}</span>
+          }
+          <span class="text-ui-sm text-et-surface-text-muted">{{ LABELS.drawingHint }}</span>
+        </div>
+      }
     </div>
     <div
       [class.bottom-16]="foldedStates().size > 0"
