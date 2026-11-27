@@ -1,5 +1,6 @@
 import { definePart, drawing, html, withAction } from '@design-system';
 import button from '@system/components/button';
+import { icon } from '@system/foundations/icons';
 import { studioMark } from '@system/foundations/logo';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
 import { START_LABELS, StartBase, StartColors } from '../../../../../apps/ethlete-studio/src/app/i18n/start-labels';
@@ -84,7 +85,7 @@ const noProducts = (copy: string, repo: string, known: string[], questions: stri
   );
 
 export default definePart<Props>({
-  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, then whether the product inherits from the Ethlete SDK (Erbt vom SDK or Eigenständig, none pressed by default: without an answer the prompt says nothing about a base), and gives an example prompt for the agent that carries the answers, and a copy button; Studio text names no CLI command. With a repo open, Anderes Repo is a text button in the shared toolbar at the bottom centre (the header has no button). While a picked folder is being added, Repo öffnen and Anderes Repo are the SDK busy button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
+  note: 'The start page before a product exists, without the shell: the section bubbles mean nothing without a product. Only the mark and a centred card in the same shape as the empty Flows and System pages. Without a repo the card asks to open a checkout; with a repo but no products it asks for the colour base (Hell, Dunkel or Beides, Beides by default) and the accent (five named swatches, Rot by default) as outline toggle buttons, then whether the product inherits from the Ethlete SDK (Erbt vom SDK or Eigenständig, none pressed by default: without an answer the prompt says nothing about a base), and gives an example prompt for the agent that carries the answers, and a copy button; Studio text names no CLI command. With a repo open, Anderes Repo is a folder icon button with a tooltip in the shared toolbar at the bottom centre (the header has no button). While a picked folder is being added, Repo öffnen and Anderes Repo is the SDK busy icon button (loading: busy): the spinner covers the label, the button is disabled and aria-busy and takes no second click; that state belongs to components/button (ADR 0331). When Studio knows other repos, both cards list them under Zuletzt geöffnet as small outline buttons that switch without a folder dialog (ADR 0419).',
   madeBy: ['claude-opus-5-5', 'design check'],
   implements: { route: '/', component: 'apps/ethlete-studio/src/app/design-parts/start/start.component.ts' },
   widths: [1440],
@@ -160,7 +161,9 @@ export default definePart<Props>({
     const open = await button.render({ label: START_LABELS.openRepo, variant: 'filled', loading: busy });
     const copy = await button.render({ label: START_LABELS.copyPrompt, variant: 'outline', size: 'sm' });
     const other = await button.render({
-      label: START_LABELS.otherRepo,
+      iconOnly: true,
+      icon: icon('folder', { size: 16 }),
+      ariaLabel: START_LABELS.otherRepo,
       variant: 'transparent',
       color: 'surface',
       size: 'sm',
