@@ -1,6 +1,6 @@
 import { chromium, type Browser } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { EMIT_WAIT_MS, watchMutations } from './action-press';
+import { watchMutations } from './action-press';
 import {
   awaitEmitted,
   LiveControl,
@@ -254,21 +254,31 @@ describe('awaitEmitted', () => {
     const page = await browser.newPage();
 
     await page.setContent(`<div id="busy"></div><script>
-      window.__etDesignEmits = [];
+      window.__etDesignEmits = [{ output: 'go' }];
       setInterval(() => (document.getElementById('busy').textContent = String(Math.random())), 5);
-      setTimeout(() => window.__etDesignEmits.push({ output: 'go' }), 60);
     </script>`);
     await watchMutations(page);
 
-    const start = Date.now();
+    const outcomes: ('fired' | 'timed out')[] = [];
+    const waitForFunction = page.waitForFunction.bind(page) as (...args: unknown[]) => Promise<unknown>;
+
+    page.waitForFunction = ((...args: unknown[]) => {
+      const waiting = waitForFunction(...args);
+
+      if (outcomes.length === 0) {
+        waiting.then(
+          () => outcomes.push('fired'),
+          () => outcomes.push('timed out'),
+        );
+      }
+
+      return waiting;
+    }) as typeof page.waitForFunction;
 
     await awaitEmitted(page, 'go');
-
-    const waited = Date.now() - start;
-
     await page.close();
 
-    expect(waited).toBeLessThan(EMIT_WAIT_MS - 100);
+    expect(outcomes[0]).toBe('fired');
   });
 }, 30_000);
 
