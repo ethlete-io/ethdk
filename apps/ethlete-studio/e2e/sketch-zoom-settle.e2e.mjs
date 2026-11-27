@@ -92,7 +92,8 @@ if (!valueOf('--project')) {
 }
 
 // WebKit takes longer than the 150 ms wheel idle to screenshot, so the preview settles before its shot unless
-// timers that come due while the shot is taken wait until it is done.
+// delayed timers that come due while the shot is taken wait until it is done. Zero-delay timers still run: Angular
+// renders through them, and holding them left the probe a stale preview on the Mac.
 const holdableTimers = () => {
   if (window.__timerHold) return;
   const hold = { on: false, due: new Map() };
@@ -102,7 +103,7 @@ const holdableTimers = () => {
   window.__timerHold = hold;
   window.setTimeout = (callback, delay, ...rest) => {
     const run = () => (typeof callback === 'function' ? callback(...rest) : undefined);
-    const id = setTimer(() => (hold.on ? hold.due.set(id, run) : run()), delay);
+    const id = setTimer(() => (hold.on && delay > 0 ? hold.due.set(id, run) : run()), delay);
 
     return id;
   };
