@@ -46,3 +46,10 @@ export const RoundedEnd: Story = {
     roundedEnd: true,
   },
 };
+
+export const Rtl: Story = {
+  beforeEach: () => {
+    document.documentElement.dir = 'rtl';
+    return () => document.documentElement.removeAttribute('dir');
+  },
+};

@@ -39,6 +39,14 @@
         & .et-icon--et-chevron {
           transform: rotate(-90deg);
         }
+
+        &:dir(rtl) {
+          transform: translateX(10px);
+
+          & .et-icon--et-chevron {
+            transform: rotate(90deg);
+          }
+        }
       }
 
       & .et-scrollable-button--end {
@@ -48,6 +56,14 @@
 
         & .et-icon--et-chevron {
           transform: rotate(90deg);
+        }
+
+        &:dir(rtl) {
+          transform: translateX(-10px);
+
+          & .et-icon--et-chevron {
+            transform: rotate(-90deg);
+          }
         }
       }
     }

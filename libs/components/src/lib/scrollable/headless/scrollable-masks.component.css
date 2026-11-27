@@ -59,6 +59,23 @@
       left top,
       right top;
     mask-repeat: no-repeat;
+
+    &:dir(rtl) {
+      mask-image:
+        linear-gradient(
+          to left,
+          transparent 0,
+          #000 var(--_et-scrollable-mask-start),
+          #000 calc(100% - var(--_et-scrollable-mask-end)),
+          transparent 100%
+        ),
+        linear-gradient(#000 0 0), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+      mask-position:
+        right top,
+        right bottom,
+        right top,
+        left top;
+    }
   }
 
   .et-scrollable[direction='vertical'].et-scrollable--masked.et-scrollable--can-scroll

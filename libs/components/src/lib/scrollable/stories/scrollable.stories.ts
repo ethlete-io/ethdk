@@ -353,3 +353,11 @@ export const OnClassBackgroundCard: Story = {
 export const OnImageBackgroundCard: Story = {
   args: { card: 'image', renderScrollbars: true },
 };
+
+export const Rtl: Story = {
+  args: { renderMasks: true, renderNavigation: true },
+  beforeEach: () => {
+    document.documentElement.dir = 'rtl';
+    return () => document.documentElement.removeAttribute('dir');
+  },
+};

@@ -117,6 +117,10 @@
     background: var(--_et-progress-bar-track-color);
   }
 
+  .et-progress-bar__track:dir(rtl) {
+    transform: scaleX(-1);
+  }
+
   .et-progress-bar__bar {
     position: absolute;
     top: 0;
