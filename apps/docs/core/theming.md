@@ -262,22 +262,20 @@ the page resolves `card`; register an `elevation: 2` surface as well if panels n
 
 A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 
-| Field                 | Type                             | Required | Description                                                                                                          |
-| --------------------- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `name`                | `string`                         | yes      | Becomes the scope class `et-surface--<name>`.                                                                        |
-| `type`                | `'light' \| 'dark'`              | yes      | The elevation family.                                                                                                |
-| `elevation`           | `number`                         | yes      | Integer; `etAutoSurface` resolves `elevation + 1`.                                                                   |
-| `isDefault`           | `boolean`                        | no       | Exactly one per `type`; paints `:root`.                                                                              |
-| `background`          | `"R G B"`                        | yes      | Surface background.                                                                                                  |
-| `color`               | `"R G B"`                        | yes      | Primary text.                                                                                                        |
-| `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                      |
-| `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                       |
-| `border`              | `"R G B"`                        | yes      | Border color.                                                                                                        |
-| `tint`                | `"R G B"`                        | no       | The source hover and pressed feedback mixes in. Unset: the surrounding surface's tint, else the surface text.        |
-| `controlText`         | `"R G B"` per state              | no       | The text of a neutral control per state - see below.                                                                 |
-| `colorThemeVariants`  | `{ <chosen theme>: <theme> }`    | no       | Swaps a chosen accent for a version that reads well on this surface - see [colors per surface](#colors-per-surface). |
-| `semanticColorThemes` | `{ success?, warning?, error? }` | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
-| `colorTheme`          | color theme name                 | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
+| Field                | Type                          | Required | Description                                                                                                          |
+| -------------------- | ----------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`               | `string`                      | yes      | Becomes the scope class `et-surface--<name>`.                                                                        |
+| `type`               | `'light' \| 'dark'`           | yes      | The elevation family.                                                                                                |
+| `elevation`          | `number`                      | yes      | Integer; `etAutoSurface` resolves `elevation + 1`.                                                                   |
+| `isDefault`          | `boolean`                     | no       | Exactly one per `type`; paints `:root`.                                                                              |
+| `background`         | `"R G B"`                     | yes      | Surface background.                                                                                                  |
+| `color`              | `"R G B"`                     | yes      | Primary text.                                                                                                        |
+| `colorMuted`         | `"R G B"`                     | yes      | Secondary text.                                                                                                      |
+| `colorSubtle`        | `"R G B"`                     | yes      | Tertiary text.                                                                                                       |
+| `border`             | `"R G B"`                     | yes      | Border color.                                                                                                        |
+| `tint`               | `"R G B"`                     | no       | The source hover and pressed feedback mixes in. Unset: the surrounding surface's tint, else the surface text.        |
+| `controlText`        | `"R G B"` per state           | no       | The text of a neutral control per state - see below.                                                                 |
+| `colorThemeVariants` | `{ <chosen theme>: <theme> }` | no       | Swaps a chosen accent for a version that reads well on this surface - see [colors per surface](#colors-per-surface). |
 
 `controlText` is the text of a neutral control per state
 (`{ default, hover?, focus?, active?, disabled? }`); only `default` is required, a missing `focus` falls back to
@@ -361,42 +359,17 @@ generated CSS also records a color theme's `type` as `--et-color-theme-type` and
 
 ### Injectors
 
-| Function                                                             | Returns                                                                                                                                                 |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `injectSurfaceThemes()`, `injectColorThemes()`                       | Every registered theme.                                                                                                                                 |
-| `injectDefaultSurfaceTheme(type?)`                                   | The `isDefault` surface theme of the only registered type, or of the `type` you name (an app with both has to say which).                               |
-| `injectRootSurfaceTheme()`                                           | A signal with the default `:root` paints now; follows [`provideColorScheme()`](#switching-light-and-dark).                                              |
-| `injectSurfaceType()`                                                | A signal with the `'light' \| 'dark'` a subtree renders on: the surrounding provider's, or the default's; `null` when none resolves.                    |
-| `injectParentSurface()`                                              | A signal with the whole `SurfaceTheme` a subtree renders on. In an app with a default per type it is `null` unless the app adds `provideColorScheme()`. |
-| `injectColorScheme()`                                                | The scheme switch of [`provideColorScheme()`](#switching-light-and-dark).                                                                               |
-| `injectSemanticColorTheme(type)`                                     | A signal with the theme of that `type`, swapped for the surface - see [semantic themes](#semantic-themes).                                              |
-| `injectDefaultColorTheme()`                                          | The `isDefault` color theme; throws without one. A fallback for a shared component with no themed ancestor.                                             |
-| `injectColorPalette()`, `injectSurfaceColorPalette()`                | The curated palette - see [offering colors to a user](#offering-colors-to-a-user).                                                                      |
-| `injectErrorTheme()`, `injectWarningTheme()`, `injectSuccessTheme()` | **Deprecated.** They return the theme once and ignore the surface; use `injectSemanticColorTheme()`.                                                    |
+| Function                                              | Returns                                                                                                     |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `injectSurfaceThemes()`, `injectColorThemes()`        | Every registered theme.                                                                                     |
+| `injectColorScheme()`                                 | The scheme switch of [`provideColorScheme()`](#switching-light-and-dark).                                   |
+| `injectSemanticColorTheme(type)`                      | A signal with the theme of that `type`, swapped for the surface - see [semantic themes](#semantic-themes).  |
+| `injectDefaultColorTheme()`                           | The `isDefault` color theme; throws without one. A fallback for a shared component with no themed ancestor. |
+| `injectColorPalette()`, `injectSurfaceColorPalette()` | The curated palette - see [offering colors to a user](#offering-colors-to-a-user).                          |
 
 A `ProvideSurfaceDirective` with nothing above it and no surface set resolves the default, so a single-scheme app's
 `elevation()` and `surfaceType()` describe its real root surface. A nested provider left unset paints nothing but
-reports what it inherits: `activeTheme()` walks up to the closest provider that resolves a surface. Use
-`injectParentSurface()` to derive an elevation relative to the surrounding surface:
-
-```ts
-private parentSurface = injectParentSurface();
-private themes = injectSurfaceThemes({ optional: true });
-
-private mySurface = computed(() => {
-  const parent = this.parentSurface();
-
-  if (!this.themes || !parent) return null;
-
-  return resolveSurfaceByElevation(this.themes, parent.type, parent.elevation + 1);
-});
-```
-
-Code that needs the surface of an open overlay (pickers rendering into overlays) uses
-`provideSurfaceContextTracker()` / `injectSurfaceContextTracker()`: each open overlay registers its surface `type`
-and `elevation` with its pane element, and `surfaceForElement(host)` returns the surface of the innermost overlay
-whose pane **contains** `host`, or `null` outside every open overlay. A layer outside every pane (the notification
-stack) resolves its own surface, so it never re-shades while it is on screen.
+reports what it inherits: `activeTheme()` walks up to the closest provider that resolves a surface.
 
 ### The `surface` color
 
@@ -473,12 +446,6 @@ variant as an ordinary color theme without a `type`, so the type lookup stays un
 Content in an overlay panel follows the surface the panel paints, not the one its trigger sits on. Where no surface
 sits above, the default root surface swaps. `:root` has no surface element, so `provideColorScheme()` paints the swap
 of the default accent on `<html>`. Without it, put an `[etProvideSurface]` at the app root.
-
-`colorTheme` and `semanticColorThemes` are deprecated and still work: `colorTheme: X` acts as an entry for the
-`isDefault` theme, `semanticColorThemes: { success: X }` as one for the theme with `type: 'success'`. An entry in
-`colorThemeVariants` wins over both. The optional `nx g @ethlete/core:migrate-color-theme-variants` converts them
-(`et update` does not run it); it reports a value it cannot convert, such as a variable, and leaves it. Pass
-`--projects` or `--include <path prefix>` to migrate one app at a time.
 
 ### Offering colors to a user
 
@@ -628,9 +595,12 @@ a {
 
 ### Migrating from runtime theming
 
-`provideColorThemes(themes)` (without the `WithTailwind4` suffix) is the previous, Tailwind-v3-era system: it
-injects `<style>` tags at runtime instead of generating CSS at build time. It - along with its helpers
-(`createThemeStyle`, `createTailwindColorThemes`, …) - is **deprecated** with intent to remove in v6.
+`provideColorThemes(themes)` (without the `WithTailwind4` suffix) was the previous, Tailwind-v3-era system: it
+injected `<style>` tags at runtime instead of generating CSS at build time. It is removed, along with its helpers
+(`createThemeStyle`, `createTailwindColorThemes`, ...), the deprecated `injectErrorTheme()`, `injectWarningTheme()` and
+`injectSuccessTheme()` (use `injectSemanticColorTheme()`), and the deprecated `SurfaceTheme.colorTheme` and
+`semanticColorThemes` (use `colorThemeVariants`). `et update` migrates them: `legacy-color-themes` and
+`migrate-semantic-color-theme-injects` are required from `5.0.0-next.81`.
 
 The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) is the type the generators read.
 `yarn nx g @ethlete/core:migrate-legacy-color-themes` does step 2 and writes the rest as a checklist: it rewrites
@@ -655,4 +625,4 @@ task for an agent.
 
 4. **The app's own CSS.** The primary swatch is emitted on every `.et-color--<name>` scope as the [tone tokens](#tone-tokens). Read those instead of `rgb(var(--et-color-primary))`. The `secondary` and `tertiary` swatches keep their `--et-color-*` names, and the `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-tone-fill` there.
 
-The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: that call is the step above.
+The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: `et update` migrates that call.
