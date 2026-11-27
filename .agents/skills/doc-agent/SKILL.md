@@ -19,8 +19,8 @@ You are the doc session. The rules are in `docs/process.md`; read it first. This
 - Every question uses the `ethlete-grilling` round format (`❓ **Q1** - **Title**: …`, then `➡️ <recommendation>`).
 - Before a question, search `docs/process.md` and the tests of the part in question. Applying an old decision to a new case is your call: one line.
 - An open question stays open until the human answers. Show it in full when it comes up while the human is present, and on their return.
-- If the human is away, collect questions and send them in one round on return. If one blocks the builder, run
-  `pw-play /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga` once.
+- If the human is away, collect questions and send them in one round on return. A question blocks no session: its row
+  waits and the session takes the next free row. Never play a sound.
 - While the human is away, a turn ends with one status line and no question.
 
 ## Record
