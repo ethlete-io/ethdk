@@ -108,3 +108,31 @@ export const unknownCommitCheckoutsOf = (options: {
 };
 
 export const gitHasCommitArgs = (sha: string) => ['cat-file', '-e', `${sha}^{commit}`];
+
+const parentOf = (path: string) => path.replace(/[\\/][^\\/]*$/, '');
+
+const extendsMain = (checkout: string, main: string) => {
+  const rest = checkout.startsWith(main) ? checkout.slice(main.length) : '';
+
+  return /^[\\/]/.test(rest) || /^[-_.][^\\/]*$/.test(rest);
+};
+
+/**
+ * The main checkout a deleted checkout is filed under, from the repositories holding one of its commits:
+ * the only holder, else the holder whose folder the checkout sits in or whose folder name it extends
+ * (`app` for `app-fab`), the longest one winning, else the only holder in the checkout's parent folder.
+ */
+export const mainOfDeletedCheckout = (options: { checkout: string; holders: readonly string[] }) => {
+  const holders = options.holders.map(trimmedPath);
+
+  if (holders.length <= 1) return holders[0];
+
+  const checkout = trimmedPath(options.checkout);
+
+  const extended = holders.filter((main) => extendsMain(checkout, main)).sort((a, b) => b.length - a.length)[0];
+  if (extended) return extended;
+
+  const siblings = holders.filter((main) => parentOf(main) === parentOf(checkout));
+
+  return siblings.length === 1 ? siblings[0] : undefined;
+};

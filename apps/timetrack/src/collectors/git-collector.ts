@@ -10,6 +10,7 @@ import {
   gitHasCommitArgs,
   gitWorktreeArgs,
   linkedWorktreesOf,
+  mainOfDeletedCheckout,
   parseGitWorktrees,
   readRepoKey$,
   resolveLocalOrigins,
@@ -322,8 +323,8 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   /**
-   * Files a checkout that stored commits name but that no longer exists under the one discovered
-   * repository holding those commits. A commit two repositories hold leaves the checkout unfiled.
+   * Files a checkout that stored commits name but that no longer exists under the discovered repository
+   * holding those commits, picked by `mainOfDeletedCheckout` when clones hold them too.
    */
   const learnDeletedWorktrees = (events: readonly CollectedEvent[]) => {
     const found = discovery();
@@ -344,8 +345,8 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
           from(mains).pipe(
             concatMap((main) => hasCommit$(main, sha).pipe(map((held) => (held ? main : null)))),
             toArray(),
-            map((holders) => holders.filter((main): main is string => !!main)),
-            map((holders) => (holders.length === 1 ? { [checkout]: holders[0] } : {})),
+            map((holders) => mainOfDeletedCheckout({ checkout, holders: holders.filter((main) => main !== null) })),
+            map((main) => (main ? { [checkout]: main } : {})),
           ),
         ),
         toArray(),
