@@ -11,6 +11,7 @@ import {
   finished,
   openFrame,
   sendShot,
+  ShotFailedError,
 } from './thumb';
 import { withRunSignal } from './run-abort';
 
@@ -558,7 +559,7 @@ describe('finished', () => {
 });
 
 describe('sendShot', () => {
-  const answer = (png: string, tag?: string) =>
+  const answer = (png: string | Error, tag?: string) =>
     new Promise<{ status: number; headers: Record<string, string>; body: unknown }>((done) => {
       const headers: Record<string, string> = {};
       const response = {
@@ -568,7 +569,10 @@ describe('sendShot', () => {
       };
       const req = { headers: tag ? { 'if-none-match': tag } : {} } as IncomingMessage;
 
-      sendShot(Object.assign(response, { req }) as unknown as ServerResponse, Promise.resolve(Buffer.from(png)));
+      sendShot(
+        Object.assign(response, { req }) as unknown as ServerResponse,
+        typeof png === 'string' ? Promise.resolve(Buffer.from(png)) : Promise.reject(png),
+      );
     });
 
   it('tags a picture with its content, answers 304 to the same tag and the new picture after an edit', async () => {
@@ -584,5 +588,16 @@ describe('sendShot', () => {
     expect(edited.status).toBe(200);
     expect(edited.headers['etag']).not.toBe(tag);
     expect(String(edited.body)).toBe('after edit');
+  });
+
+  it('sends the failure text of a drawn error frame in x-et-error on the 500 picture', async () => {
+    const failed = await answer(
+      new ShotFailedError('Cannot find module\n  "@x/logo" \u00e4' + 'y'.repeat(400), Buffer.from('png')),
+    );
+
+    expect(failed.status).toBe(500);
+    expect(failed.headers['content-type']).toBe('image/png');
+    expect(failed.headers['x-et-error']).toMatch(/^Cannot find module "@x\/logo" \?y+$/);
+    expect(failed.headers['x-et-error']).toHaveLength(300);
   });
 });

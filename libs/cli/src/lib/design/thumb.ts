@@ -552,6 +552,16 @@ export const noteFailure = <T>(shot: Promise<T>, failed: (failure: { status: num
   return shot;
 };
 
+const ERROR_HEADER_MAX = 300;
+
+/** A failure message as one header-safe line: printable ASCII only, whitespace collapsed, length-capped. */
+export const errorHeaderOf = (message: string) =>
+  message
+    .replace(/\s+/g, ' ')
+    .replace(/[^\x20-\x7e]/g, '?')
+    .trim()
+    .slice(0, ERROR_HEADER_MAX);
+
 export const SHOT_MAX_AGE_S = 3600;
 
 /**
@@ -580,12 +590,10 @@ export const sendShot = (response: ServerResponse, shot: Promise<Buffer | { png:
     (error: unknown) => {
       const failure = failureOf(error);
 
-      send(
-        response,
-        error instanceof ShotFailedError
-          ? { status: 500, type: 'image/png', body: error.png }
-          : { status: failure.status, type: 'text/plain; charset=utf-8', body: failure.message },
-      );
+      if (error instanceof ShotFailedError) {
+        response.setHeader('x-et-error', errorHeaderOf(error.message));
+        send(response, { status: 500, type: 'image/png', body: error.png });
+      } else send(response, { status: failure.status, type: 'text/plain; charset=utf-8', body: failure.message });
     },
   );
 
