@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.53
+
+### Patch Changes
+
+- `et design sketch new` asks for a state per case the old design or the brief shows of the part before ready.
+
 ## 3.0.0-next.52
 
 ### Minor Changes
