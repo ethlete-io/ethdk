@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { cpSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { copyPart } from './copy-part.mjs';
 import { withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -14,9 +15,13 @@ const project = valueOf('--project') ? resolve(valueOf('--project')) : root;
 
 process.env['DE_PORT'] ??= '4483';
 
+const FIXTURE_TARGET = 'components/comment-draft';
+const WIDTH_CLASS = ['w-80', 'w-72'];
+const DROPPED_STATE = "    busy: { text: 'Tonal wirkt neben filled zu blass.', phase: 'busy' },\n";
+
 const VIEW = {
   systemProduct: valueOf('--product') ?? 'studio',
-  systemEntry: valueOf('--entry') ?? 'sketch:pages/system',
+  systemEntry: valueOf('--entry') ?? `sketch:${FIXTURE_TARGET}`,
 };
 const CELLS_TIMEOUT_MS = 180000;
 const SETTLE_MS = 1500;
@@ -33,6 +38,44 @@ for (const entry of readdirSync(project)) {
   if (entry !== '.ethlete' && entry !== '.git') symlinkSync(join(project, entry), join(checkout, entry));
 }
 cpSync(join(project, '.ethlete/design'), join(checkout, '.ethlete/design'), { recursive: true });
+
+if (!valueOf('--project')) {
+  const studioDir = join(checkout, '.ethlete/design/studio');
+  const sketchFolder = join(studioDir, 'sketches', FIXTURE_TARGET.replace('/', '-'));
+
+  rmSync(join(studioDir, 'sketches'), { recursive: true, force: true });
+
+  for (const variant of ['a', 'b']) {
+    mkdirSync(join(sketchFolder, variant, dirname(FIXTURE_TARGET)), { recursive: true });
+    copyPart(join(studioDir, FIXTURE_TARGET), join(sketchFolder, variant, FIXTURE_TARGET));
+  }
+
+  const variantFiles = ['a', 'b'].map((variant) => join(sketchFolder, variant, FIXTURE_TARGET, 'comment-draft.ts'));
+
+  for (const file of variantFiles) {
+    const source = readFileSync(file, 'utf8');
+    const shorter = source.replace('rows: 3', 'rows: 1');
+    const changed = file === variantFiles[1] ? shorter.replace(...WIDTH_CLASS).replace(DROPPED_STATE, '') : shorter;
+
+    if (!source.includes('rows: 3') || !source.includes(WIDTH_CLASS[0]) || !source.includes(DROPPED_STATE))
+      throw new Error(`${file}: fixture drifted`);
+    writeFileSync(file, changed);
+  }
+  writeFileSync(
+    join(sketchFolder, 'sketch.json'),
+    JSON.stringify({
+      target: FIXTURE_TARGET,
+      targets: [FIXTURE_TARGET],
+      status: 'ready',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      rounds: [{ key: 'r1', title: '', note: 'sketch-zoom-settle e2e' }],
+      variantInfo: {
+        a: { authors: ['sketch-zoom-settle-e2e'], round: 'r1' },
+        b: { authors: ['sketch-zoom-settle-e2e'], round: 'r1' },
+      },
+    }),
+  );
+}
 
 const openView = async ({ page, studioUrl }) => {
   await page.goto(studioUrl);
