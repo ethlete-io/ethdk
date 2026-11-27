@@ -158,6 +158,10 @@ const FIT_PASSES = 6;
 
 const FIT_SETTLED = 0.002;
 
+// A new stroke width re-styles the whole sketch (WebKit, 100 cells: about 100 ms), so a zoom preview moves it only in
+// steps of this ratio; the drawn stroke stays within 0.2 px of its settled 1 px.
+const STROKE_STEP = Math.log(1.4);
+
 type FitDom = {
   columns: number;
   blocks: number;
@@ -525,7 +529,9 @@ export class SketchesComponent {
   private settledScale = computed(() => this.canvas.preview()?.zoom ?? this.scale());
   private previewScale = computed(() => this.canvas.preview()?.scale ?? 1);
   protected chromeZoom = computed(() => (this.canvas.preview() ? 1 / this.previewScale() : null));
-  protected strokeWidth = computed(() => `${1 / this.previewScale()}px`);
+  protected strokeWidth = computed(
+    () => `${Math.exp(-Math.round(Math.log(this.previewScale()) / STROKE_STEP) * STROKE_STEP)}px`,
+  );
   protected chromeSpace = computed(() => {
     const scale = this.canvas.preview()?.scale;
 

@@ -36,12 +36,13 @@
     [class.opacity-50]="dimmed()"
     class="relative overflow-clip @container-size [overflow-clip-margin:8px]"
   >
+    <!-- A zoom preview changes --sk-stroke; inherited into the shot it re-styles all of it, in WebKit every frame. -->
     <div
       [style.width.px]="width()"
       [style.height.px]="shownHeight()"
       [style.transform]="'scale(' + scale() + ')'"
       [class.overflow-hidden]="!!crop()"
-      class="pointer-events-none origin-top-left"
+      class="pointer-events-none origin-top-left [--sk-stroke:initial]"
       data-sk-fit-inner
     >
       <div
