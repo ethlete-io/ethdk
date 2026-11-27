@@ -625,6 +625,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-overlay-sidebar-scroller',
   'et-overlay-template-host',
   'et-page-size-select-host',
+  'et-pagination-arrow',
   'et-pagination-button',
   'et-pagination-button--control',
   'et-pagination-ellipsis',
