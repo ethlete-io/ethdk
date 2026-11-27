@@ -34,6 +34,7 @@ import { SHARD_WEIGHTS_FILE } from './shard-weights.mjs';
 import { FRAME, measureZoom, ZOOM_BUDGET, zoomP50BudgetOf } from './zoom-budget.mjs';
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
+import { workerCountOf } from './worker-count.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
 import { argvCheckOf, CANVAS_OPTIONS, usageOf } from './cli-options.mjs';
 
@@ -7132,13 +7133,7 @@ const buildStudioAsync = (outputPath) =>
     child.on('exit', (code) => done(code ?? 1));
   });
 
-const workerCount = () => {
-  const asked = Number(
-    args.includes('--workers') ? args[args.indexOf('--workers') + 1] : process.env['STUDIO_E2E_WORKERS'],
-  );
-
-  return asked >= 1 ? Math.floor(asked) : Math.max(1, Math.min(8, Math.floor(availableParallelism() / 4)));
-};
+const workerCount = () => workerCountOf({ args, env: process.env, cores: availableParallelism() });
 
 const lead = async () => {
   // macOS Maintenance Sleep freezes every process mid-run and reads as a design server stall.

@@ -41,7 +41,6 @@ Geparkt: B735 Implementierung bei App-Änderung (26.11. Queue auf 15 gekürzt): 
 Geparkt: B812 Heavy-Lock blockiert Studio-Checks (B793 26.11. 16:05, Suspect): Studio-Checks warten über /tmp/fifagg-heavy.lock 30+ min hinter anderen Repos; Flows-e2e starb danach mit Exit 137, Ursache nicht gemessen.
 Geparkt: B813 Subagent-Befehl überlebt TaskStop (nach B811, 26.11. 16:05, Suspect): pid 3699617, ein Flows-Check des beendeten B793-Agents, hing an systemd ohne ET_AGENT_ID und wartete weiter auf den Heavy-Lock; der Builder stoppte ihn von Hand.
 Geparkt: B799b Chrome-Leck in den Studio-Apps messen (26.11. 16:30 für Tempo-Plan geparkt): Die Chrome-Zahl pro Design-Server bleibt flach, während Tom Studio nutzt; die Ursache der 434 (:4402-Dev-App) und 298 (tomflix-App) ist gemessen und behoben.
-Geparkt: B800 Studio-e2e lokal mit 2 Workern (26.11. 16:30 für Tempo-Plan geparkt): `yarn studio:e2e` startet lokal ohne `--workers` höchstens 2 Worker; CI behält seine Zahl.
 Geparkt: B805 Sketch „zeichnet“: besserer Leer-Zustand (26.11. 16:30 für Tempo-Plan geparkt): Ein Sketch, an dem ein Agent noch zeichnet und der noch keinen Frame hat, zeigt auf der Fläche klar, was passiert (wer zeichnet, an welchem Part, seit wann, was als Nächstes kommt) statt nur eines kleinen „zeichnet“ in der Mitte.
 
 Geparkt: B772 Select: fehlende Zustände (26.11. ~23:45, Mensch: Platz für B837/B838): sdk components/select bekommt die 4 fehlenden Zustände (select.open, select.option-hover, select.option-focus-visible, select.option-selected), damit `design ready` das Teil wieder markiert.
