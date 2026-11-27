@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
+import { toolbarSystemViolationsOf } from '../sketch-head/toolbar-system';
 import { InventoryPageComponent, InventoryPageEntry } from './inventory-page.component';
 
 const PAGES: InventoryPageEntry[] = [
@@ -47,7 +48,7 @@ const render = async (inputs: Record<string, unknown>) => {
   const element = fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
     [...element.querySelectorAll<HTMLButtonElement>('button')].find(
-      (candidate) => candidate.textContent?.trim() === label,
+      (candidate) => (candidate.getAttribute('aria-label') ?? candidate.textContent?.trim()) === label,
     );
   const text = (selector: string) =>
     [...element.querySelectorAll(selector)].map((node) =>
@@ -115,8 +116,10 @@ describe('InventoryPageComponent', () => {
   it('shows Neu laden in the shared toolbar and no button in the aside header', async () => {
     const { element } = await render({});
 
-    expect(element.querySelectorAll('aside:has(h2) > header button')).toHaveLength(0);
-    expect(element.querySelector('ethlete-sketch-head [role="toolbar"]')?.textContent).toContain('Neu laden');
+    expect(toolbarSystemViolationsOf(element)).toEqual([]);
+    expect(element.querySelector('ethlete-sketch-head [role="toolbar"] button')?.getAttribute('aria-label')).toBe(
+      'Neu laden',
+    );
   });
 
   it('shows only the drawing note and blocks reload while loading', async () => {

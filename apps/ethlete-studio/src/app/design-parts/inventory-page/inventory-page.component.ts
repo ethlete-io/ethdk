@@ -11,7 +11,7 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { injectSemanticColorTheme, ProvideColorDirective } from '@ethlete/core';
 import { CanvasViewport, mountCanvasViewport } from '../../components/design-canvas/canvas-viewport';
 import { INVENTORY_LABELS } from '../../i18n/inventory-labels';
@@ -157,15 +157,32 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
             <ethlete-sketch-head [status]="null" class="pointer-events-auto min-w-0" discardable="false">
               <button
                 [disabled]="loading()"
+                [attr.aria-label]="LABELS.reload"
+                [etTooltip]="LABELS.reload"
                 (click)="reload.emit()"
                 sketchHeadExtra
-                et-button
+                et-icon-button
                 type="button"
                 variant="transparent"
                 color="surface"
                 size="sm"
+                data-inventory-reload
               >
-                {{ LABELS.reload }}
+                <svg
+                  class="et-icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M13 8a5 5 0 1 1-1.5-3.6" />
+                  <path d="M13 2.5v2.8h-2.8" />
+                </svg>
               </button>
             </ethlete-sketch-head>
           </div>
@@ -227,6 +244,7 @@ const openCountOf = (page: InventoryPageEntry) => rowsOf(page).filter((row) => r
     ProvideColorDirective,
     ShellPageComponent,
     SketchHeadComponent,
+    TOOLTIP_IMPORTS,
     ZoomChipComponent,
   ],
   host: { class: 'block h-screen w-full' },

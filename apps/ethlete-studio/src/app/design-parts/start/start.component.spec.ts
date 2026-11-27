@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { toolbarSystemViolationsOf } from '../sketch-head/toolbar-system';
 import { StartComponent } from './start.component';
 
 const render = async (repo?: string, busy = false, repos: string[] = [], repoPath?: string) => {
@@ -16,7 +17,7 @@ const render = async (repo?: string, busy = false, repos: string[] = [], repoPat
   const element = fixture.nativeElement as HTMLElement;
   const button = (label: string) =>
     [...element.querySelectorAll<HTMLButtonElement>('button')].find(
-      (candidate) => candidate.textContent?.trim() === label,
+      (candidate) => (candidate.getAttribute('aria-label') ?? candidate.textContent?.trim()) === label,
     );
 
   return { fixture, element, button };
@@ -48,8 +49,10 @@ describe('StartComponent', () => {
     expect(element.textContent).toContain('Lege in mein-monorepo-mit-langem-namen das Produkt shop an');
     expect(button('Repo öffnen')).toBeUndefined();
     expect(emitted).toEqual(['other', 'copy']);
-    expect(element.querySelector('header button')).toBeNull();
-    expect(element.querySelector('ethlete-sketch-head [role="toolbar"]')?.textContent).toContain('Anderes Repo');
+    expect(toolbarSystemViolationsOf(element)).toEqual([]);
+    expect(element.querySelector('ethlete-sketch-head [role="toolbar"] button')?.getAttribute('aria-label')).toBe(
+      'Anderes Repo',
+    );
   });
 
   it('asks for the colour base and the accent and copies a prompt with both answers', async () => {

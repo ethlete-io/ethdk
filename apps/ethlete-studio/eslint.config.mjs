@@ -43,6 +43,7 @@ export default [
       'src/app/components/design-canvas/canvas-viewport.ts',
       'src/app/components/design-canvas/frame-zoom-viewport.ts',
       'src/app/components/design-canvas/pointer-focus.ts',
+      'src/app/design-parts/sketch-head/toolbar-system.ts',
     ],
     rules: {
       'ethlete/no-dom-query': 'off',

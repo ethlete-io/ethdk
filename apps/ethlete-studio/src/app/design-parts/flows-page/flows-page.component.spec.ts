@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { toolbarSystemViolationsOf } from '../sketch-head/toolbar-system';
 import { FLOWS_SAMPLE_DRAFT, FLOWS_SAMPLE_PINS, FlowsPageComponent } from './flows-page.component';
 
 class SilentResizeObserver {
@@ -41,6 +42,12 @@ describe('FlowsPageComponent', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it('keeps its actions in the shared toolbar as icon buttons and none in the head', async () => {
+    const { element } = await render();
+
+    expect(toolbarSystemViolationsOf(element)).toEqual([]);
   });
 
   it('starts at 100 % instead of fitting the flow', async () => {

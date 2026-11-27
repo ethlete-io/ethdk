@@ -1,5 +1,5 @@
 import { booleanAttribute, Component, computed, input, model, output, ViewEncapsulation } from '@angular/core';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 import { SketchHeadComponent } from '../sketch-head/sketch-head.component';
 import { projectEntriesOf } from '../studio-menu/project-entries';
 import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/start-labels';
@@ -28,15 +28,31 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
         <ethlete-sketch-head [status]="null" class="pointer-events-auto min-w-0" discardable="false">
           <button
             [loading]="busy()"
+            [attr.aria-label]="LABELS.otherRepo"
+            [etTooltip]="LABELS.otherRepo"
             (click)="otherRepo.emit()"
             sketchHeadExtra
-            et-button
+            et-icon-button
             type="button"
             variant="transparent"
             color="surface"
             size="sm"
+            data-start-other-repo
           >
-            {{ LABELS.otherRepo }}
+            <svg
+              class="et-icon"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M2.5 4.5a1 1 0 0 1 1-1H6l1.5 1.7h5a1 1 0 0 1 1 1v5.3a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />
+            </svg>
           </button>
         </ethlete-sketch-head>
       </div>
@@ -182,7 +198,7 @@ import { START_LABELS, StartAccent, StartBase, StartColors } from '../../i18n/st
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, SketchHeadComponent],
+  imports: [BUTTON_IMPORTS, SketchHeadComponent, TOOLTIP_IMPORTS],
   host: { class: 'relative flex font-ui h-full min-h-225 w-full flex-col bg-et-surface-background' },
 })
 export class StartComponent {

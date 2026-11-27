@@ -87,7 +87,9 @@ const render = async (
 };
 
 const buttonNamed = (element: HTMLElement, name: string) =>
-  [...element.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === name);
+  [...element.querySelectorAll<HTMLButtonElement>('button')].find(
+    (button) => (button.getAttribute('aria-label') ?? button.textContent?.trim()) === name,
+  );
 
 const marksOf = (element: HTMLElement) => [...element.querySelectorAll<HTMLElement>('figure span.rounded-full')];
 
