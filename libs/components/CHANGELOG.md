@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.103
+
+### Patch Changes
+
+- An empty `et-scrollable` no longer reports that it can scroll, and its hidden buttons no longer widen the page.
+
 ## 1.0.0-next.102
 
 ### Patch Changes

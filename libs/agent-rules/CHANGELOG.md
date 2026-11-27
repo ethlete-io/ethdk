@@ -1,5 +1,24 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.50
+
+### Minor Changes
+
+- Add `codex-limit.mjs` to the codex-subagent skill: it prints the left share and reset time of the Codex 5h and weekly limit and exits non-zero when exhausted, so agents fall back to a Claude subagent.
+- The usage-line mod shows the Codex 5h and weekly limit left, marked when exhausted.
+
+### Patch Changes
+
+- Fix the `codex-runs` and `e2e-progress` mods being refused at load: `atom` keys are now string literals and `$.fs` is no longer passed as a value.
+- `ethlete-agents report` drops the running slice when its `slice-paths` entry is older than 2 hours.
+- The `status-line` mod counts the rows of a queue table under a `# Warteschlange` heading of any level.
+- The usage-line mod draws its usage as plain status line text instead of a pinned plugin notice.
+- Use `agent-sessions restart --process --config <dir>` to switch a Claude session's saved config directory while resuming its handoff.
+- `builder-idle-check` counts a Codex run in a `codex-<task>@<repo>` tmux session as a running subagent.
+- Add a Claude Code pane for Codex run state, duration, and recent output filtered by launching session.
+- `agent-sessions send` records the sender's tmux session, and every mailbox message names it.
+- Add a usage-line Claude Code mod that shows the 5 hour and weekly usage with the reset time in the status line of every session.
+
 ## 0.1.0-next.49
 
 ### Patch Changes
