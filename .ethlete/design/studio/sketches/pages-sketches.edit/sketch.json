@@ -73,7 +73,7 @@
     "components/shell-system-picker": "2b01ab7429b66c53",
     "components/shortcuts-dialog": "65b217b5fcaa69e5",
     "components/skeleton": "4a9b8f56a4d2f51f",
-    "components/sketch-head": "6bc0fa7160f9911e",
+    "components/sketch-head": "577c7596590b930a",
     "components/sketch-status-badge": "56a3677d57193d3d",
     "components/slider": "dead62008c1fd01d",
     "components/standings": "c1c824802ee9fc58",
@@ -105,7 +105,7 @@
     "pages/system": "9822430be1d4da1a",
     "fixtures.ts": "3577047c4437f3a2"
   },
-  "baselineTree": "b4540ebb9b821e39c6469cf7790ccf1f04cab7d1",
+  "baselineTree": "b048db94d4db0c6088a4020b325cf56fbaa2a8c8",
   "editOldCommit": "78d420578da1089d391b1bb84224f648477afd33",
   "sharedBase": {
     "pages/sketches/shared/change-crop.ts": "a2f54ada60b3a2dc",
