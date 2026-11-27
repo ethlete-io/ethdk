@@ -297,6 +297,65 @@ describe('createDrawQueue', () => {
     expect(started).toHaveLength(DRAWS_AT_ONCE + 1);
   });
 
+  it('starts a spare job after the idle jobs asked after it, in the places idle jobs take', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const busy = (name: string) => async () => {
+      started.push(name);
+      await held;
+    };
+    const drawn = [
+      ...['idle 1', 'idle 2'].map((name) => queue.run(busy(name), 'idle')),
+      queue.run(busy('spare'), 'spare'),
+      queue.run(busy('idle 3'), 'idle'),
+    ];
+
+    await vi.waitFor(() => expect(started).toEqual(['idle 1', 'idle 2']));
+    await new Promise((done) => setTimeout(done, 5));
+    expect(started).toEqual(['idle 1', 'idle 2']);
+
+    release();
+    await Promise.all(drawn);
+    expect(started).toEqual(['idle 1', 'idle 2', 'idle 3', 'spare']);
+  });
+
+  it('keeps a running idle job a shown ask joined drawing when a shown shot starts', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const idle = queue.run(async (browser) => {
+      started.push('idle');
+
+      const { signal } = abortingOf(browser);
+
+      await new Promise<void>((done, fail) => {
+        signal?.addEventListener('abort', () => fail(new Error('the context closed')));
+        setTimeout(done, 50);
+      });
+
+      return 'drawn through';
+    }, 'idle');
+
+    await vi.waitFor(() => expect(started).toEqual(['idle']));
+    queue.join(idle, { priority: 'low', rank: 'visible' });
+
+    const shown = queue.run(
+      async () => {
+        started.push('visible');
+        await held;
+      },
+      { priority: 'low', rank: 'visible' },
+    );
+
+    await expect(idle).resolves.toBe('drawn through');
+    expect(started).toEqual(['idle', 'visible']);
+    release();
+    await shown;
+  });
+
   it('starts no idle job while a high job draws', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const started: string[] = [];

@@ -9,6 +9,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { SketchVariant } from '../system-modules';
 import { partHashOf } from './baseline';
 import { ChangeBox } from './change-box';
+import { EDIT_NEW } from './edit-old-base';
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import { overlaySketch } from './overlay';
@@ -145,22 +146,24 @@ const drawsTheSame = async (options: {
   presets: string[] | null;
   state: string;
   sketch: SketchVariant;
+  alongside: SketchVariant | null;
 }) => {
-  const { pictureOf, product, key, part, presets, state, sketch } = options;
+  const { pictureOf, product, key, part, presets, state, sketch, alongside } = options;
 
   try {
     const changes = await Promise.all(
-      framesOf(part, presets).map(async (frame) => {
-        const draw = (drawn: SketchVariant | null, fresh: boolean) =>
-          pictureOf({
-            product,
-            part: key,
-            state,
-            ...frame,
-            sketch: drawn,
-            params: new URLSearchParams(),
-            fresh,
-          });
+      framesOf(part, presets).map(async (frame, index) => {
+        const asked = (drawn: SketchVariant | null) => ({
+          product,
+          part: key,
+          state,
+          ...frame,
+          sketch: drawn,
+          params: new URLSearchParams(),
+        });
+        const draw = (drawn: SketchVariant | null, fresh: boolean) => pictureOf({ ...asked(drawn), fresh });
+
+        if (alongside && index === 0) void pictureOf({ ...asked(alongside), priority: 'spare' }).catch(() => undefined);
 
         const { same, change } = await drawnPair(draw, sketch);
 
@@ -360,6 +363,8 @@ export const unchangedStatesOf = async (options: {
             presets,
             state,
             sketch: { target: sketch.target, variant },
+            alongside:
+              isEditSketch(sketch) && variant === EDIT_OLD ? { target: sketch.target, variant: EDIT_NEW } : null,
           })
         : ({ result: 'different' } as const);
     }),

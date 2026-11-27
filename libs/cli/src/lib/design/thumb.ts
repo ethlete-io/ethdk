@@ -244,7 +244,7 @@ export const heldAnimations = `document.getAnimations()
   .filter((animation) => typeof ScrollTimeline === 'undefined' || !(animation.timeline instanceof ScrollTimeline))
   .forEach((animation) => animation.cancel())`;
 
-export type DrawPriority = 'high' | 'low' | 'idle';
+export type DrawPriority = 'high' | 'low' | 'idle' | 'spare';
 
 /**
  * What one ask wants of a drawing. `view` is a number the asker raises with each view change; the
@@ -277,14 +277,16 @@ export const INSPECT_BROWSER_ARGS = [...DRAW_BROWSER_ARGS, '--disable-frame-rate
 export const DRAWS_AT_ONCE = 8;
 export const IDLE_DRAWS_AT_ONCE = DRAWS_AT_ONCE / 4;
 const IDLE_LANE = 5;
+const SPARE_LANE = 6;
 
 /**
  * One shared headless Chromium, launched on the first ask, that runs up to `DRAWS_AT_ONCE` drawings at once.
  * A waiting `high` drawing runs first; of the `low` ones, those for the active frame of the shown view,
- * then its visible cells, then the rest, then those of views no longer shown, then the `idle` ones, each lane in the
- * order asked. `idle` drawings take at most `IDLE_DRAWS_AT_ONCE` places and none start while a shown shot draws, so a
- * shot the viewer waits for starts at once and shares the CPU with few of them. A shown shot that starts stops the
- * running `idle` drawings; each waits in its lane again and draws anew.
+ * then its visible cells, then the rest, then those of views no longer shown, then the `idle` ones, then the `spare`
+ * ones, each lane in the order asked. `idle` and `spare` drawings together take at most `IDLE_DRAWS_AT_ONCE` places
+ * and none start while a shown shot draws, so a shot the viewer waits for starts at once and shares the CPU with few
+ * of them. A shown shot that starts stops the running `idle` and `spare` drawings no other ask joined; each waits in
+ * its lane again and draws anew.
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
@@ -341,7 +343,7 @@ export const createDrawQueue = (options: {
   const waiting: WaitingDraw[] = [];
   const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
   const drawingLanes: number[] = [];
-  const runningIdle = new Set<AbortController>();
+  const runningIdle = new Map<AbortController, WaitingDraw>();
   let shownView = 0;
 
   const launch = () => {
@@ -374,6 +376,7 @@ export const createDrawQueue = (options: {
     if (shown) return shown;
     if (typeof want.view === 'number' && want.view < shownView) return 4;
     if (want.priority === 'idle') return IDLE_LANE;
+    if (want.priority === 'spare') return SPARE_LANE;
 
     return want.rank === 'active' ? 1 : want.rank === 'visible' ? 2 : 3;
   };
@@ -384,8 +387,8 @@ export const createDrawQueue = (options: {
     while (drawingLanes.length < DRAWS_AT_ONCE && waiting.length > 0) {
       const idleFull =
         drawingLanes.some((lane) => lane <= 2) ||
-        drawingLanes.filter((lane) => lane === IDLE_LANE).length >= IDLE_DRAWS_AT_ONCE;
-      const lanes = waiting.map(entryLaneOf).map((lane) => (idleFull && lane === IDLE_LANE ? Infinity : lane));
+        drawingLanes.filter((lane) => lane >= IDLE_LANE).length >= IDLE_DRAWS_AT_ONCE;
+      const lanes = waiting.map(entryLaneOf).map((lane) => (idleFull && lane >= IDLE_LANE ? Infinity : lane));
       const lane = Math.min(...lanes);
 
       if (lane === Infinity) return;
@@ -397,10 +400,10 @@ export const createDrawQueue = (options: {
 
       const start = { lane, waitedMs: performance.now() - entry.asked, busyLanes: [...drawingLanes] };
 
-      const stop = lane === IDLE_LANE ? new AbortController() : null;
+      const stop = lane >= IDLE_LANE ? new AbortController() : null;
 
-      if (lane <= 2) runningIdle.forEach((running) => running.abort());
-      if (stop) runningIdle.add(stop);
+      if (lane <= 2) runningIdle.forEach((running, stopped) => entryLaneOf(running) >= IDLE_LANE && stopped.abort());
+      if (stop) runningIdle.set(stop, entry);
 
       drawingLanes.push(lane);
       entry.wants.forEach((want) => want.onStart?.(start));
@@ -429,8 +432,6 @@ export const createDrawQueue = (options: {
 
   const add = (entry: WaitingDraw, want: DrawWant) => {
     see(want);
-
-    if (!waiting.includes(entry)) return;
 
     entry.wants.add(want);
 
@@ -512,7 +513,7 @@ export const createDrawQueue = (options: {
 
       return drawn;
     },
-    /** Adds an ask to a drawing `run` returned, so it runs in the best lane any of its asks wants, unless it already started. */
+    /** Adds an ask to a drawing `run` returned, so it runs, or runs again once stopped, in the best lane any of its asks wants. */
     join,
     /** Moves a drawing `run` returned into the high lane, unless it already started. */
     hurry: (drawn: Promise<unknown>) => join(drawn, { priority: 'high' }),

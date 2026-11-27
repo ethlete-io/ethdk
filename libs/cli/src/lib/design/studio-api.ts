@@ -537,7 +537,8 @@ const listingOf = async ({
 
   const { pictureOf } = asked;
   const listingPictureOf: PictureOf | undefined =
-    pictureOf && ((options) => pictureOf({ ...options, priority: 'idle', signal }));
+    pictureOf &&
+    ((options) => pictureOf({ ...options, priority: options.priority === 'spare' ? 'spare' : 'idle', signal }));
 
   const targetsListed = inTurns({ items: sketches, signal }, (sketch) =>
     listOnly

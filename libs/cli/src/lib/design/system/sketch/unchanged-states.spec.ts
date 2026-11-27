@@ -93,6 +93,35 @@ describe('unchangedStatesOf', () => {
     expect(await unchangedStatesOf({ product, sketch, variant: 'new', load: counting().load })).toEqual([]);
   });
 
+  it('draws the edit sketch variant new as spare work at the first frame where it draws old against the product', async () => {
+    const { product } = acme();
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
+      variants: ['new', 'old'],
+    }) as Sketch;
+    const { load: plain } = counting();
+    const load: SketchPartLoader = async (options) => {
+      const loaded = (await plain(options)) as { default: object };
+
+      return { default: { ...loaded.default, widths: [320, 1440] } };
+    };
+    const drawn: string[] = [];
+    const pictureOf: PictureOf = async ({ sketch: on, state, width, priority }) => {
+      drawn.push(`${state}@${width} ${on?.variant ?? 'now'}${priority ? ` ${priority}` : ''}`);
+
+      return { png: Buffer.from(on?.variant ?? 'now'), marks: [] };
+    };
+
+    writeFileSync(resolve(variantDirOf(sketch, 'old'), 'elements', 'hero', 'hero.css'), '.acme-hero { color: red; }');
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'old', load, pictureOf })).toEqual([]);
+    expect(drawn.filter((entry) => entry.includes(' new'))).toEqual(['default@320 new spare']);
+    expect(new Set(drawn.filter((entry) => entry.endsWith(' old')))).toEqual(
+      new Set(['default@320 old', 'default@1440 old']),
+    );
+  });
+
   it('leaves out a state whose demo frame the variant changed', async () => {
     const { product, sketch, hero } = acme();
     const file = resolve(hero, 'hero.ts');
