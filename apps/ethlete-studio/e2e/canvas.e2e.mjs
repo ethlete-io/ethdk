@@ -5115,8 +5115,29 @@ const CASES = [
                 ? after.borderBottomColor
                 : /rgba?\([^)]*\)(?!.*rgba?\()/.exec(style.boxShadow)?.[0];
 
+            const top = document.elementFromPoint((rect.left + rect.right) / 2, rect.bottom - 0.5);
+            const cover =
+              !top || frame.contains(top)
+                ? 'frame'
+                : `${top.tagName.toLowerCase()}${[...top.attributes]
+                    .filter((attribute) => attribute.name.startsWith('data-') || attribute.name === 'role')
+                    .map((attribute) => `[${attribute.name}]`)
+                    .join('')}`;
+            const preview = document.querySelector('ethlete-sketch-view [data-sk-rows] > div')?.style.transform ?? '';
+
             return rect.width >= 20 && rect.bottom + 3 < innerHeight && style.opacity === '1'
-              ? [{ index, left: rect.left, right: rect.right, bottom: rect.bottom, ring }]
+              ? [
+                  {
+                    index,
+                    left: rect.left,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                    ring,
+                    cover,
+                    after: `${after.transform} ${after.borderBottomWidth}`,
+                    preview,
+                  },
+                ]
               : [];
           }),
         );
@@ -5130,6 +5151,12 @@ const CASES = [
             height: 6,
           };
           const png = (await page.screenshot({ clip })).toString('base64');
+          const shotBottom = await page.evaluate(
+            (index) =>
+              document.querySelectorAll('ethlete-sketch-view [data-sk-frame]')[index]?.getBoundingClientRect().bottom ??
+              null,
+            frame.index,
+          );
           const edge = await page.evaluate(
             async ({ png, ring }) => {
               const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
@@ -5156,12 +5183,18 @@ const CASES = [
                 rows.push(Math.round((hits / width) * 100));
               }
 
-              return { closed: rows.some((share) => share >= 80), rows };
+              const middle = (Math.floor(height / 2) * width + Math.floor(width / 2)) * 4;
+              const seen = `rgb(${data[middle]}, ${data[middle + 1]}, ${data[middle + 2]})`;
+
+              return { closed: rows.some((share) => share >= 80), rows, seen, want: `rgb(${r}, ${g}, ${b})` };
             },
             { png, ring: frame.ring },
           );
 
-          if (!edge.closed) open.push(`#${frame.index}@${Math.round(frame.bottom)} rows ${edge.rows.join('/')}%`);
+          if (!edge.closed)
+            open.push(
+              `#${frame.index}@${frame.bottom.toFixed(2)} (after the shot ${shotBottom?.toFixed(2) ?? 'gone'}) rows ${edge.rows.join('/')}% ring ${edge.want} mid ${edge.seen} on top ${frame.cover} after ${frame.after} world ${frame.preview}`,
+            );
         }
 
         return open.join(',');
@@ -5187,6 +5220,11 @@ const CASES = [
       const fitOut = outOfView(fitted, await toolbarRect());
       const fitOpen = await openBottomEdges();
 
+      if (process.env['STUDIO_E2E_FIT_SHOTS'])
+        await page.screenshot({
+          path: join(process.env['STUDIO_E2E_FIT_SHOTS'], `fit-${target.label ?? target.name}.png`),
+        });
+
       const foldCovered = await page.evaluate(() => {
         const fold = document.querySelector('ethlete-sketch-view [data-sk-folded]')?.getBoundingClientRect();
         const bar = document.querySelector('ethlete-sketch-view [data-sk-toolbar]')?.getBoundingClientRect();
@@ -5203,7 +5241,7 @@ const CASES = [
 
       return {
         ok: !shiftOut && !fitOut && !shiftOpen && !fitOpen && !foldCovered && after.camera?.y !== before.camera?.y,
-        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}; open bottom edge after Shift+1: ${shiftOpen || 'none'}; after Fit: ${fitOpen || 'none'}; fold bar: ${foldCovered || 'clear'}`,
+        detail: `${describe(before, after)} view bottom ${Math.round(after.view.bottom)}; out after Shift+1: ${shiftOut || 'none'}; out after Fit: ${fitOut || 'none'}; open bottom edge after Shift+1: ${shiftOpen || 'none'}; after Fit: ${fitOpen || 'none'}; fold bar: ${foldCovered || 'clear'}${fitOpen ? `; ${describe(after, fitted)} at Fit` : ''}`,
       };
     },
   },
