@@ -7183,15 +7183,17 @@ const lead = async () => {
   if (listOnly) {
     const knownMs = queue.reduce((sum, job) => sum + (known[keyOf(job)] ?? 0), 0);
 
-    console.log(
+    const lines = [
       `${queue.length} of ${matched} cases${shardLabel}, ${seconds(knownMs).trim()} by the last local timings${unweightedNote}:`,
-    );
+    ];
     for (const job of queue) {
       const undelayed = delayPicturesMs && CASES[job.case]?.delayPictures === false ? '  [pictures not delayed]' : '';
       const unheld = holdListingsMs && CASES[job.case]?.holdListings === false ? '  [listings not held]' : '';
 
-      console.log(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
+      lines.push(`${seconds(known[keyOf(job)] ?? 0)}  ${job.page.padEnd(9)} ${job.name}${undelayed}${unheld}`);
     }
+    // A pipe stdout is async: exiting before the write drains cuts the listing short.
+    await new Promise((resolve) => process.stdout.write(`${lines.join('\n')}\n`, resolve));
     process.exit(0);
   }
 
