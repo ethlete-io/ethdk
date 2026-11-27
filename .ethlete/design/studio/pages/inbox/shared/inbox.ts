@@ -3,7 +3,7 @@ import { control } from '@ethlete/components/design/control';
 import { commentPinMark } from '@system/components/comment-pin';
 import { commentRow, commentRowStyles, type Thread } from '@system/components/comment-row';
 import button from '@system/components/button';
-import { stepperGrid } from '../../system/shared/many-states';
+import { stepperGrid } from '../../../pages/system/shared/many-states';
 import switchPart from '@system/components/switch';
 import { canvasFrame, canvasFrameStyles, canvasView, stateGrid } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';

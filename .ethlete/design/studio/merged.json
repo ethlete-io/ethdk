@@ -164,10 +164,11 @@
     "note": "merged without a pick: allowed by docs/process.md:49"
   },
   "pages/inbox": {
-    "hash": "2cdc95a4a51639da",
+    "hash": "613e2fcd898f95f7",
     "variant": "new",
-    "decidedBy": "claude-sonnet-5-5",
-    "at": "2026-11-26T09:54:44.245Z"
+    "decidedBy": "plan: Tom via doc session 27.11. Q4",
+    "at": "2026-11-27T10:31:33.788Z",
+    "note": "merged without a pick: allowed by Tom via doc session 27.11. Q4"
   },
   "pages/inventory": {
     "hash": "2b5d1be0c74cba02",

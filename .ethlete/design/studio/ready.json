@@ -966,11 +966,7 @@
   },
   "pages/inbox": {
     "actions": [
-      "emit:close",
       "emit:collapse",
-      "emit:fit",
-      "emit:maximize",
-      "emit:minimize",
       "emit:pick",
       "emit:pinToggle",
       "emit:productChange",
@@ -981,9 +977,6 @@
       "emit:showResolvedChange",
       "emit:sideWidthChange",
       "emit:withdrawComment",
-      "emit:zoomIn",
-      "emit:zoomOut",
-      "emit:zoomReset",
       "open",
       "opens:command-palette",
       "system-picker"
