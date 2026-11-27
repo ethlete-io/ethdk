@@ -19,7 +19,8 @@ wsl -d ethlete -u root -- bash -c "apt-get update && apt-get install -y docker.i
 ```
 
 Add `[boot]\nsystemd=true` to `/etc/wsl.conf` in the distro so `dockerd` starts with it, then `wsl --terminate ethlete`.
-WSL stops an idle distro after a minute; a `.wslconfig` with `vmIdleTimeout=-1` keeps Docker warm between runs.
+`vmIdleTimeout=-1` in `.wslconfig` keeps the WSL VM up, not the distro: WSL still stops `ethlete` some seconds after
+its last `wsl.exe` session, and the next run pays about 3 s for the distro boot (systemd, dockerd).
 
 ## Running a suite
 
