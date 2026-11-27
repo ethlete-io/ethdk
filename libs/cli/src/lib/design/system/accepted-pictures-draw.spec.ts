@@ -89,6 +89,29 @@ describe('drawStatePictures', () => {
     ]);
   });
 
+  it('compares a kept state with expected pictures that are still being drawn', async () => {
+    const { target, product } = chipProduct();
+
+    pictureOf.mockImplementation(async (options) => ({
+      png: blankPngOf(2, 2),
+      source: options.fresh ? 'drawn' : 'memory',
+    }));
+
+    await drawStatePictures({
+      target,
+      config: {},
+      product,
+      parts: ['components/chip'],
+      expected: { 'components/chip': Promise.resolve({ default: 'other' }) },
+    });
+
+    expect(pictureOf.mock.calls.map(([options]) => `${options.state} ${options.fresh}`).sort()).toEqual([
+      'default false',
+      'default true',
+      'hover false',
+    ]);
+  });
+
   it('draws every state with its slots filled, so a change inside a slot changes the picture', async () => {
     const target = mkdtempSync(join(tmpdir(), 'cli-design-draw-pictures-'));
     const chip = join(target, DESIGN_DIR, 'app-a/components/chip/chip.ts');

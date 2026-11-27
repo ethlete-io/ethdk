@@ -244,6 +244,32 @@ describe('autoAcceptOf', () => {
     expect(directEditsOf(productOf(target))).toEqual([]);
   });
 
+  it('draws the part at HEAD and the edited part side by side, still comparing against HEAD', async () => {
+    const { target, chip } = checkout();
+    const drawn = drawing({ default: 'a1', hover: 'c3' });
+    let inFlight = 0;
+    let most = 0;
+    const draw: DrawStates = async (options) => {
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      inFlight -= 1;
+
+      return drawn.draw(options);
+    };
+
+    drawn.pictures.head = { default: 'a1', hover: 'b2' };
+    recordMerged({ product: productOf(target), parts: [CHIP] });
+    appendFileSync(chip, '// visible edit\n');
+
+    expect(await autoAccept(target, draw)).toEqual([
+      `PICTURES CHANGED app-a ${CHIP}: hover`,
+      `DIRECT EDIT app-a ${CHIP}: changed outside a sketch - pick old or new in sketch ${CHIP}@edit`,
+    ]);
+    expect(drawn.variants.sort()).toEqual([null, 'old'].sort());
+    expect(most).toBe(2);
+  });
+
   it('reports an edit sketch closed in the same run because every state draws as before, not opened', async () => {
     const { target, dir, chip } = checkout();
     const { draw } = drawing({ default: 'a1', hover: 'b2' });

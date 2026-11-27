@@ -1,6 +1,7 @@
 export type YieldTurn = () => Promise<void>;
 
 let current: YieldTurn | null = null;
+let held = 0;
 
 /** Runs `run` as a design run that hands its turn to `turn` whenever it calls `yieldRun` between two parts. */
 export const withRunYield = async <T>(turn: YieldTurn | undefined, run: () => Promise<T>) => {
@@ -22,7 +23,7 @@ export const withRunYield = async <T>(turn: YieldTurn | undefined, run: () => Pr
 export const yieldRun = async () => {
   const turn = current;
 
-  if (!turn) return;
+  if (!turn || held > 0) return;
 
   current = null;
 
@@ -30,5 +31,16 @@ export const yieldRun = async () => {
     await turn();
   } finally {
     current = turn;
+  }
+};
+
+/** Runs `run` with `yieldRun` a no-op until it settles, for draws that run beside another draw of the same run. */
+export const withoutYield = async <T>(run: () => Promise<T>) => {
+  held += 1;
+
+  try {
+    return await run();
+  } finally {
+    held -= 1;
   }
 };

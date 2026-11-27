@@ -5,7 +5,7 @@ import { chromiumOf } from '../browser';
 import { pngSizeOf } from '../contact-sheet';
 import { DesignConfig } from '../design-config';
 import { createPartShooter } from '../shot';
-import { yieldRun } from '../run-yield';
+import { withoutYield, yieldRun } from '../run-yield';
 import { DesignServer, drawingOn, WarmDraw } from '../warm-draw';
 import { commentsOnSketch } from './comments/comment';
 import { compareFrameOf } from './harness-shot';
@@ -75,7 +75,7 @@ export type DrawStates = (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   parts: string[];
-  expected?: Record<string, StatePictures>;
+  expected?: Record<string, StatePictures | Promise<StatePictures | undefined>>;
   sketch?: SketchVariant;
   warm?: WarmDraw;
   sizes?: Map<string, StateSizes>;
@@ -215,7 +215,7 @@ const drawPartsWith = async (options: {
   pictures: ReturnType<typeof createPartShooter>;
   product: ResolvedProduct;
   parts: string[];
-  expected?: Record<string, StatePictures>;
+  expected?: Record<string, StatePictures | Promise<StatePictures | undefined>>;
   sketch?: SketchVariant;
   drawn: Map<string, StatePictures | string>;
   sizes?: Map<string, StateSizes>;
@@ -273,9 +273,12 @@ const drawPartsWith = async (options: {
       const pictured = await Promise.all(
         states.map(async (state) => {
           const first = await pictureOf(state, false);
-          const want = expected?.[part]?.[state];
 
-          return want !== undefined && want !== first.hash && !first.drawnNow ? pictureOf(state, true) : first;
+          if (first.drawnNow) return first;
+
+          const want = (await expected?.[part])?.[state];
+
+          return want !== undefined && want !== first.hash ? pictureOf(state, true) : first;
         }),
       );
       const hashes: StatePictures = {};
@@ -567,65 +570,105 @@ export const autoAcceptOf = async (options: {
       records.push({ part: resolved, design, baseline: null });
   }
 
-  for (const { part: resolved, design, sketch, recheck } of heads) {
-    const part = partKeyOf(resolved);
-    const unreadable = recheck ? refreshEditOld({ product, sketch }) : null;
+  const checked = heads.map((head) => ({
+    ...head,
+    unreadable: head.recheck ? refreshEditOld({ product, sketch: head.sketch }) : null,
+  }));
+  const drawable = checked.filter(({ unreadable }) => !unreadable);
+  const settleHeads = (olds: (StatePictures | string | undefined)[]) => {
+    for (const head of checked) {
+      const { part: resolved, design, sketch, unreadable } = head;
+      const old = olds[drawable.indexOf(head)];
 
-    if (isNotFound(unreadable)) {
-      problem(resolved, unreadable);
-      continue;
+      if (isNotFound(unreadable)) problem(resolved, unreadable);
+      else if (unreadable) oldNotDrawn({ resolved, sketch }, unreadable);
+      else if (old === undefined || typeof old === 'string') oldNotDrawn({ resolved, sketch }, old ?? 'no drawing');
+      else
+        edits.push({
+          part: resolved,
+          design,
+          baseline: { hash: merged[partKeyOf(resolved)] ?? '', states: old, slots: true },
+          sketch,
+        });
     }
+  };
 
-    if (unreadable) {
-      oldNotDrawn({ resolved, sketch }, unreadable);
-      continue;
-    }
+  if (edits.length + drawable.length + records.length === 0) {
+    settleHeads([]);
 
-    const old = (
-      await draw({ target, config, product, parts: [part], sketch: { target: sketch.target, variant: EDIT_OLD }, warm })
-    ).get(part);
-
-    if (old === undefined || typeof old === 'string') oldNotDrawn({ resolved, sketch }, old ?? 'no drawing');
-    else {
-      if (merged[part] !== undefined) cache.write({ part: resolved, partHash: merged[part], states: old });
-      edits.push({ part: resolved, design, baseline: { hash: merged[part] ?? '', states: old, slots: true }, sketch });
-    }
+    return lines;
   }
 
-  const needs = [...edits, ...records];
+  await yieldRun();
 
-  if (needs.length === 0) return lines;
+  const olds = withoutYield(() =>
+    Promise.all(
+      drawable.map(async ({ part: resolved, sketch }) => {
+        const part = partKeyOf(resolved);
+        const old = (
+          await draw({
+            target,
+            config,
+            product,
+            parts: [part],
+            sketch: { target: sketch.target, variant: EDIT_OLD },
+            warm,
+          })
+        ).get(part);
+
+        if (old !== undefined && typeof old !== 'string' && merged[part] !== undefined)
+          cache.write({ part: resolved, partHash: merged[part], states: old });
+
+        return old;
+      }),
+    ),
+  );
+  const oldOf = (resolved: ResolvedPart) =>
+    olds.then(
+      (drawn) => {
+        const old = drawn[drawable.findIndex(({ part }) => part === resolved)];
+
+        return old === undefined || typeof old === 'string' ? undefined : old;
+      },
+      () => undefined,
+    );
+
+  await Promise.all(
+    drawable.filter(({ part }) => merged[partKeyOf(part)] === partHashNowOf(part)).map(({ part }) => oldOf(part)),
+  );
 
   const sizes = new Map<string, StateSizes>();
-  const cached = new Map(
-    needs.flatMap(({ part, baseline }) => {
-      const states = cache.read(part, partHashNowOf(part));
-      const sized = cache.sizesOf(part, partHashNowOf(part));
+  const keptNowOf = (part: ResolvedPart, compared: boolean) => {
+    const states = cache.read(part, partHashNowOf(part));
+    const sized = cache.sizesOf(part, partHashNowOf(part));
 
-      if (!states || (!sized && !baseline)) return [];
+    if (!states || (!sized && !compared)) return [];
 
-      if (sized) sizes.set(partKeyOf(part), sized);
+    if (sized) sizes.set(partKeyOf(part), sized);
 
-      return [[partKeyOf(part), states] as const];
-    }),
-  );
-  const toDraw = needs.filter(({ part }) => !cached.has(partKeyOf(part)));
-  const drawn = new Map<string, StatePictures | string>([
-    ...cached,
-    ...(toDraw.length === 0
-      ? []
-      : await draw({
-          target,
-          config,
-          product,
-          warm,
-          sizes,
-          parts: toDraw.map(({ part }) => partKeyOf(part)),
-          expected: Object.fromEntries(
-            edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
-          ),
-        })),
+    return [[partKeyOf(part), states] as const];
+  };
+  const cached = new Map([
+    ...edits.flatMap(({ part, baseline }) => keptNowOf(part, !!baseline)),
+    ...drawable.flatMap(({ part }) => keptNowOf(part, true)),
+    ...records.flatMap(({ part, baseline }) => keptNowOf(part, !!baseline)),
   ]);
+  const toDraw = [...edits, ...drawable, ...records].filter(({ part }) => !cached.has(partKeyOf(part)));
+  const expected: Record<string, StatePictures | Promise<StatePictures | undefined>> = Object.fromEntries([
+    ...edits.flatMap(({ part, baseline }) => (baseline ? [[partKeyOf(part), baseline.states]] : [])),
+    ...drawable.map(({ part }) => [partKeyOf(part), oldOf(part)]),
+  ]);
+  const [drawnNow, oldsDrawn] = await Promise.all([
+    toDraw.length === 0
+      ? new Map<string, StatePictures | string>()
+      : draw({ target, config, product, warm, sizes, parts: toDraw.map(({ part }) => partKeyOf(part)), expected }),
+    olds,
+  ]);
+
+  settleHeads(oldsDrawn);
+
+  const drawn = new Map<string, StatePictures | string>([...cached, ...drawnNow]);
+  const needs = [...edits, ...records];
 
   for (const { part: resolved, design, baseline, sketch } of needs) {
     const part = partKeyOf(resolved);
