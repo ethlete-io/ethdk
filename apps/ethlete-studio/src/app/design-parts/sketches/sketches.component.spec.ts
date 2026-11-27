@@ -2351,6 +2351,7 @@ describe('SketchesComponent', () => {
     const fixture = await render({
       camera: '100',
       rows: [empty('a'), empty('b')],
+      pins: SKETCH_PINS,
       part: 'components/zoom-chip',
       status: 'waiting',
       agent: { by: { short: 'Opus 5.5', id: 'opus', agent: 'claude' }, since: 'seit 2 Min' },
@@ -2361,6 +2362,7 @@ describe('SketchesComponent', () => {
     expect(block()).toContain('Opus 5.5 zeichnet components/zoom-chip');
     expect(block()).toContain('seit 2 Min');
     expect(block()).toContain('Der Rahmen füllt sich');
+    expect(root.querySelector('ethlete-comment-pin')).toBeNull();
 
     fixture.componentRef.setInput('rows', [{ ...empty('a'), shots: [{ state: 'rest', changed: true, height: 46 }] }]);
     await fixture.whenStable();

@@ -735,7 +735,7 @@
       }
     }
   </div>
-  @if (!IS_WITHDRAWN(row) && comments() === null) {
+  @if (!IS_WITHDRAWN(row) && comments() === null && !blankDrawing()) {
     @if (pinOf(row.key); as pin) {
       <span [class.hidden]="headHidden()" class="absolute top-space-1 right-space-1 z-1 flex">
         <ethlete-comment-pin
