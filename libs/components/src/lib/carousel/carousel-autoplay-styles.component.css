@@ -98,7 +98,10 @@
       inline-size: var(--et-carousel-dot-ring-size);
       block-size: var(--et-carousel-dot-ring-size);
       border: var(--et-carousel-dot-ring-width) solid
-        var(--et-carousel-dot-ring-track-color, color-mix(in srgb, var(--et-surface-tint, gray) 30%, transparent));
+        var(
+          --et-carousel-dot-ring-track-color,
+          color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 30%, transparent)
+        );
       border-radius: 50%;
       opacity: 0;
       scale: 0.55;

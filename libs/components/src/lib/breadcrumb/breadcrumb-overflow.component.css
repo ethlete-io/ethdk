@@ -26,12 +26,12 @@
         color 120ms ease;
 
       &:where(a, button):hover {
-        background: color-mix(in srgb, var(--et-surface-tint) 12%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text)) 12%, transparent);
         text-decoration-color: transparent;
       }
 
       &:where(a, button):active {
-        background: color-mix(in srgb, var(--et-surface-tint) 20%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text)) 20%, transparent);
       }
     }
   }

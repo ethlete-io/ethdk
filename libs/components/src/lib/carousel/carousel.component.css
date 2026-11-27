@@ -190,17 +190,23 @@
       inline-size: var(--et-carousel-dot-size);
       block-size: var(--et-carousel-dot-size);
       border-radius: 50%;
-      background: var(--et-carousel-dot-color, color-mix(in srgb, var(--et-surface-tint, gray) 35%, transparent));
+      background: var(
+        --et-carousel-dot-color,
+        color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 35%, transparent)
+      );
     }
 
     &:hover::before {
-      background: var(--et-carousel-dot-hover-color, color-mix(in srgb, var(--et-surface-tint, gray) 55%, transparent));
+      background: var(
+        --et-carousel-dot-hover-color,
+        color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 55%, transparent)
+      );
     }
 
     &:active::before {
       background: var(
         --et-carousel-dot-pressed-color,
-        color-mix(in srgb, var(--et-surface-tint, gray) 85%, transparent)
+        color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 85%, transparent)
       );
     }
 

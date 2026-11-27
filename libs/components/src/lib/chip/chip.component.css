@@ -52,7 +52,7 @@
     line-height: 1.4;
     max-inline-size: 100%;
     box-sizing: border-box;
-    background: color-mix(in srgb, var(--et-surface-tint, currentColor) 14%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 14%, transparent);
     color: var(--et-surface-text, currentColor);
     -webkit-user-select: none;
     user-select: none;
@@ -75,7 +75,7 @@
 
       @media (hover: hover) {
         &:hover:not([aria-checked='true'], [data-readonly], [data-disabled]) {
-          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 22%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 22%, transparent);
         }
       }
 
@@ -138,13 +138,13 @@
 
       @media (hover: hover) {
         &:not([disabled]):hover {
-          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 20%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 20%, transparent);
           color: var(--et-surface-text, currentColor);
         }
       }
 
       &:not([disabled]):active {
-        background: color-mix(in srgb, var(--et-surface-tint, currentColor) 28%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 28%, transparent);
       }
 
       &:focus-visible {

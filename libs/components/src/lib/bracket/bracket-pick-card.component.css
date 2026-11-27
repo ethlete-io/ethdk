@@ -64,7 +64,7 @@
     }
 
     &:where(button):hover {
-      background: color-mix(in srgb, var(--et-surface-tint, #777) 12%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, #777)) 12%, transparent);
     }
 
     &:where(button)[aria-pressed='true']:hover {

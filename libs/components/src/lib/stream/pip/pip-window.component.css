@@ -64,7 +64,8 @@
   }
   .et-pip-window__title-bar:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 60%, transparent);
+    box-shadow: inset 0 0 0 2px
+      color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 60%, transparent);
   }
 
   .et-pip-window__title-bar-spacer {

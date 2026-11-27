@@ -51,7 +51,7 @@
     padding-inline: var(--et-kbd-key-padding-inline);
     border: 1px solid var(--et-surface-border, rgb(255 255 255 / 0.1));
     border-radius: var(--et-kbd-key-border-radius);
-    background: color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 8%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 8%, transparent);
     color: var(--et-kbd-color, var(--et-surface-text-muted, rgb(255 255 255 / 0.55)));
     font: inherit;
     font-size: var(--et-kbd-font-size);

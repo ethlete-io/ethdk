@@ -95,7 +95,11 @@
       var(--et-tone-fill, currentColor) var(--_et-chart-accent-mix, 100%),
       var(--et-surface-background, transparent)
     );
-    --_et-bar-chart-column-tint: color-mix(in srgb, var(--et-surface-tint, currentColor) 6%, transparent);
+    --_et-bar-chart-column-tint: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text, currentColor)) 6%,
+      transparent
+    );
     --_et-bar-chart-mark-tint: color-mix(
       in srgb,
       var(--_et-bar-chart-color) 85%,

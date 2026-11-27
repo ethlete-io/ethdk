@@ -58,7 +58,10 @@
     inline-size: stretch;
     block-size: var(--et-skeleton-size, 1em);
     border-radius: var(--et-skeleton-radius);
-    background: var(--et-skeleton-color, color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent));
+    background: var(
+      --et-skeleton-color,
+      color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 12%, transparent)
+    );
   }
 
   /* `text` is a line of text's height rather than a fixed px, so a bar sits in running copy without
@@ -113,7 +116,10 @@
       background: linear-gradient(
         90deg,
         transparent,
-        var(--et-skeleton-highlight-color, color-mix(in srgb, var(--et-surface-tint, gray) 16%, transparent)),
+        var(
+          --et-skeleton-highlight-color,
+          color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 16%, transparent)
+        ),
         transparent
       );
       animation: et-skeleton-sweep var(--et-skeleton-duration) ease-in-out infinite;

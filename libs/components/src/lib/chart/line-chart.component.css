@@ -131,7 +131,11 @@
   }
 
   .et-line-chart-slice {
-    --_et-line-chart-slice-tint: color-mix(in srgb, var(--et-surface-tint, currentColor) 6%, transparent);
+    --_et-line-chart-slice-tint: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text, currentColor)) 6%,
+      transparent
+    );
 
     outline: none;
 

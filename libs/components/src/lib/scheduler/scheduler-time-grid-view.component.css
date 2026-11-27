@@ -179,7 +179,7 @@
     block-size: calc(var(--_et-scheduler-time-grid-block-span, 0) * 1%);
     background: var(
       --et-scheduler-time-grid-non-business-background,
-      color-mix(in srgb, var(--et-surface-tint, rgb(255 255 255)) 6%, transparent)
+      color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, rgb(255 255 255))) 6%, transparent)
     );
     pointer-events: none;
   }
