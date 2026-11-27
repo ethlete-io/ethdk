@@ -211,7 +211,7 @@ const storedIn = (target: string) => {
   const dir = join(workRootOf(target), SHOT_STORE_DIR);
 
   return existsSync(dir)
-    ? (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'))
+    ? (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.shot'))
     : [];
 };
 
@@ -484,7 +484,7 @@ describe('createShotStore', () => {
     writeFileSync(input, 'one');
     store().write('key', { address, picture });
 
-    const [entry = ''] = (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'));
+    const [entry = ''] = (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.shot'));
 
     expect(store().read('key', address)).toEqual(picture);
 
@@ -512,7 +512,7 @@ describe('createShotStore', () => {
 
   describe('shared by checkouts', () => {
     const entriesIn = (dir: string) =>
-      (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.json'));
+      (readdirSync(dir, { recursive: true }) as string[]).filter((name) => name.endsWith('.shot'));
     const setUp = () => {
       const base = mkdtempSync(join(tmpdir(), 'cli-shot-store-'));
       const dir = join(base, 'store');

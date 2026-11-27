@@ -10,7 +10,7 @@ let temps = 0;
  * @internal Writes `entry.text` as the entry `entry.name` of the disk cache in `dir`, whole or not at all. Writes nothing once the
  * run in progress is aborted, whose results may come from a closing browser. False when nothing was written.
  */
-export const writeCacheEntry = (dir: string, entry: { name: string; text: string }) => {
+export const writeCacheEntry = (dir: string, entry: { name: string; text: string | Buffer }) => {
   const { name, text } = entry;
 
   if (runSignal()?.aborted) return false;

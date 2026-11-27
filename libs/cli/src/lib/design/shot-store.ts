@@ -2,10 +2,12 @@ import { createHash, randomUUID } from 'crypto';
 import {
   closeSync,
   existsSync,
+  fstatSync,
   mkdirSync,
   openSync,
   readdirSync,
   readFileSync,
+  readSync,
   realpathSync,
   rmSync,
   statSync,
@@ -50,18 +52,17 @@ export type SharedDraw =
 
 type DrawLock = { pid: number; at: number; token: string };
 
-type Entry = {
-  key: string;
-  code?: string;
-  scope: string;
-  inputs: [string, string | null][];
-  png: string;
-  marks: PartMark[];
-  boxes?: CompareBoxes;
-  markup?: string;
-  ambient?: TextAmbient;
-  kept?: unknown;
-};
+type Head = { key: string; code?: string; scope: string; inputs: [string, string | null][] };
+
+type Body = { marks: PartMark[]; boxes?: CompareBoxes; markup?: string; ambient?: TextAmbient; kept?: unknown };
+
+type Entry = Head & Body & { png: Buffer };
+
+type LegacyEntry = Head & Body & { png: string };
+
+type Wanted = { key: string; scope: string; anyCode: boolean };
+
+type Found = { name: string; entry: Entry | null };
 
 /** The shot store folder under the work root, one for every checkout that shares the `node_modules` it lies in. */
 export const SHOT_STORE_DIR = 'part-shots';
@@ -70,7 +71,13 @@ const SHOT_STORE_LIMIT = 512 * 1024 * 1024;
 
 const STALE_TEMP_MS = 60_000;
 
-const ENTRY_SUFFIX = '.json';
+const ENTRY_SUFFIX = '.shot';
+
+const LEGACY_SUFFIX = '.json';
+
+const ENTRY_MAGIC = Buffer.from('ETSHOT1\n');
+
+const PREFIX_BYTES = ENTRY_MAGIC.length + 8;
 
 const VARIANTS_PER_KEY = 4;
 
@@ -78,16 +85,43 @@ const LOCK_NAME = 'draw.lock';
 
 const LOCK_POLL_MS = 100;
 
-const isEntry = (value: unknown): value is Entry => {
-  const entry = value as Partial<Entry> | null;
+const isHead = (value: unknown): value is Head => {
+  const head = value as Partial<Head> | null;
 
-  return (
-    typeof entry?.key === 'string' &&
-    typeof entry.scope === 'string' &&
-    Array.isArray(entry.inputs) &&
-    typeof entry.png === 'string' &&
-    Array.isArray(entry.marks)
-  );
+  return typeof head?.key === 'string' && typeof head.scope === 'string' && Array.isArray(head.inputs);
+};
+
+const isBody = (value: unknown): value is Body => Array.isArray((value as Partial<Body> | null)?.marks);
+
+const isLegacyEntry = (value: unknown): value is LegacyEntry =>
+  isHead(value) && isBody(value) && typeof (value as Partial<LegacyEntry>).png === 'string';
+
+const isEntryName = (name: string) => name.endsWith(ENTRY_SUFFIX) || name.endsWith(LEGACY_SUFFIX);
+
+const entryBytesOf = ({ key, code, scope, inputs, png, ...body }: Entry) => {
+  const head = Buffer.from(JSON.stringify({ key, code, scope, inputs } satisfies Head));
+  const rest = Buffer.from(JSON.stringify(body satisfies Body));
+  const prefix = Buffer.alloc(PREFIX_BYTES);
+
+  ENTRY_MAGIC.copy(prefix);
+  prefix.writeUInt32BE(head.length, ENTRY_MAGIC.length);
+  prefix.writeUInt32BE(rest.length, ENTRY_MAGIC.length + 4);
+
+  return Buffer.concat([prefix, head, rest, png]);
+};
+
+const bytesAt = (fd: number, { at, length }: { at: number; length: number }) => {
+  const bytes = Buffer.alloc(length);
+
+  for (let read = 0; read < length;) {
+    const got = readSync(fd, bytes, read, length - read, at + read);
+
+    if (got === 0) throw new Error('design-explore: shot store entry ends early');
+
+    read += got;
+  }
+
+  return bytes;
 };
 
 const isLock = (value: unknown): value is DrawLock => {
@@ -137,6 +171,7 @@ export const createShotStore = (options: {
   const limit = options.limit ?? SHOT_STORE_LIMIT;
   const pollMs = options.pollMs ?? LOCK_POLL_MS;
   const hashes = new Map<string, { stamp: string; hash: string }>();
+  const stamps = new Map<string, string | null>();
   const used = new Map<string, string>();
   let sizes: Map<string, number> | null = null;
   const checkoutGone = () => !existsSync(options.checkout);
@@ -158,12 +193,40 @@ export const createShotStore = (options: {
 
   const keyDirOf = (key: string) => createHash('sha1').update(salt).update('\n').update(key).digest('hex');
 
-  const hashOf = (stored: string) => {
-    const file = isAbsolute(stored) ? stored : resolve(options.checkout, stored);
-
+  const statStampOf = (file: string) => {
     try {
       const stat = statSync(file, { bigint: true });
-      const stamp = `${stat.size} ${stat.mtimeNs} ${stat.ctimeNs}`;
+
+      return `${stat.size} ${stat.mtimeNs} ${stat.ctimeNs}`;
+    } catch {
+      return null;
+    }
+  };
+
+  // A stamp holds for the rest of the event-loop turn, so a file written and checked again in the same turn reads
+  // its earlier stamp; a write's own hashes pass `fresh`.
+  const stampOf = (file: string, fresh: boolean) => {
+    if (fresh) return statStampOf(file);
+
+    const seen = stamps.get(file);
+
+    if (seen !== undefined) return seen;
+    if (stamps.size === 0) setImmediate(() => stamps.clear()).unref();
+
+    const stamp = statStampOf(file);
+
+    stamps.set(file, stamp);
+
+    return stamp;
+  };
+
+  const hashOf = (stored: string, fresh = false) => {
+    const file = isAbsolute(stored) ? stored : resolve(options.checkout, stored);
+    const stamp = stampOf(file, fresh);
+
+    if (stamp === null) return null;
+
+    try {
       const known = hashes.get(file);
 
       if (known?.stamp === stamp) return known.hash;
@@ -231,7 +294,7 @@ export const createShotStore = (options: {
       const stat = statSync(join(dir, name), { throwIfNoEntry: false });
 
       if (!stat?.isFile()) continue;
-      if (name.endsWith(ENTRY_SUFFIX)) sizes.set(name, stat.size);
+      if (isEntryName(name)) sizes.set(name, stat.size);
       else if (basename(name) === LOCK_NAME) dropDeadLock(join(dir, name));
       else if (Date.now() - stat.mtimeMs > STALE_TEMP_MS) rmSync(join(dir, name), { force: true });
     }
@@ -266,29 +329,86 @@ export const createShotStore = (options: {
 
     try {
       return readdirSync(join(dir, keyDir))
-        .filter((name) => name.endsWith(ENTRY_SUFFIX))
+        .filter(isEntryName)
         .map((name) => join(keyDir, name));
     } catch {
       return [];
     }
   };
 
-  const entryOf = (name: string, wanted: { key: string; scope: string; anyCode: boolean }): Entry | null => {
+  const matches = (head: Head, wanted: Wanted) =>
+    head.key === wanted.key &&
+    head.scope === wanted.scope &&
+    (wanted.anyCode || (head.code ?? '') === code) &&
+    head.inputs.every(([file, hash]) => hashOf(file) === hash);
+
+  const persist = (name: string, entry: Entry) => {
+    const bytes = entryBytesOf(entry);
+    const known = sizesOf();
+
+    if (!writeCacheEntry(join(dir, dirname(name)), { name: basename(name), text: bytes })) return false;
+
+    known.set(name, bytes.length);
+
+    return true;
+  };
+
+  const migrated = (legacy: string, entry: Entry) => {
+    const name = `${legacy.slice(0, -LEGACY_SUFFIX.length)}${ENTRY_SUFFIX}`;
+
+    if (checkoutGone() || !persist(name, entry)) return legacy;
+
+    remove(sizesOf(), legacy);
+
+    return name;
+  };
+
+  const legacyEntryOf = (name: string, wanted: Wanted): Found => {
     try {
       const entry: unknown = JSON.parse(readFileSync(join(dir, name), 'utf8'));
 
-      if (!isEntry(entry) || entry.key !== wanted.key || entry.scope !== wanted.scope) return null;
-      if (!wanted.anyCode && (entry.code ?? '') !== code) return null;
-      if (entry.inputs.some(([file, hash]) => hashOf(file) !== hash)) return null;
+      if (!isLegacyEntry(entry)) return { name, entry: null };
 
-      return entry;
+      const current = { ...entry, png: Buffer.from(entry.png, 'base64') };
+
+      return { name: migrated(name, current), entry: matches(entry, wanted) ? current : null };
     } catch {
-      return null;
+      return { name, entry: null };
+    }
+  };
+
+  const entryOf = (name: string, wanted: Wanted): Found => {
+    if (name.endsWith(LEGACY_SUFFIX)) return legacyEntryOf(name, wanted);
+
+    let fd: number | null = null;
+
+    try {
+      fd = openSync(join(dir, name), 'r');
+
+      const prefix = bytesAt(fd, { at: 0, length: PREFIX_BYTES });
+
+      if (!prefix.subarray(0, ENTRY_MAGIC.length).equals(ENTRY_MAGIC)) return { name, entry: null };
+
+      const headLength = prefix.readUInt32BE(ENTRY_MAGIC.length);
+      const bodyLength = prefix.readUInt32BE(ENTRY_MAGIC.length + 4);
+      const head: unknown = JSON.parse(bytesAt(fd, { at: PREFIX_BYTES, length: headLength }).toString('utf8'));
+
+      if (!isHead(head) || !matches(head, wanted)) return { name, entry: null };
+
+      const restAt = PREFIX_BYTES + headLength;
+      const rest = bytesAt(fd, { at: restAt, length: fstatSync(fd).size - restAt });
+      const body: unknown = JSON.parse(rest.subarray(0, bodyLength).toString('utf8'));
+
+      return { name, entry: isBody(body) ? { ...body, ...head, png: rest.subarray(bodyLength) } : null };
+    } catch {
+      return { name, entry: null };
+    } finally {
+      if (fd !== null) closeSync(fd);
     }
   };
 
   const pictureOf = (entry: Entry): Picture => ({
-    png: Buffer.from(entry.png, 'base64'),
+    png: entry.png,
     marks: entry.marks,
     ...(entry.boxes ? { boxes: entry.boxes } : {}),
     ...(typeof entry.markup === 'string' ? { markup: entry.markup } : {}),
@@ -298,8 +418,8 @@ export const createShotStore = (options: {
   const readOf = ({ key, address, anyCode }: { key: string; address: StoredAddress; anyCode: boolean }) => {
     const scope = storedScopeOf(address);
 
-    for (const name of variantsOf(key)) {
-      const entry = entryOf(name, { key, scope, anyCode });
+    for (const variant of variantsOf(key)) {
+      const { name, entry } = entryOf(variant, { key, scope, anyCode });
 
       if (!entry) continue;
       if (anyCode) return entry;
@@ -369,10 +489,7 @@ export const createShotStore = (options: {
     return entry ? pictureOf(entry) : null;
   };
 
-  const keep = (
-    key: string,
-    { address, fields }: { address: StoredAddress; fields: Pick<Entry, 'png' | 'marks'> & Partial<Entry> },
-  ) => {
+  const keep = (key: string, { address, fields }: { address: StoredAddress; fields: Body & { png: Buffer } }) => {
     try {
       const files = inputsOf(address);
 
@@ -381,7 +498,7 @@ export const createShotStore = (options: {
       const scope = storedScopeOf(address);
       const inputs = [...new Set(files.map(storedPathOf))]
         .sort()
-        .map((file): [string, string | null] => [file, hashOf(file)]);
+        .map((file): [string, string | null] => [file, hashOf(file, true)]);
       const variant = createHash('sha1')
         .update(code)
         .update('\n')
@@ -390,13 +507,12 @@ export const createShotStore = (options: {
         .update(JSON.stringify(inputs))
         .digest('hex');
       const name = join(keyDirOf(key), `${variant}${ENTRY_SUFFIX}`);
-      const entry: Entry = { ...fields, key, code, scope, inputs };
-      const text = JSON.stringify(entry);
+      const legacy = join(keyDirOf(key), `${variant}${LEGACY_SUFFIX}`);
       const known = sizesOf();
 
-      if (!writeCacheEntry(join(dir, dirname(name)), { name: `${variant}${ENTRY_SUFFIX}`, text })) return;
+      if (!persist(name, { ...fields, key, code, scope, inputs })) return;
 
-      known.set(name, Buffer.byteLength(text));
+      remove(known, legacy);
       used.set(key, name);
 
       const others = variantsOf(key)
@@ -422,7 +538,7 @@ export const createShotStore = (options: {
       keep(key, {
         address,
         fields: {
-          png: picture.png.toString('base64'),
+          png: picture.png,
           marks: picture.marks,
           ...(picture.boxes === undefined ? {} : { boxes: picture.boxes }),
           ...(picture.markup === undefined ? {} : { markup: picture.markup }),
@@ -430,7 +546,7 @@ export const createShotStore = (options: {
         },
       }),
     readKept: (key, address) => readOf({ key, address, anyCode: false })?.kept ?? null,
-    writeKept: (key, { address, kept }) => keep(key, { address, fields: { png: '', marks: [], kept } }),
+    writeKept: (key, { address, kept }) => keep(key, { address, fields: { png: Buffer.alloc(0), marks: [], kept } }),
     drop: (key) => {
       const name = used.get(key);
 
