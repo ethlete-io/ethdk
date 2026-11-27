@@ -46,7 +46,7 @@ const describeHolder = (machine, n) => {
 };
 
 let interrupted = false;
-let stopJob = (_signal) => undefined;
+let stopJob = () => undefined;
 let runTmpToRemove;
 
 // The kill-with-parent watchdog of the running job takes the job's process tree down once this process exits.
