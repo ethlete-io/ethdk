@@ -92,6 +92,33 @@ const spawnRemoteRun = ({ repo, sha, suite, log }) =>
     child.on('close', (code) => done(code ?? 255));
   });
 
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+/** Waits until no live process holds `<dir>/mirror.lock`, then takes it; returns the release function. */
+const acquireSlot = async (dir, pollMs) => {
+  const file = join(dir, 'mirror.lock');
+  for (;;) {
+    try {
+      writeFileSync(file, String(process.pid), { flag: 'wx' });
+      return () => rmSync(file, { force: true });
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      const holder = Number(readFileSync(file, 'utf8'));
+      if (!holder || !alive(holder)) rmSync(file, { force: true });
+      else await sleep(pollMs);
+    }
+  }
+};
+
 /** Runs the push-suite steps for `sha` on the rack and writes `<dir>/<sha>.json` plus a line in `<dir>/verdicts.log`. */
 export const mirrorCommit = async ({
   repo,
@@ -100,7 +127,18 @@ export const mirrorCommit = async ({
   remote = spawnRemoteRun,
   now = () => new Date(),
   attempt = 1,
+  pollMs = 2000,
 }) => {
+  mkdirSync(dir, { recursive: true });
+  const release = await acquireSlot(dir, pollMs);
+  try {
+    return await mirrorLocked({ repo, sha, dir, remote, now, attempt });
+  } finally {
+    release();
+  }
+};
+
+const mirrorLocked = async ({ repo, sha, dir, remote, now, attempt }) => {
   const git = gitIn(repo);
   const parent = git(['rev-parse', '--verify', `${sha}^`]).stdout.trim();
   const subject = git(['log', '-1', '--format=%s', sha]).stdout.trim();
@@ -134,15 +172,6 @@ export const mirrorCommit = async ({
   writeFileSync(join(dir, 'latest.txt'), `${line}\n`);
   rmSync(join(dir, 'running.json'), { force: true });
   return verdict;
-};
-
-const alive = (pid) => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
 };
 
 /** The recorded mirror run, `died` when its process no longer exists; undefined when none is recorded. */

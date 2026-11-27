@@ -97,6 +97,47 @@ test('mirrorCommit writes the verdict file and a readable line', async () => {
   }
 });
 
+test('mirrorCommit waits for a concurrent run instead of sharing the remote slot', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  commit(repo, 'a');
+  const sha = commit(repo, 'b');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  try {
+    let running = 0;
+    let overlap = 0;
+    const remote = async (call) => {
+      running++;
+      overlap = Math.max(overlap, running);
+      await new Promise((done) => setTimeout(done, 60));
+      writeFileSync(call.log, `push-suite: ok ${sha}\n`);
+      running--;
+      return 0;
+    };
+    await Promise.all([
+      mirrorCommit({ repo, sha, dir, remote, pollMs: 5 }),
+      mirrorCommit({ repo, sha, dir, remote, pollMs: 5 }),
+    ]);
+    assert.equal(overlap, 1);
+    assert.equal(existsSync(join(dir, 'mirror.lock')), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('mirrorCommit takes over a lock whose holder died', async () => {
+  const repo = tempGitRepo('next-mirror-');
+  commit(repo, 'a');
+  const sha = commit(repo, 'b');
+  const dir = mkdtempSync(join(tmpdir(), 'next-mirror-out-'));
+  try {
+    writeFileSync(join(dir, 'mirror.lock'), '2147483646');
+    const verdict = await mirrorCommit({ repo, sha, dir, remote: async () => 0, pollMs: 5 });
+    assert.equal(verdict.sha, sha);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('mirrorCommit runs no suite for a root commit', async () => {
   const repo = tempGitRepo('next-mirror-');
   const sha = commit(repo, 'a');
