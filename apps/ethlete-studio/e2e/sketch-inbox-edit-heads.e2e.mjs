@@ -39,8 +39,7 @@ try {
       await page.reload();
       await page
         .locator('ethlete-shell-collapse button')
-        .click({ timeout: 30_000 })
-        .catch(() => undefined);
+        .click({ timeout: 30_000 });
       await matrix.waitFor({ state: 'attached', timeout: 60_000 });
       const zoomOut = sketch.locator('[data-camera-out] button');
       for (const zoom of [5, 2]) {
