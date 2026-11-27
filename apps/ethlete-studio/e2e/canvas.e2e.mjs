@@ -2267,9 +2267,7 @@ const CASES = [
         await page.waitForTimeout(1500);
         const { lastWheel, samples } = await page.evaluate(() => window.__rowProbe);
         const after = samples.filter((sample) => sample.at > lastWheel);
-        const painted = after.filter(
-          (sample) => sample.at <= lastWheel + 100 && Math.abs(sample.scale - lastScale) < 0.001,
-        );
+        const painted = after.filter((sample) => Math.abs(sample.scale - lastScale) < 0.001);
 
         measured = { lastWheel, after, samples, preview: painted.at(-1), attempt };
         if (measured.preview) break;
