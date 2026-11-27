@@ -1,10 +1,19 @@
+import { existsSync, realpathSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { AtRule, Message, Plugin } from 'postcss';
 
 const RELATIVE_PATH = /(['"])(\.{1,2}(?:\/[^'"]*)?)\1/u;
 
+// Workaround: Tailwind's oxide scanner applies no .gitignore to a source path that runs through a symlink, and then
+// reads every ignored build tree below it.
+const realIn = (dir: string, path: string) => {
+  const absolute = resolve(dir, path);
+
+  return existsSync(absolute) ? realpathSync(absolute) : absolute;
+};
+
 const absoluteIn = (params: string, dir: string) =>
-  params.replace(RELATIVE_PATH, (...[, quote = '', path = '']: string[]) => `${quote}${resolve(dir, path)}${quote}`);
+  params.replace(RELATIVE_PATH, (...[, quote = '', path = '']: string[]) => `${quote}${realIn(dir, path)}${quote}`);
 
 const importersOf = (messages: Message[]) => {
   const importers = new Map<string, Set<string>>();
