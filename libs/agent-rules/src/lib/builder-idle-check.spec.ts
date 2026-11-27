@@ -134,6 +134,14 @@ describe('builder-idle-check', () => {
     expect(result?.reason).toContain('2 of 4');
   });
 
+  it('treats a row as taken when a running agent description names its ID as a whole token', () => {
+    expect(runHook({ transcript: 'agent-names-row' })).toBeNull();
+
+    const result = runHook({ transcript: 'agent-names-other-row' });
+
+    expect(result?.reason).toContain('B1 (Offene Arbeit)');
+  });
+
   it('counts agents from before a /clear that are unfinished in the session subagents dir', () => {
     const result = runHook({ transcript: 'cleared-session' });
 

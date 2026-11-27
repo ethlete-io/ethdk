@@ -338,6 +338,15 @@ def open_builder_rows(root, sources, patterns):
     return rows
 
 
+def not_taken(rows, labels):
+    return [
+        row
+        for row in rows
+        if row.startswith("(")
+        or not any(re.search(rf"(?<![A-Za-z0-9]){re.escape(row.split(' ')[0])}(?![A-Za-z0-9])", label) for label in labels)
+    ]
+
+
 def reason_for(rows, watchers, working, slots, sources, patterns):
     watching = f" (still watching: {', '.join(watchers)})" if watchers else ""
     queues = ", ".join(source["path"] for source in sources)
@@ -375,10 +384,10 @@ def main():
             return
         sources = queue_sources(settings)
         patterns = string_list(settings.get("waitPatterns"), DEFAULT_WAIT_PATTERNS)
-        rows = open_builder_rows(root, sources, patterns)
+        watchers = [task["label"] for task in running] + codex
+        rows = not_taken(open_builder_rows(root, sources, patterns), watchers)
         if not rows:
             return
-        watchers = [task["label"] for task in running] + codex
         print(json.dumps({"decision": "block", "reason": reason_for(rows, watchers, working, slots, sources, patterns)}))
     except Exception:
         return
