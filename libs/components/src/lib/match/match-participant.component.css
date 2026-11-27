@@ -74,7 +74,7 @@
     border: var(--et-match-participant-emblem-border-width) solid
       var(--et-match-participant-emblem-border-color, var(--et-surface-border, currentColor));
     border-radius: var(--et-match-participant-emblem-radius);
-    background: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 10%, transparent);
   }
 
   .et-match-participant:where([data-tbd]) .et-match-participant-emblem {
@@ -133,7 +133,7 @@
     inline-size: 100%;
     block-size: 100%;
     overflow: visible;
-    fill: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
+    fill: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 10%, transparent);
     stroke: var(--et-surface-border, currentColor);
     stroke-width: 1.5;
     stroke-linejoin: round;
@@ -224,7 +224,7 @@
     line-height: 16px;
     font-variant-numeric: tabular-nums;
     color: var(--et-surface-text-muted, currentColor);
-    background: color-mix(in srgb, var(--et-surface-tint, gray) 12%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 12%, transparent);
     border-radius: 4px;
   }
 

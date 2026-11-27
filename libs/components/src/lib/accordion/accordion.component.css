@@ -66,7 +66,7 @@
       &:has(.et-accordion-trigger:hover:not([aria-disabled='true'])) {
         --_et-accordion-border-color: color-mix(
           in srgb,
-          var(--et-surface-control-text, gray) 35%,
+          var(--et-surface-tint, var(--et-surface-text, gray)) 35%,
           var(--et-surface-border, rgb(128 128 128 / 0.25))
         );
       }
@@ -112,7 +112,7 @@
       &:hover {
         background: var(
           --et-accordion-header-hover-background,
-          color-mix(in srgb, var(--et-surface-tint, gray) 7%, transparent)
+          color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 7%, transparent)
         );
 
         &:not([aria-disabled='true']) {
@@ -128,7 +128,7 @@
     &:active {
       background: var(
         --et-accordion-header-active-background,
-        color-mix(in srgb, var(--et-surface-tint, gray) 14%, transparent)
+        color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 14%, transparent)
       );
     }
 

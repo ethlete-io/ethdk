@@ -34,10 +34,14 @@
     --_et-table-row-paint: var(--et-table-row-background, var(--et-surface-background, Canvas));
     --_et-table-row-surface: var(--_et-table-row-paint);
     --_et-table-stripe-solid: var(--_et-table-row-paint);
-    --_et-table-row-hover-solid: color-mix(in srgb, var(--et-surface-tint, gray) 8%, var(--_et-table-row-paint));
+    --_et-table-row-hover-solid: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 8%,
+      var(--_et-table-row-paint)
+    );
     --_et-table-row-pressed-solid: color-mix(
       in srgb,
-      var(--et-surface-control-text, gray) 16%,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 16%,
       var(--_et-table-row-paint)
     );
     --_et-table-inert-row-hover-solid: var(--_et-table-row-paint);

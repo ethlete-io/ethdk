@@ -603,6 +603,48 @@ test.describe('table / pointer', () => {
     await expect.poll(() => stickyClasses(root)).toEqual(['name:et-table-sticky-start', 'joined:et-table-sticky-end']);
   });
 
+  for (const tint of ['rgb(200 0 0)', 'initial']) {
+    test(`a hovered row tints pinned and scrolling cells from the surface tint (tint: ${tint})`, async ({ page }) => {
+      await page.setViewportSize({ width: 900, height: 720 });
+      const root = await openStory(page, STICKY_COLUMNS_STORY_ID);
+      const table = root.locator('et-table');
+
+      await table.evaluate((host, value) => (host as HTMLElement).style.setProperty('--et-surface-tint', value), tint);
+      await expect.poll(() => stickyClasses(root)).toContain('name:et-table-sticky-start');
+      await cell(root, 1, 'email').hover();
+
+      const paint = await table.evaluate((host, value) => {
+        const style = getComputedStyle(host);
+        const source = value === 'initial' ? style.getPropertyValue('--et-surface-text').trim() : value;
+        const surface = style.getPropertyValue('--et-surface-background').trim();
+        const resolve = (background: string) => {
+          const probe = document.createElement('div');
+          probe.style.background = background;
+          host.appendChild(probe);
+          const color = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+
+          return color;
+        };
+        const cellPaint = (key: string) => {
+          const element = host.querySelectorAll('.et-table-row')[1]?.querySelector(`[data-col-key="${key}"]`);
+
+          return element ? getComputedStyle(element).backgroundColor : '';
+        };
+
+        return {
+          scrolling: cellPaint('email'),
+          pinned: cellPaint('name'),
+          expectedScrolling: resolve(`color-mix(in srgb, ${source} 8%, transparent)`),
+          expectedPinned: resolve(`color-mix(in srgb, ${source} 8%, ${surface})`),
+        };
+      }, tint);
+
+      expect(paint.scrolling).toBe(paint.expectedScrolling);
+      expect(paint.pinned).toBe(paint.expectedPinned);
+    });
+  }
+
   test('dragging the body pans the table sideways without selecting text', async ({ page }) => {
     const root = await openStory(page, DRAG_SCROLL_STORY_ID);
     const table = root.locator('et-table');

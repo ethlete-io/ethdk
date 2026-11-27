@@ -36,11 +36,16 @@
     /* The table owns this scroll container, so it owns the scrollbar in it: left to the platform, a
        horizontally scrolling table ends on a wide light-grey slab that no theme reaches. */
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--et-surface-tint, gray) 35%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 35%, transparent)
+      transparent;
 
     /* Skin knobs — the flat cell rules read these; each appearance overrides what it needs. The band
        is a subtle neutral tint mixed over the surface so it stays opaque under the sticky header. */
-    --_et-table-band: color-mix(in srgb, var(--et-surface-tint, gray) 7%, var(--et-surface-background, Canvas));
+    --_et-table-band: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 7%,
+      var(--et-surface-background, Canvas)
+    );
     /* The opaque paint behind the two bars rows pass under: the sticky header row and the footer bar.
        Both read it, so an app that recolours one cannot leave the other behind. */
     --_et-table-header-bg: var(--et-table-header-background-color, var(--et-surface-background, Canvas));
@@ -60,20 +65,20 @@
     --_et-table-stripe-solid: var(--_et-table-row-surface);
     /* The hover tint, in the same two forms and for the same reason. Read as a knob so an appearance
        can drop it, where a row has nothing to react to. */
-    --_et-table-hover-tint: color-mix(in srgb, var(--et-surface-tint, gray) 8%, transparent);
+    --_et-table-hover-tint: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 8%, transparent);
     --_et-table-hover-tint-solid: color-mix(
       in srgb,
-      var(--et-surface-control-text, gray) 8%,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 8%,
       var(--_et-table-row-surface)
     );
     --_et-table-row-hover: var(--_et-table-hover-tint);
     --_et-table-row-hover-solid: var(--_et-table-hover-tint-solid);
     /* Held rather than hovered. Twice the hover tint, the same step the library's buttons take, in the
        same two forms as the hover tint and for the same reason. */
-    --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-tint, gray) 16%, transparent);
+    --_et-table-pressed-tint: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 16%, transparent);
     --_et-table-pressed-tint-solid: color-mix(
       in srgb,
-      var(--et-surface-control-text, gray) 16%,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 16%,
       var(--_et-table-row-surface)
     );
     --_et-table-row-pressed: var(--_et-table-pressed-tint);
@@ -115,7 +120,7 @@
        classes) - and every rule below composes these, so none of them needs to ask. */
     --_et-table-pin-shadow: var(
       --et-table-pin-shadow-color,
-      color-mix(in srgb, var(--et-surface-tint, black) 30%, transparent)
+      color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, black)) 30%, transparent)
     );
     /* Per axis as well, because the two marks answer to different designs: an app that draws its own
        rule at a pinned column's edge takes the inline mark to `transparent` and still wants the block
@@ -182,8 +187,12 @@
 
   .et-table-host:where([data-appearance='zebra']) {
     --_et-table-header-bg: var(--et-table-header-background-color, var(--_et-table-band));
-    --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-tint, gray) 4%, transparent);
-    --_et-table-stripe-solid: color-mix(in srgb, var(--et-surface-tint, gray) 4%, var(--_et-table-row-surface));
+    --_et-table-stripe-bg: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 4%, transparent);
+    --_et-table-stripe-solid: color-mix(
+      in srgb,
+      var(--et-surface-tint, var(--et-surface-text, gray)) 4%,
+      var(--_et-table-row-surface)
+    );
   }
 
   .et-table-host:where([data-appearance='grid']) {
@@ -462,7 +471,7 @@
        so the public knob can fall back to a theme token (see the theming guide). */
     --_et-table-scroll-fade-color: var(
       --et-table-scroll-fade-color,
-      color-mix(in srgb, var(--et-surface-tint, black) 22%, transparent)
+      color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, black)) 22%, transparent)
     );
   }
 
@@ -791,7 +800,7 @@
     margin-block-start: var(--_et-table-busy-margin-block-start);
     margin-block-end: var(--_et-table-busy-margin-block-end);
     overflow: hidden;
-    background: color-mix(in srgb, var(--et-surface-tint, gray) 10%, transparent);
+    background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, gray)) 10%, transparent);
   }
 
   .et-table-busy-bar.et-table-busy-bar--enter {
