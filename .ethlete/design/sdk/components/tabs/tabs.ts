@@ -11,11 +11,13 @@ type Props = TabsMockOptions & { forced?: { tab: number; interaction: TriggerInt
 const TABS = [{ label: 'Overview' }, { label: 'Activity' }, { label: 'Settings' }];
 const WITH_DISABLED = [...TABS, { label: 'Billing', disabled: true }];
 
-const icon = (name: string) =>
-  iconMarkup(
-    SDK_ICONS.find((each) => each.name === name)!,
-    'et-tab-group__trigger-icon',
-  );
+const icon = (name: string) => {
+  const found = SDK_ICONS.find((each) => each.name === name);
+
+  if (!found) throw new Error(`Unknown icon ${name}`);
+
+  return iconMarkup(found, 'et-tab-group__trigger-icon');
+};
 const WITH_ICONS = [
   { label: `${icon('et-grid-2x2')}Overview` },
   { label: `${icon('et-clock')}Activity` },

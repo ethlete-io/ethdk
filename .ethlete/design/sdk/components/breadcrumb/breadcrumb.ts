@@ -40,7 +40,7 @@ const hiddenCrumbs = [1, 2, 3, 4];
 const longMarkup = (props: Props) => {
   const trail = longTrail(props);
   const panel = props.open
-    ? breadcrumbOverflowPanel(hiddenCrumbs.map((index) => trail[index]!)).replace(
+    ? breadcrumbOverflowPanel(hiddenCrumbs.flatMap((index) => trail[index] ?? [])).replace(
         'class="et-overlay ',
         'data-et-surface="overflow.body" class="et-overlay ',
       )

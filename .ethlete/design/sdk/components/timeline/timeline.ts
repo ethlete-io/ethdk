@@ -4,7 +4,13 @@ import { timeline, timelineStyles, type TimelineMockItem } from '@ethlete/compon
 import { definePart, drawing } from '@design-system';
 import frame from './timeline.css?inline';
 
-const icon = (name: string) => SDK_ICONS.find((each) => each.name === name)!;
+const icon = (name: string) => {
+  const found = SDK_ICONS.find((each) => each.name === name);
+
+  if (!found) throw new Error(`Unknown icon ${name}`);
+
+  return found;
+};
 
 type Props = {
   markers?: boolean;

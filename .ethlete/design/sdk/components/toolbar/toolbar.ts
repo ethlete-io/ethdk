@@ -3,7 +3,13 @@ import { SDK_ICONS } from '@ethlete/components/design/icon-set';
 import { definePart, drawing } from '@design-system';
 import frame from './toolbar.css?inline';
 
-const icon = (name: string) => SDK_ICONS.find((each) => each.name === name)!;
+const icon = (name: string) => {
+  const found = SDK_ICONS.find((each) => each.name === name);
+
+  if (!found) throw new Error(`Unknown icon ${name}`);
+
+  return found;
+};
 
 type Interaction = 'hover' | 'active' | 'focus-visible';
 type Control = 'bold' | 'italic' | 'underline' | 'bulleted' | 'numbered' | 'quote' | 'link';
