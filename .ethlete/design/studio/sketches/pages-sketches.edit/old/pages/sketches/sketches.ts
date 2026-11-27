@@ -285,6 +285,7 @@ const ROUNDS: Record<PartKind | 'screen', string> = {
   edit: BUILD_READY_LABELS.groups['direct-edit'],
   many: 'Runde 1 · Viele Zustände',
   phone: 'Runde 1 · Schmale Seite',
+  answered: 'Runde 1 · Anzahl in Halbfett',
   screen: 'Runde 2 · Port nach dem Merge',
 };
 
@@ -752,7 +753,7 @@ export default definePart<Props>({
     'no-sketches': { camera: 'fit', empty: true },
     'list-error': { camera: 'fit', part: 'narrow', comparing: true, listError: LIST_ERROR },
     'compare-pending': { camera: 'fit', part: 'narrow', comparing: true, known: [...COUNT_STATES] },
-    'compare-answered': { camera: 'fit', part: 'narrow' },
+    'compare-answered': { camera: 'fit', part: 'answered' },
     neighbourhood: { camera: 'fit', part: 'neighbours' },
     'added-state': { camera: 'fit', part: 'narrow', added: true },
     'narrow-wide-state': { camera: 'fit', part: 'narrow', wideState: true },
@@ -793,7 +794,7 @@ export default definePart<Props>({
     'comments-draft': { camera: 'fit', part: 'narrow', comments: 'draft' },
     'merge-confirm': { camera: 'fit', part: 'narrow', selected: 'b', confirm: 'merge' },
     'discard-confirm': { camera: 'fit', part: 'narrow', confirm: 'discard' },
-    live: { camera: 'fit', part: 'narrow', live: true },
+    live: { camera: { zoom: 2, x: 0, y: -80 }, part: 'narrow', live: true },
   },
   describe: {
     'page-sketch':
@@ -822,7 +823,8 @@ export default definePart<Props>({
       'Some states known as changed while the rest still compare; check that only those show and the rest sit folded behind one line.',
     neighbourhood:
       'Each variant changes one interaction of a control; check that the whole row of that control shows, the changed cell bright and its neighbours dimmed, and that the other controls stay folded.',
-    'compare-answered': 'The comparison done; check that unchanged states are dimmed and the grid did not jump.',
+    'compare-answered':
+      'The comparison done on a part where only the count changes; check the folded line for the unchanged basket-button states and that the grid did not jump.',
     'added-state':
       'A variant adds a state Aktuell lacks; check the dashed neu in der Skizze frame in Aktuell and fehlt in dieser Variante where it is missing.',
     'narrow-wide-state':
@@ -878,7 +880,7 @@ export default definePart<Props>({
       'Übernehmen of b asks first; check the confirmation dialog anchored to the button with Bestätigen.',
     'discard-confirm':
       'Verwerfen asks first; check the confirmation dialog above the Verwerfen icon in the floating toolbar.',
-    live: 'A frame made live by a double click; check the Live · Esc badge at the top right of the canvas.',
+    live: 'A frame made live by a double click, zoomed in; check the Live · Esc badge at the top right of the canvas and the one state frame at its large size.',
   },
   groups: [
     {

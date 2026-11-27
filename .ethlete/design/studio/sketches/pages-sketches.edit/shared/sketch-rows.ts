@@ -45,7 +45,7 @@ export type SketchPart = {
   render: (state: string) => Promise<Render>;
 };
 
-export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many' | 'phone';
+export type PartKind = 'wide' | 'narrow' | 'edit' | 'neighbours' | 'many' | 'phone' | 'answered';
 
 const OPUS: Omit<Model, 'when'> = { short: 'Opus 5.5', id: 'claude-opus-5-5', agent: 'claude' };
 const SOL: Omit<Model, 'when'> = { short: 'GPT-6.1 Sol', id: 'gpt-6.1-sol', agent: 'codex' };
@@ -180,6 +180,20 @@ export const PARTS: Record<PartKind, SketchPart> = {
         model: { ...SOL, when: '02.11. 11:09' },
         changed: ['add-active', 'add-focus-visible'],
         look: '**:data-farn-add:rounded-full',
+      },
+    ],
+  },
+  answered: {
+    ...narrowPart(),
+    rows: [
+      { key: 'current', label: 'Stand', note: 'Gemergter Stand', changed: [], look: '' },
+      {
+        key: 'c',
+        label: 'Entwurf 3',
+        note: 'Anzahl in Halbfett; die Korb-Knopf-Zustände bleiben wie heute.',
+        model: { ...OPUS, when: '02.11. 11:02' },
+        changed: NARROW_STATES.filter((name) => name.startsWith('count')),
+        look: '**:data-farn-count:font-ui-strong',
       },
     ],
   },
