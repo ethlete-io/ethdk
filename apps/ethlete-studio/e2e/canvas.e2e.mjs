@@ -35,9 +35,23 @@ import { FRAME, measureZoom, ZOOM_BUDGET, zoomP50BudgetOf } from './zoom-budget.
 import { residentSurvivors, survivorLinesOf } from './resident-survivors.mjs';
 import { goalLineOf, isNoisy, loadArgOf, runLoadLineOf, startRunLoad, topProcesses } from './run-load.mjs';
 import { placeSketchDraft } from './sketch-comment-draft.mjs';
+import { argvCheckOf, CANVAS_OPTIONS, usageOf } from './cli-options.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const args = process.argv.slice(2);
+const argvCheck = argvCheckOf({ args, options: CANVAS_OPTIONS });
+const usage = usageOf({ script: 'apps/ethlete-studio/e2e/canvas.e2e.mjs', options: CANVAS_OPTIONS });
+
+if (argvCheck.kind === 'help') {
+  console.log(usage);
+  process.exit(0);
+}
+
+if (argvCheck.kind === 'unknown') {
+  console.error(`unknown option ${argvCheck.option}\n\n${usage}`);
+  process.exit(2);
+}
+
 const built = args.includes('--built') ? resolve(args[args.indexOf('--built') + 1]) : undefined;
 const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined;
 const zoomFixture = args.includes('--zoom-fixture') || args.includes('--prepare-checkout');
