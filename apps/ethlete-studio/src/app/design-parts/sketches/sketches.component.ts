@@ -529,9 +529,10 @@ export class SketchesComponent {
   private settledScale = computed(() => this.canvas.preview()?.zoom ?? this.scale());
   private previewScale = computed(() => this.canvas.preview()?.scale ?? 1);
   protected chromeZoom = computed(() => (this.canvas.preview() ? 1 / this.previewScale() : null));
-  protected strokeWidth = computed(
-    () => `${Math.exp(-Math.round(Math.log(this.previewScale()) / STROKE_STEP) * STROKE_STEP)}px`,
+  protected strokeScale = computed(() =>
+    Math.exp(-Math.round(Math.log(this.previewScale()) / STROKE_STEP) * STROKE_STEP),
   );
+  protected strokeWidth = computed(() => `${this.strokeScale()}px`);
   protected chromeSpace = computed(() => {
     const scale = this.canvas.preview()?.scale;
 

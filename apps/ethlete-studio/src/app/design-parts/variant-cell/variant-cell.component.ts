@@ -8,9 +8,10 @@ type MarkBox = { left: number; top: number; width: number; height: number };
 /** A changed area of the shot; with `from`, the new place of a part that moved there from `from`. */
 export type VariantCellMark = MarkBox & { from?: MarkBox };
 
-// An outset shadow ring paints under the scaled content, whose subpixel bottom edge then hides it.
+// An outset ring is clipped by the frame in WebKit (no overflow-clip-margin), and a border or shadow under 1 px is
+// snapped (to 1 px, or to 0 in WebKit) before the zoom preview scales it, so the ring is a 1 px border scaled down.
 const FRAME_RING =
-  'after:pointer-events-none after:absolute after:-inset-(--sk-stroke) after:border-(length:--sk-stroke) after:border-et-surface-border';
+  'after:pointer-events-none after:absolute after:top-0 after:left-0 after:size-[calc(100%/var(--sk-stroke-scale,1))] after:origin-top-left after:scale-(--sk-stroke-scale,1) after:border after:border-et-surface-border';
 
 // Chromium and WebKit rasterize a scaled-down iframe's 16 px dot-grid gradient tile as a solid grey fill once
 // the tile drops below one CSS pixel, so a cell this small shows its picture instead of the live frame.
