@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync } from 'node:fs';
+import { closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { referenceAccentOf } from './accent.mjs';
+import { clientCommitsSince, DEFAULT_MAX_AGE_DAYS, dueReasonOf, lastRunOf, RUN_RECORD } from './due.mjs';
 import { writeImageSet } from './image-set.mjs';
 import { SDK_LIBS } from './sdk-skew.mjs';
 import { registerInStudio, registrationOutcomeOf } from './studio-register.mjs';
 
 const USAGE = `usage: yarn client-run [--source <tomflix>] [--reference <old design>] [--out <dir>] [--sdk <built sdk copy>] [--titles <n>] [--model <m>]
-       yarn client-run --judge <run dir> [--sdk <built sdk copy>]     judge an earlier run again, with that sdk's cli`;
+       yarn client-run --judge <run dir> [--sdk <built sdk copy>]     judge an earlier run again, with that sdk's cli
+       yarn client-run --if-due [--max-age-days <n>] [...]            run only when the tool changed since the last run or it is old`;
 
 const here = import.meta.dirname;
 const repo = resolve(here, '../..');
@@ -27,6 +29,8 @@ const { values } = parseArgs({
     titles: { type: 'string', default: '12' },
     model: { type: 'string' },
     judge: { type: 'string' },
+    'if-due': { type: 'boolean' },
+    'max-age-days': { type: 'string', default: String(DEFAULT_MAX_AGE_DAYS) },
     help: { type: 'boolean', short: 'h' },
   },
 });
@@ -90,6 +94,22 @@ if (values.judge) {
   process.exit(0);
 }
 
+if (values['if-due']) {
+  const last = lastRunOf(resolve(values.out));
+  const clientCommits = last?.sdkCommit ? clientCommitsSince({ repo, sdkCommit: last.sdkCommit }) : null;
+  const reason = dueReasonOf({ last, now: new Date(), maxAgeDays: Number(values['max-age-days']), clientCommits });
+  if (!reason) {
+    console.log(`client-run: not due - ${last.name} shows the current tool`);
+    process.exit(0);
+  }
+  console.log(`client-run: due - ${reason}`);
+}
+
+const headOf = (dir) => {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' });
+  return result.status === 0 ? result.stdout.trim() : null;
+};
+
 const stamp = stampOf(new Date());
 const runDir = join(resolve(values.out), stamp);
 const target = join(runDir, 'tomflix');
@@ -98,6 +118,10 @@ if (existsSync(runDir)) {
   process.exit(1);
 }
 mkdirSync(runDir, { recursive: true });
+writeFileSync(
+  join(runDir, RUN_RECORD),
+  `${JSON.stringify({ sdkCommit: values.sdk ? null : headOf(repo), startedAt: new Date().toISOString() }, null, 2)}\n`,
+);
 
 const sdk = values.sdk
   ? resolve(values.sdk)
