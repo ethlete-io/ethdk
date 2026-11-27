@@ -1,7 +1,6 @@
 import { control } from '@ethlete/components/design/control';
 import { definePart, drawing, html, withAction } from '@design-system';
 import { iconButton, iconButtonStyles } from '@ethlete/components/design/button';
-import button from '@system/components/button';
 import menu from '@system/components/menu';
 import { icon } from '@system/foundations/icons';
 import switchPart from '@system/components/switch';
@@ -129,11 +128,12 @@ export const sketchHead = async ({
         pressed: comment.on,
       }).replace('<button ', '<button data-sk-comment ')
     : '';
-  const reload = await button.render({
-    label: SKETCHES_LABELS.reload,
-    variant: 'outline',
-    color: 'surface',
+  const reload = iconButton({
+    icon: icon('refresh', { cls: 'et-icon' }),
+    ariaLabel: SKETCHES_LABELS.reload,
     size: 'sm',
+    variant: 'transparent',
+    color: 'surface',
   });
   const picker = await roundMenu(rounds, roundsOpen);
   const toggle = withdrawn
@@ -167,7 +167,7 @@ export const sketchHead = async ({
       <span class="mx-space-1 h-5 w-px flex-none bg-et-surface-border" aria-hidden="true"></span>
       ${picker.body}
       ${discardable && comment ? withAction(control(commentToggle, 'comment'), comment.action ?? 'emit:commentModeChange') : ''}
-      ${discardable && retry ? withAction(control(reload.body, 'retry'), 'emit:retry') : ''}
+      ${discardable && retry ? withAction(control(reload, 'retry'), 'emit:retry') : ''}
       ${
         discardable
           ? html`<span class="relative flex" data-sk-discard
@@ -179,8 +179,7 @@ export const sketchHead = async ({
   </div>`;
   return {
     body,
-    styles:
-      state.styles + iconButtonStyles + reload.styles + picker.styles + (toggle?.styles ?? '') + holdTriggerStyles,
+    styles: state.styles + iconButtonStyles + picker.styles + (toggle?.styles ?? '') + holdTriggerStyles,
     setup: toggleHold,
   };
 };

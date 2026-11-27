@@ -5,6 +5,7 @@ import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { SketchStatus, SketchWithdrawn } from '../sketches/sketches-sample';
 import { SketchHeadComponent } from './sketch-head.component';
+import { toolbarSystemViolationsOf } from './toolbar-system';
 
 const HOLD = { until: 'B1', since: 'seit 1 Min' };
 
@@ -215,6 +216,7 @@ describe('SketchHeadComponent', () => {
     expect(host.discards).toBe(1);
     expect(host.retries).toBe(1);
     expect(host.withdrawn()).toBe('shown');
+    expect(toolbarSystemViolationsOf(root)).toEqual([]);
   });
 
   it('draws no Verwerfen and no hint text when the sketch cannot be discarded', async () => {

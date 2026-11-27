@@ -7,6 +7,7 @@ import { SYSTEM_LABELS } from '../../i18n/system-labels';
 import { COMMENT_THREAD_LABELS, COMMENT_LIST_LABELS } from '../../i18n/comments-labels';
 import { SHELL_LABELS } from '../../i18n/shell-labels';
 import { OpenPointsChipComponent } from './open-points-chip.component';
+import { toolbarSystemViolationsOf } from '../sketch-head/toolbar-system';
 import { SystemPageComponent } from './system-page.component';
 
 const LABELS = SYSTEM_LABELS;
@@ -25,6 +26,12 @@ const render = async (inputs: Record<string, unknown>) => {
 };
 
 describe('SystemPageComponent', () => {
+  it('keeps its page actions in the shared toolbar and no button in a page head', async () => {
+    const fixture = await render({ commentMode: true });
+
+    expect(toolbarSystemViolationsOf(fixture.nativeElement)).toEqual([]);
+  });
+
   it('shows the Esc oder C hint in comment mode only without a draft', async () => {
     const fixture = await render({ commentMode: true });
     const actions = () =>
