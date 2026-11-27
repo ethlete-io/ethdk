@@ -17,6 +17,7 @@ import {
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { writeCacheEntry } from './cache-entry';
+import { pngSizeOf } from './contact-sheet';
 import { isRunning } from './is-running';
 import { PartAddress, PartMark, Picture, TextAmbient } from './shot';
 import { CompareBoxes } from './system/compare-boxes';
@@ -27,8 +28,11 @@ export type StoredAddress = Pick<PartAddress, 'product' | 'part' | 'sketch' | 'p
 /** Pictures kept on disk across server restarts, each served only while every file it was drawn from is unchanged. */
 export type ShotStore = {
   read: (key: string, address: StoredAddress) => Picture | null;
-  /** Like `read`, also answering a picture an older picture code drew from the same files, whose size only is current. */
-  readAnyCode: (key: string, address: StoredAddress) => Picture | null;
+  /**
+   * Like `read`, also answering a picture an older picture code drew from the same files, whose size only is current.
+   * It reads only the entry's head and the picture's size; the picture loads on its first use.
+   */
+  readAnyCode: (key: string, address: StoredAddress) => SizedPicture | null;
   write: (key: string, drawn: { address: StoredAddress; picture: Picture }) => void;
   /** A JSON value `writeKept` kept under `key`, served on the same terms as a picture, or null. */
   readKept: (key: string, address: StoredAddress) => unknown;
@@ -63,6 +67,9 @@ type LegacyEntry = Head & Body & { png: string };
 type Wanted = { key: string; scope: string; anyCode: boolean };
 
 type Found = { name: string; entry: Entry | null };
+
+/** A stored picture with its size, which the store answers without reading the picture. */
+export type SizedPicture = Picture & { size: { width: number; height: number } };
 
 /** The shot store folder under the work root, one for every checkout that shares the `node_modules` it lies in. */
 export const SHOT_STORE_DIR = 'part-shots';
@@ -122,6 +129,36 @@ const bytesAt = (fd: number, { at, length }: { at: number; length: number }) => 
   }
 
   return bytes;
+};
+
+const lazyPictureOf = (size: SizedPicture['size'], load: () => Entry | null): SizedPicture => {
+  let loaded: Entry | null = null;
+  const entry = () => {
+    loaded ??= load();
+
+    if (!loaded) throw new Error('design-explore: shot store entry no longer reads');
+
+    return loaded;
+  };
+
+  return {
+    size,
+    get png() {
+      return entry().png;
+    },
+    get marks() {
+      return entry().marks;
+    },
+    get boxes() {
+      return entry().boxes;
+    },
+    get markup() {
+      return entry().markup;
+    },
+    get ambient() {
+      return entry().ambient;
+    },
+  };
 };
 
 const isLock = (value: unknown): value is DrawLock => {
@@ -377,33 +414,69 @@ export const createShotStore = (options: {
     }
   };
 
+  const matchingHeadOf = (fd: number, wanted: Wanted) => {
+    const prefix = bytesAt(fd, { at: 0, length: PREFIX_BYTES });
+
+    if (!prefix.subarray(0, ENTRY_MAGIC.length).equals(ENTRY_MAGIC)) return null;
+
+    const headLength = prefix.readUInt32BE(ENTRY_MAGIC.length);
+    const bodyLength = prefix.readUInt32BE(ENTRY_MAGIC.length + 4);
+    const head: unknown = JSON.parse(bytesAt(fd, { at: PREFIX_BYTES, length: headLength }).toString('utf8'));
+
+    return isHead(head) && matches(head, wanted) ? { head, restAt: PREFIX_BYTES + headLength, bodyLength } : null;
+  };
+
+  const withEntryFile = <T>(name: string, read: (fd: number) => T) => {
+    const fd = openSync(join(dir, name), 'r');
+
+    try {
+      return read(fd);
+    } finally {
+      closeSync(fd);
+    }
+  };
+
+  const restOf = (fd: number, { head, restAt, bodyLength }: { head: Head; restAt: number; bodyLength: number }) => {
+    const rest = bytesAt(fd, { at: restAt, length: fstatSync(fd).size - restAt });
+    const body: unknown = JSON.parse(rest.subarray(0, bodyLength).toString('utf8'));
+
+    return isBody(body) ? { ...body, ...head, png: rest.subarray(bodyLength) } : null;
+  };
+
   const entryOf = (name: string, wanted: Wanted): Found => {
     if (name.endsWith(LEGACY_SUFFIX)) return legacyEntryOf(name, wanted);
 
-    let fd: number | null = null;
-
     try {
-      fd = openSync(join(dir, name), 'r');
+      return {
+        name,
+        entry: withEntryFile(name, (fd) => {
+          const found = matchingHeadOf(fd, wanted);
 
-      const prefix = bytesAt(fd, { at: 0, length: PREFIX_BYTES });
-
-      if (!prefix.subarray(0, ENTRY_MAGIC.length).equals(ENTRY_MAGIC)) return { name, entry: null };
-
-      const headLength = prefix.readUInt32BE(ENTRY_MAGIC.length);
-      const bodyLength = prefix.readUInt32BE(ENTRY_MAGIC.length + 4);
-      const head: unknown = JSON.parse(bytesAt(fd, { at: PREFIX_BYTES, length: headLength }).toString('utf8'));
-
-      if (!isHead(head) || !matches(head, wanted)) return { name, entry: null };
-
-      const restAt = PREFIX_BYTES + headLength;
-      const rest = bytesAt(fd, { at: restAt, length: fstatSync(fd).size - restAt });
-      const body: unknown = JSON.parse(rest.subarray(0, bodyLength).toString('utf8'));
-
-      return { name, entry: isBody(body) ? { ...body, ...head, png: rest.subarray(bodyLength) } : null };
+          return found ? restOf(fd, found) : null;
+        }),
+      };
     } catch {
       return { name, entry: null };
-    } finally {
-      if (fd !== null) closeSync(fd);
+    }
+  };
+
+  const sizedOf = (name: string, wanted: Wanted): SizedPicture | null => {
+    if (name.endsWith(LEGACY_SUFFIX)) {
+      const { entry } = legacyEntryOf(name, wanted);
+
+      return entry ? { ...pictureOf(entry), size: pngSizeOf(entry.png) } : null;
+    }
+
+    try {
+      const found = withEntryFile(name, (fd) => {
+        const head = matchingHeadOf(fd, wanted);
+
+        return head && { head, size: pngSizeOf(bytesAt(fd, { at: head.restAt + head.bodyLength, length: 24 })) };
+      });
+
+      return found && lazyPictureOf(found.size, () => withEntryFile(name, (fd) => restOf(fd, found.head)));
+    } catch {
+      return null;
     }
   };
 
@@ -415,14 +488,13 @@ export const createShotStore = (options: {
     ...(entry.ambient ? { ambient: entry.ambient } : {}),
   });
 
-  const readOf = ({ key, address, anyCode }: { key: string; address: StoredAddress; anyCode: boolean }) => {
+  const readOf = (key: string, address: StoredAddress) => {
     const scope = storedScopeOf(address);
 
     for (const variant of variantsOf(key)) {
-      const { name, entry } = entryOf(variant, { key, scope, anyCode });
+      const { name, entry } = entryOf(variant, { key, scope, anyCode: false });
 
       if (!entry) continue;
-      if (anyCode) return entry;
 
       const now = new Date();
 
@@ -484,7 +556,7 @@ export const createShotStore = (options: {
   };
 
   const read = (key: string, address: StoredAddress) => {
-    const entry = readOf({ key, address, anyCode: false });
+    const entry = readOf(key, address);
 
     return entry ? pictureOf(entry) : null;
   };
@@ -530,9 +602,15 @@ export const createShotStore = (options: {
   return {
     read,
     readAnyCode: (key, address) => {
-      const entry = readOf({ key, address, anyCode: true });
+      const scope = storedScopeOf(address);
 
-      return entry ? pictureOf(entry) : null;
+      for (const variant of variantsOf(key)) {
+        const sized = sizedOf(variant, { key, scope, anyCode: true });
+
+        if (sized) return sized;
+      }
+
+      return null;
     },
     write: (key, { address, picture }) =>
       keep(key, {
@@ -545,7 +623,7 @@ export const createShotStore = (options: {
           ...(picture.ambient === undefined ? {} : { ambient: picture.ambient }),
         },
       }),
-    readKept: (key, address) => readOf({ key, address, anyCode: false })?.kept ?? null,
+    readKept: (key, address) => readOf(key, address)?.kept ?? null,
     writeKept: (key, { address, kept }) => keep(key, { address, fields: { png: Buffer.alloc(0), marks: [], kept } }),
     drop: (key) => {
       const name = used.get(key);

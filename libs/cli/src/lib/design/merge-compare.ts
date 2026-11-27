@@ -29,9 +29,16 @@ export type CompareRow = {
 /** The rows of a merge preview, split by whether the merge changes a pixel of their picture. */
 export type MergeCompare = { target: string; variant: string; changed: CompareRow[]; unchanged: CompareRow[] };
 
-/** A picture with where it came from; without `source` it may have come from a cache. */
-/** `drawnAt`: the `performance.now()` at which this server began drawing the picture, `null` for one read from a store. */
-export type SourcedPicture = Picture & { source?: ShotSource; drawnAt?: number | null };
+/**
+ * A picture with where it came from; without `source` it may have come from a cache. `drawnAt`: the
+ * `performance.now()` at which this server began drawing the picture, `null` for one read from a store. `size`: set on
+ * a picture read from a store with `kept: 'size'`, whose `png` then loads on its first use.
+ */
+export type SourcedPicture = Picture & {
+  source?: ShotSource;
+  drawnAt?: number | null;
+  size?: { width: number; height: number };
+};
 
 export type PictureOf = (options: {
   product: string;

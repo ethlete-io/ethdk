@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { blankPngOf } from './blank-png';
 import { createShotStore } from './shot-store';
 
 const reads = vi.hoisted(() => ({
@@ -74,6 +75,25 @@ describe('the shot store hit check', () => {
 
     expect(storeOf('newer').read('key', address)).toBeNull();
     expect(bytesReadIn(store)).toBeLessThan(4 * 1024);
+  });
+
+  it('answers the size of an older picture code without reading its picture, which loads on first use', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-shot-store-reads-'));
+    const store = join(dir, 'store');
+    const input = join(dir, 'input.ts');
+    const storeOf = (code: string) =>
+      createShotStore({ dir: store, salt: 's', code, checkout: dir, inputsOf: () => [input], scopeOf: () => '' });
+    const png = Buffer.concat([blankPngOf(320, 120), randomBytes(1024 * 1024)]);
+
+    writeFileSync(input, 'one');
+    storeOf('older').write('key', { address, picture: { png, marks: [] } });
+    reads.bytes.clear();
+
+    const sized = storeOf('newer').readAnyCode('key', address);
+
+    expect(sized?.size).toEqual({ width: 320, height: 120 });
+    expect(bytesReadIn(store)).toBeLessThan(4 * 1024);
+    expect(sized?.png).toEqual(png);
   });
 
   it('stats each read file once while one turn checks many entries drawn from it', () => {

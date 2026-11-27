@@ -88,7 +88,7 @@ export const shotFramesOf = async ({
         kept: 'size',
       }).catch(() => null);
 
-      if (picture) return [{ ...shot, frame: pngSizeOf(picture.png) }];
+      if (picture) return [{ ...shot, frame: picture.size ?? pngSizeOf(picture.png) }];
     }
 
     return recordedOf(shot);

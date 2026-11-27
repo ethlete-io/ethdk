@@ -1233,7 +1233,9 @@ export const createPartShooter = (options: {
         return keptPictureOf(options, kept === 'size').then((found) => {
           if (!found) throw new NotKeptError(`design-explore: no kept picture of ${options.part} ${options.state}`);
 
-          return { ...found.picture, source: found.source, drawnAt: null };
+          const sourced = { source: found.source, drawnAt: null };
+
+          return found.source === 'memory' ? { ...found.picture, ...sourced } : Object.assign(found.picture, sourced);
         });
 
       let source: ShotSource | undefined;
