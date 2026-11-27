@@ -10,6 +10,7 @@ const STICKY_BUTTONS_STORY_ID = 'components-layout-scrollable--sticky-buttons';
 const BORDER_MASK_STORY_ID = 'components-layout-scrollable--border-mask';
 const PROVIDED_BUTTON_COLOR_STORY_ID = 'components-layout-scrollable--provided-button-color';
 const TAB_BAR_STORY_ID = 'components-layout-scrollable--tab-bar';
+const EMPTY_IN_FLEX_ROW_STORY_ID = 'components-layout-scrollable--empty-in-flex-row';
 
 const HOST = '.et-scrollable';
 const CONTAINER = '.et-scrollable-container';
@@ -651,5 +652,16 @@ test.describe('scrollable / item sizing', () => {
 
     expect(Math.abs(end.trailing - end.expected), JSON.stringify(end)).toBeLessThanOrEqual(1);
     expect(end.remaining).toBe(0);
+  });
+});
+
+test.describe('scrollable / empty', () => {
+  test('an empty track next to a growing label does not widen the page', async ({ page }) => {
+    const root = await openStory(page, EMPTY_IN_FLEX_ROW_STORY_ID);
+
+    await expect(root.locator(HOST)).not.toHaveClass(/et-scrollable--can-scroll/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(
+      0,
+    );
   });
 });

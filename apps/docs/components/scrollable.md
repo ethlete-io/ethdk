@@ -180,7 +180,7 @@ An `et-segmented-button` inside an `et-scrollable` needs no marker: it registers
 
 ## State & programmatic scrolling
 
-- `(scrollStateChange)` emits `{ canScroll, isAtStart, isAtEnd }`.
+- `(scrollStateChange)` emits `{ canScroll, isAtStart, isAtEnd }`. A track without children never scrolls, and it renders no buttons.
 - `(intersectionChange)` emits per-child visibility ratios (debounced), which is what powers the dots and darkening.
 - On the headless `ScrollableDirective` (exported as `etScrollable`): `scrollToElement(...)`, `scrollToElementByIndex({ index })`, and `scrollToStartDirection()` / `scrollToEndDirection()` - one container or item step back/forward, which is what the prev/next buttons call. `getActiveChildren()` and `getScrollContainerRef()` expose the tracked children and the container element as readonly signals.
 

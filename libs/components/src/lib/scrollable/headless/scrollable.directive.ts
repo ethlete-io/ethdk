@@ -141,10 +141,12 @@ export class ScrollableDirective {
   );
   public isAtEnd = computed(() => (this.scrollObserverRef()?.isAtEnd() ?? false) && this.isScrollOffsetAtEdge('end'));
 
-  public canScroll = computed(() =>
-    this.direction() === 'horizontal'
-      ? this.containerScrollState().canScrollHorizontally
-      : this.containerScrollState().canScrollVertically,
+  public canScroll = computed(
+    () =>
+      this.scrollableChildren().length > 0 &&
+      (this.direction() === 'horizontal'
+        ? this.containerScrollState().canScrollHorizontally
+        : this.containerScrollState().canScrollVertically),
   );
 
   public childIntersections = signalElementIntersection(this.scrollableChildren, {

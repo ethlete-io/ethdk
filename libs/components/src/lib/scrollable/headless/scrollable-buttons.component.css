@@ -94,11 +94,20 @@
       }
     }
 
+    /* A hidden button still counts as overflow: on a track narrower than a button it widens the page. */
+    &:not(.et-scrollable--can-scroll) > .et-scrollable-wrapper > .et-scrollable-buttons {
+      display: none;
+    }
+
     &.et-scrollable--can-animate.et-scrollable--can-scroll {
       & .et-scrollable-button {
         transition:
           opacity 300ms var(--ease-5),
           transform 300ms var(--ease-5);
+
+        @starting-style {
+          opacity: 0;
+        }
       }
     }
 

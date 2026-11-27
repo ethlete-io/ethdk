@@ -56,12 +56,12 @@ const navigationOf = (fixture: ComponentFixture<TestHostComponent>) =>
     .componentInstance as ScrollableNavigationComponent;
 
 describe('ScrollableDirective edge cases', () => {
-  it('renders no dots and pages nowhere without children', async () => {
+  it('cannot scroll, renders no navigation and pages nowhere without children', async () => {
     const { fixture, scroll } = await create();
     const scrollable = scrollableOf(fixture);
 
-    expect(navigationOf(fixture).navigation()).toEqual({ items: [], activeIndex: -1 });
-    expect(fixture.nativeElement.querySelectorAll('.et-scrollable-navigation-item')).toHaveLength(0);
+    expect(scrollable.canScroll()).toBe(false);
+    expect(fixture.debugElement.query(By.directive(ScrollableNavigationComponent))).toBeNull();
 
     scrollable.scrollOneItemSize('end');
     scrollable.scrollToElementByIndex({ index: 0 });

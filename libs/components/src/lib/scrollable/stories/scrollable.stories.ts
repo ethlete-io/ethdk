@@ -1,6 +1,6 @@
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { provideScrollableConfig } from '../headless/scrollable-config';
-import { SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../scrollable.imports';
+import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS } from '../scrollable.imports';
 import { ScrollableStorybookComponent } from './components';
 
 export default {
@@ -255,6 +255,23 @@ export const TabBar: Story = {
           </button>
         }
       </et-scrollable>
+    `,
+  }),
+};
+
+export const EmptyInFlexRow: Story = {
+  decorators: [
+    applicationConfig({
+      providers: [provideScrollableConfig({ buttons: { enabled: true } })],
+    }),
+    moduleMetadata({ imports: [SCROLLABLE_IMPORTS, SCROLLABLE_NAVIGATION_IMPORTS, SCROLLABLE_DRAG_IMPORTS] }),
+  ],
+  render: () => ({
+    template: `
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="flex: 1">Global series ranking</span>
+        <et-scrollable etScrollableDrag></et-scrollable>
+      </div>
     `,
   }),
 };
