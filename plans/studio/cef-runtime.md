@@ -26,7 +26,8 @@ Open:
 - The human confirms the switch to Windows after the spike (ADR 0242).
 - Any native Windows build of the repo needs `C:\Program Files\Git\usr\bin` first on `PATH`: the Nx targets
   `core:build-generators`, `query:build-generators` and `components:build-generators` run `rm -rf`.
-- The spike patch is scratch only (`C:\b480` on `rack`): `tauri-runtime-cef` and the `linux`/`macos` gates in
+- The spike patch lives only in `.claude/handoffs/agent-results/b480-win-cef.diff` on tank (`C:\b480` on `rack`
+  was deleted 27.11.): `tauri-runtime-cef` and the `linux`/`macos` gates in
   `Cargo.toml`, `main.rs`, `lib.rs` and `console_log.rs` widened by `windows`, the Windows `tauri-runtime-wry`
   dependency dropped.
 
