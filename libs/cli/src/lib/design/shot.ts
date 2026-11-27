@@ -384,6 +384,36 @@ export const emptySlotsScriptOf = (part: string, fill: string | null = null) => 
   return Promise.all([...document.images].map((image) => image.decode().catch(() => undefined)));
 })()`;
 
+/** The caption prefix of a `slot()` region in an app shot, which the app fills where the harness passes nothing. */
+export const SLOT_MARK_CAPTION = 'filled by the app: ';
+
+/**
+ * A page script that replaces the content of every `[data-et-projected]` region with a hatched, dashed box captioned
+ * `SLOT_MARK_CAPTION` and the region name, as a compare's design picture empties those regions: the harness passes
+ * no content into them, so the app draws only its fallback there.
+ */
+export const markSlotsScriptOf = () => `(() => {
+  document.querySelectorAll('[data-et-projected]').forEach((slot) => {
+    const mark = document.createElement('div');
+
+    mark.setAttribute('data-et-slot-mark', slot.getAttribute('data-et-projected') ?? '');
+    mark.textContent = ${JSON.stringify(SLOT_MARK_CAPTION)} + (slot.getAttribute('data-et-projected') ?? '');
+    mark.style.cssText = [
+      'position:absolute', 'inset:0', 'box-sizing:border-box', 'display:flex', 'align-items:center',
+      'justify-content:center', 'padding:8px', 'text-align:center', 'font:500 12px/16px system-ui,sans-serif',
+      'color:CanvasText', 'border:2px dashed currentColor', 'opacity:0.6',
+      'background:repeating-linear-gradient(45deg,color-mix(in srgb,currentColor 12%,transparent) 0 6px,transparent 6px 12px)',
+    ].join(';');
+    slot.replaceChildren(mark);
+
+    if (getComputedStyle(slot).position === 'static') slot.style.position = 'relative';
+    const { width, height } = slot.getBoundingClientRect();
+
+    if (width < 160) slot.style.minWidth = '160px';
+    if (height < 64) slot.style.minHeight = '64px';
+  });
+})()`;
+
 const DRAW_LIMIT_MS = 4 * DRAW_TIMEOUT_MS;
 
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;

@@ -117,7 +117,7 @@ export type ShootStates = (options: {
   only: readonly string[] | null;
   preset?: string | null;
   sketch?: string | null;
-  /** Draws the app even for a state compare cannot check against its design: one that differs only inside slots, or sends props the app has no input for. */
+  /** Draws the app even for a state compare cannot check against its design: one that differs only inside slots, or sends props the app has no input for. Marks its `slot()` regions as filled by the app. */
   appOnly?: boolean;
   /** The folder of the built harness app `url` serves; without it no app picture is cached. */
   appRoot?: string | null;
@@ -432,7 +432,7 @@ export const shootStatesWith =
                 ...drive,
                 ...(looks.length > 0 ? { looks } : {}),
                 ...(appOnly
-                  ? {}
+                  ? { markSlots: true }
                   : {
                       props: {
                         sent,

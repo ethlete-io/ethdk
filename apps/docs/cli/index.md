@@ -633,7 +633,9 @@ The design server shoots the same app side: `GET /__design/shot?product=&part=&s
 `preset`) answers the PNG compare takes of that state in the harness app, from a watch build of the harness the server
 keeps while it runs. It takes no `call`, `sketch`, `width` or `interaction`, and no `surface`, `color`, `fill`,
 `scheme` or `scale`: the harness draws the app's own theme at scale 1. It answers 422 with compare's reason when
-it cannot shoot the state. `source=design`, the default, draws the design.
+it cannot shoot the state. The harness passes no content into a `slot()` region, so the shot replaces the content of
+every element with `data-et-projected` with a hatched box captioned `filled by the app: <name>`: mark the region an
+app component draws a slot's content in with that attribute. `source=design`, the default, draws the design.
 
 `et design compare --affected --product app-a` compares every implemented part whose app files changed since its
 `implemented.json` record, the parts a shared change reaches, in one run on one harness. Each part's output starts with

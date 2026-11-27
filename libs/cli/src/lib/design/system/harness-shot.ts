@@ -1,6 +1,6 @@
 import { DesignPreset } from '../design-config';
 import { timedPhase } from '../phase-timing';
-import { checkerScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
+import { checkerScriptOf, markSlotsScriptOf, pixelBoxOf, TextAmbient, viewportOf } from '../shot';
 import { awaitFonts, Browser, DRAW_TIMEOUT_MS } from '../thumb';
 import { forcedSelectorOf } from '../force-interactions';
 import { boxedMarkupScriptOf } from './dom-boxes';
@@ -386,6 +386,8 @@ type HarnessDrive = {
   props?: { sent: unknown; designOnly: ReadonlySet<string> };
   /** Records the steps of the shot as `<phase> load|prepare|drive|settle|screenshot` timing phases. */
   phase?: string;
+  /** Draws every `slot()` region of the app as filled by the app, with `markSlotsScriptOf`. */
+  markSlots?: boolean;
 };
 
 type DrivenHarness = {
@@ -535,6 +537,8 @@ const drivenHarnessOf = async <T>(options: HarnessDrive, use: (driven: DrivenHar
     }
 
     if (options.forcesInFrames) await forceStylesOf(page);
+
+    if (options.markSlots) await page.evaluate(markSlotsScriptOf());
 
     return await use({ page, host, room, timeout, step, sdkErrors, appErrors, forcedTargets });
   } finally {
