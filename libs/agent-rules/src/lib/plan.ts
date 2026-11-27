@@ -13,7 +13,7 @@ import { filterContent, isPackageInstalled, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
 import { emitAgentsSkills } from './targets/agents-skills';
-import { CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
+import { CLAUDE_LOCAL_SETTINGS_FILE, CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { assertKnownMods } from './targets/claude-mods';
 import { emitClaude } from './targets/claude';
 import { CODEX_FILE, emitCodex } from './targets/codex';
@@ -111,7 +111,7 @@ export const claudeMdImportsAgentsMd = (root: string) => {
 };
 
 /**
- * The local file only affects runtime behavior, never sync output — so the warnings here are about
+ * The local file affects runtime behavior and, through `mods`, only the gitignored local settings — so the warnings here are about
  * the mistakes that would otherwise fail silently: a file the hooks can't parse, a key that
  * suggests someone expected sync-time overrides, a hook name nothing matches, or a checkout path
  * that no longer exists (the skills reading it would just report the checkout as missing).
@@ -129,7 +129,7 @@ const collectLocalConfigWarnings = (root: string) => {
 
   if (local.unknownKeys.length > 0) {
     warnings.push(
-      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports ${LOCAL_CONFIG_KEYS.map((key) => `"${key}"`).join(', ')}; it never changes what sync writes.`,
+      `${LOCAL_CONFIG_FILE_NAME} contains unsupported key(s): ${local.unknownKeys.join(', ')} — the local file supports ${LOCAL_CONFIG_KEYS.map((key) => `"${key}"`).join(', ')}; only "mods" changes what sync writes.`,
     );
   }
 
@@ -216,7 +216,7 @@ const isUnparseableJson = (contents: string) => {
 };
 
 const collectHookSettingsWarnings = (root: string) =>
-  [CLAUDE_SETTINGS_FILE, CODEX_HOOKS_FILE]
+  [CLAUDE_SETTINGS_FILE, CLAUDE_LOCAL_SETTINGS_FILE, CODEX_HOOKS_FILE]
     .filter((path) => isUnparseableJson(readExisting(root, path)))
     .map((path) => `${path} is not valid JSON — sync leaves it alone, so no hook is registered or removed there.`);
 
@@ -281,6 +281,11 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   assertKnownGitHooks(config.gitHooks);
   assertKnownMods(config.mods);
 
+  const localState = readLocalConfig(config.root);
+  const localMods = localState.exists && localState.valid ? (localState.config.mods ?? []) : [];
+
+  assertKnownMods(localMods);
+
   const items = loadContent();
   const { kept, skipped } = filterContent(items, config);
 
@@ -342,6 +347,8 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
       claudeTarget: config.targets.includes('claude'),
       existingSettings: readExisting(config.root, CLAUDE_SETTINGS_FILE),
       mods: config.mods,
+      existingLocalSettings: readExisting(config.root, CLAUDE_LOCAL_SETTINGS_FILE),
+      localMods,
       sdkProfile: config.scopes.includes('sdk'),
     }),
     ...emitCodexHooks({

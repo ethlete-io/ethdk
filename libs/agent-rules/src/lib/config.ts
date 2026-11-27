@@ -203,11 +203,13 @@ export type BuilderIdleConfig = {
 
 /**
  * The gitignored local config holds per-machine values, read at runtime — by the generated hook
- * scripts, and by the agent while following a skill — never by `sync`. Sync output must be
+ * scripts, and by the agent while following a skill — never by `sync`, except `mods`. Sync output must be
  * identical on every machine and in CI (the generated files are committed and `check` diffs them),
  * so nothing here may change what gets emitted:
  *
  * - `disableHooks: true` silences every generated hook, `["context-warning"]` just the named ones.
+ * - `mods` enables Claude Code mods on this machine only. It is the one key `sync` reads: it writes them
+ *   into the gitignored `.claude/settings.local.json`, never into the committed `settings.json`.
  * - `disableAutoHandoffSave: true` keeps the context-warning hook's normal tiered messages (including
  *   in auto mode), but at the critical tier in auto mode it falls back to just recommending
  *   a handoff instead of writing the handoff file automatically.
@@ -224,6 +226,7 @@ export type LocalConfig = {
   awayMode?: AwayModeConfig;
   builderSlots?: number;
   builderIdle?: BuilderIdleConfig;
+  mods?: string[];
 };
 
 export type LocalConfigState =
@@ -237,6 +240,7 @@ export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
   'awayMode',
   'builderSlots',
   'builderIdle',
+  'mods',
 ];
 
 /**

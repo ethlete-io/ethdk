@@ -4,6 +4,7 @@ import { mergeModSettings, modMarketplacePath } from './claude-mods';
 import { emitHookScripts, emitHookSettings, hooksForAgent } from './hooks-shared';
 
 export const CLAUDE_SETTINGS_FILE = '.claude/settings.json';
+export const CLAUDE_LOCAL_SETTINGS_FILE = '.claude/settings.local.json';
 
 const HOOKS_DIR = '.claude/hooks/ethlete';
 
@@ -18,11 +19,15 @@ export const emitClaudeHooks = (options: {
   claudeTarget: boolean;
   existingSettings: string;
   mods: string[];
+  existingLocalSettings: string;
+  localMods: string[];
   sdkProfile: boolean;
 }): EmittedFile[] => {
-  const { context, claudeTarget, existingSettings, sdkProfile } = options;
+  const { context, claudeTarget, existingSettings, existingLocalSettings, sdkProfile } = options;
   const hooks = claudeTarget ? hooksForAgent({ hooks: context.hooks, agent: 'claude' }) : [];
   const mods = claudeTarget ? options.mods : [];
+  const localMods = claudeTarget ? options.localMods : [];
+  const marketplacePath = modMarketplacePath({ sdkProfile });
 
   return [
     ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR, runner: packageRunnerVar(context.vars) }),
@@ -34,8 +39,28 @@ export const emitClaudeHooks = (options: {
       hooksDir: HOOKS_DIR,
       commandFor,
       createWhenEmpty: true,
-      mergeExtra: (merged) =>
-        mergeModSettings({ existing: merged, mods, marketplacePath: modMarketplacePath({ sdkProfile }) }),
+      mergeExtra: (merged) => mergeModSettings({ existing: merged, mods, marketplacePath }),
     }),
+    ...emitLocalModSettings({ existing: existingLocalSettings, mods: localMods, marketplacePath }),
   ];
+};
+
+const emitLocalModSettings = (options: {
+  existing: string;
+  mods: string[];
+  marketplacePath: string;
+}): EmittedFile[] => {
+  const { existing, mods, marketplacePath } = options;
+
+  if (existing.trim().length === 0 && mods.length === 0) return [];
+
+  try {
+    const merged = mergeModSettings({ existing, mods, marketplacePath });
+
+    if (JSON.stringify(JSON.parse(existing.trim() || '{}')) === JSON.stringify(JSON.parse(merged))) return [];
+
+    return [{ path: CLAUDE_LOCAL_SETTINGS_FILE, contents: merged }];
+  } catch {
+    return [];
+  }
 };

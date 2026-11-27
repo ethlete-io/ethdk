@@ -1,6 +1,7 @@
 import {
   appendFileSync,
   mkdirSync,
+  readFileSync,
   mkdtempSync,
   readdirSync,
   statSync,
@@ -169,5 +170,57 @@ describe('sync with a relative root', () => {
     sync({ root: relative(process.cwd(), root) });
 
     expect(readdirSync(join(root, '.agents/skills')).includes('ethlete-gone')).toBe(false);
+  });
+});
+
+describe('local config mods', () => {
+  const claudeRepo = (localConfig: unknown) => {
+    const root = consumerRepo({ targets: ['claude'] });
+
+    mkdirSync(join(root, '.claude'), { recursive: true });
+    writeFileSync(join(root, '.claude/settings.json'), '{}\n', 'utf8');
+    writeFileSync(join(root, 'ethlete-agents.config.local.json'), JSON.stringify(localConfig), 'utf8');
+
+    return root;
+  };
+
+  it('writes the local mods into settings.local.json and leaves settings.json untouched', () => {
+    const root = claudeRepo({ mods: ['status-line'] });
+    const committedBefore = readFileSync(join(root, '.claude/settings.json'));
+
+    captureOutput();
+    sync({ root });
+
+    const local = JSON.parse(readFileSync(join(root, '.claude/settings.local.json'), 'utf8'));
+
+    expect(local.enabledPlugins).toEqual({ 'status-line@ethlete': true });
+    expect(local.extraKnownMarketplaces.ethlete).toBeDefined();
+    expect(readFileSync(join(root, '.claude/settings.json')).equals(committedBefore)).toBe(true);
+    expect(readFileSync(join(root, '.claude/settings.json'), 'utf8')).not.toContain('status-line');
+  });
+
+  it('keeps other keys of an existing settings.local.json', () => {
+    const root = claudeRepo({ mods: ['usage-line'] });
+
+    writeFileSync(
+      join(root, '.claude/settings.local.json'),
+      JSON.stringify({ permissions: { allow: ['Bash(ls:*)'] } }),
+      'utf8',
+    );
+    captureOutput();
+    sync({ root });
+
+    const local = JSON.parse(readFileSync(join(root, '.claude/settings.local.json'), 'utf8'));
+
+    expect(local.permissions).toEqual({ allow: ['Bash(ls:*)'] });
+    expect(local.enabledPlugins).toEqual({ 'usage-line@ethlete': true });
+  });
+
+  it('rejects an unknown local mod', () => {
+    const root = claudeRepo({ mods: ['nope'] });
+
+    captureOutput();
+
+    expect(() => sync({ root })).toThrow(/Unknown mod/);
   });
 });

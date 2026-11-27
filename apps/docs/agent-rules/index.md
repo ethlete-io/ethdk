@@ -300,12 +300,13 @@ that differs per developer, without touching any committed file:
 }
 ```
 
-| Option                   | What it does                                                                                                                                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                    |
-| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself. |
+| Option                   | What it does                                                                                                                                                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `disableHooks`           | `true` disables every generated hook; an array (`["context-warning"]`) just the named ones.                                                                                                                 |
+| `mods`                   | Claude Code mods on this machine only: `sync` writes the `ethlete` marketplace and `<mod>@ethlete` entries into the gitignored `.claude/settings.local.json` (other keys stay), never into `settings.json`. |
+| `disableAutoHandoffSave` | Keeps the `context-warning` hook's tiered warnings but drops the auto-mode escalation: at the critical tier it recommends a handoff instead of saving the handoff file itself.                              |
 
-Everything in this file is read at runtime - by the generated hook scripts and by the
+Everything in this file except `mods` is read at runtime - by the generated hook scripts and by the
 agent while following a skill - never by `sync`: the generated files stay identical on
 every machine and in CI, which is what lets `check` diff them. That is also why the file
 takes nothing beyond these keys - `sync`/`check` warn about unknown keys. Add the

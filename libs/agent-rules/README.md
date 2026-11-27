@@ -533,6 +533,10 @@ that differs per developer, without touching any committed file:
 - **`disableAutoHandoffSave`** - keeps the `context-warning` hook's tiered warnings but
   drops the auto-mode escalation: at the critical tier it recommends `/ethlete-handoff`
   instead of saving the handoff file itself.
+- **`mods`** - Claude Code mods for this machine only. `yarn agents:sync` writes the `ethlete`
+  marketplace and the `<mod>@ethlete` entries into the gitignored `.claude/settings.local.json`
+  (other keys stay) and never into the committed `settings.json`. Mods in the committed config
+  keep going to `settings.json`.
 
 - **`builderSlots`** - the slot limit of the `builder-idle-check` hook (default 4): a builder
   stop is blocked while fewer subagents and background commands run than this and a free
