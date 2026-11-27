@@ -34,7 +34,6 @@ Geparkt: B780 Toggletip-Fläche in Storybook transparent (B779 26.11., Cause gem
 Geparkt: B687 Automatischer Kunden-Vorlauf (26.11. Queue auf 15 gekürzt): Ein Kunden-Agent läuft vor jedem Tomflix-Lauf mit dem Menschen und hin und wieder von selbst; ein Skript prüft das Ergebnis mit den Augen des Menschen (was Studio zeigt), keine Handkorrektur.
 Geparkt: B713 Timetrack-Absturz 24.11. (26.11. Queue auf 15 gekürzt): Timetrack läuft über Nacht stabil; Prompts des Menschen über SSH bei leerem Platz zählen als Fernarbeit.
 Geparkt: B735 Implementierung bei App-Änderung (26.11. Queue auf 15 gekürzt): Ändert ein Commit die App-Komponente, die einen Studio-Teil implementiert, meldet die Prüfung IMPLEMENTATION-UNCOMPARED, bis der Agent App und Design verglichen hat.
-Geparkt: B812 Heavy-Lock blockiert Studio-Checks (B793 26.11. 16:05, Suspect): Studio-Checks warten über /tmp/fifagg-heavy.lock 30+ min hinter anderen Repos; Flows-e2e starb danach mit Exit 137, Ursache nicht gemessen.
 Geparkt: B799b Chrome-Leck in den Studio-Apps messen (26.11. 16:30 für Tempo-Plan geparkt): Die Chrome-Zahl pro Design-Server bleibt flach, während Tom Studio nutzt; die Ursache der 434 (:4402-Dev-App) und 298 (tomflix-App) ist gemessen und behoben.
 
 Geparkt: B754 Tabs: activeUnderline entfernen (26.11. ~23:45, Mensch: Platz für B837/B838, passt zum nächsten großen Bump): `provideTabsConfig` hat keine Option `activeUnderline` mehr; die aktive Unterstreichung ist immer an.
