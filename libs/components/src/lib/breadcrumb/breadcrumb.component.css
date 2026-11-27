@@ -118,6 +118,10 @@
     rotate: 90deg;
     inline-size: var(--et-breadcrumb-separator-size);
     block-size: var(--et-breadcrumb-separator-size);
+
+    &:dir(rtl) {
+      rotate: -90deg;
+    }
   }
 
   .et-breadcrumb-loading {

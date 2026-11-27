@@ -157,6 +157,14 @@
     &:where(.et-carousel-control-icon--next) {
       rotate: 90deg;
     }
+
+    &:where(.et-carousel-control-icon--previous):dir(rtl) {
+      rotate: 90deg;
+    }
+
+    &:where(.et-carousel-control-icon--next):dir(rtl) {
+      rotate: -90deg;
+    }
   }
 
   .et-carousel-dots {

@@ -117,7 +117,7 @@
        --et-switch-thumb-size and takes the on-primary color when checked. */
       position: absolute;
       top: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size) + 4px) / 2);
-      left: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size) + 4px) / 2);
+      inset-inline-start: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size) + 4px) / 2);
       width: calc(var(--et-switch-thumb-size) - 4px);
       height: calc(var(--et-switch-thumb-size) - 4px);
       border-radius: calc(var(--et-switch-thumb-size) / 2);
@@ -145,7 +145,9 @@
 
       .et-switch-thumb {
         top: calc((var(--et-switch-track-height) - var(--et-switch-thumb-size)) / 2);
-        left: calc(var(--et-switch-track-width) - var(--et-switch-thumb-size) - var(--et-switch-thumb-offset));
+        inset-inline-start: calc(
+          var(--et-switch-track-width) - var(--et-switch-thumb-size) - var(--et-switch-thumb-offset)
+        );
         width: var(--et-switch-thumb-size);
         height: var(--et-switch-thumb-size);
         background-color: var(--et-tone-on-fill, white);
@@ -162,7 +164,9 @@
 
       &:active:not([aria-disabled='true']):not([data-readonly]) .et-switch-thumb {
         width: calc(var(--et-switch-thumb-size) + 3px);
-        left: calc(var(--et-switch-track-width) - var(--et-switch-thumb-size) - 3px - var(--et-switch-thumb-offset));
+        inset-inline-start: calc(
+          var(--et-switch-track-width) - var(--et-switch-thumb-size) - 3px - var(--et-switch-thumb-offset)
+        );
       }
     }
 
@@ -185,7 +189,7 @@
       }
 
       .et-switch-thumb {
-        left: calc((var(--et-switch-track-width) - (var(--et-switch-thumb-size) - 4px)) / 2);
+        inset-inline-start: calc((var(--et-switch-track-width) - (var(--et-switch-thumb-size) - 4px)) / 2);
         background-color: var(--et-tone-text, currentColor);
       }
     }
@@ -200,7 +204,7 @@
       .et-switch-thumb {
         transition:
           top var(--et-switch-transition-duration) ease,
-          left var(--et-switch-transition-duration) ease,
+          inset-inline-start var(--et-switch-transition-duration) ease,
           width var(--et-switch-transition-duration) ease,
           height var(--et-switch-transition-duration) ease,
           background-color var(--et-switch-transition-duration) ease;

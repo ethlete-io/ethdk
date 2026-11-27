@@ -55,3 +55,10 @@ export const Disabled: StoryObj<SwitchDisabledStorybookComponent> = {
     template: '<et-sb-switch-disabled />',
   }),
 };
+
+export const Rtl: Story = {
+  beforeEach: () => {
+    document.documentElement.dir = 'rtl';
+    return () => document.documentElement.removeAttribute('dir');
+  },
+};

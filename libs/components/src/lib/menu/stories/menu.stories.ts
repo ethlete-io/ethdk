@@ -69,3 +69,10 @@ export const LoadingItem: Story = {
     template: `<et-sb-menu-loading />`,
   }),
 };
+
+export const Rtl: Story = {
+  beforeEach: () => {
+    document.documentElement.dir = 'rtl';
+    return () => document.documentElement.removeAttribute('dir');
+  },
+};

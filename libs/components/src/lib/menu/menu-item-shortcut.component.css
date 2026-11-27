@@ -6,6 +6,8 @@
     font-size: 12px;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.04em;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   .et-menu-item {
