@@ -320,7 +320,7 @@ type RowDrag = {
                       [attr.data-compact]="compact(band.span) || null"
                       (click)="breakClear.emit(band.window)"
                       (pointerdown)="$event.stopPropagation()"
-                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-tint px-2 py-1 text-left text-small text-et-surface-text-muted hover:border-et-surface-border-strong hover:text-et-surface-ink data-[compact]:py-0 data-[compact]:leading-none"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-tint/12 px-2 py-1 text-left text-small text-et-surface-text-muted hover:border-et-surface-border-strong hover:text-et-surface-ink data-[compact]:py-0 data-[compact]:leading-none"
                       data-break
                       type="button"
                     >
@@ -590,7 +590,7 @@ type RowDrag = {
                         class="h-0.5 grow rounded-full bg-et-surface-text-subtle opacity-40 group-hover:bg-et-tone-fill group-hover:opacity-100 group-focus-visible:bg-et-tone-fill group-focus-visible:opacity-100 group-active:bg-et-tone-fill group-active:opacity-100 group-data-[dragging]:bg-et-tone-fill group-data-[dragging]:opacity-100"
                       ></span>
                       <span
-                        class="absolute top-1/2 right-0 -translate-y-1/2 rounded-sm bg-et-surface-tint px-1 text-mono whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
+                        class="absolute top-1/2 right-0 -translate-y-1/2 rounded-sm bg-et-surface-background px-1 text-mono whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 group-active:opacity-100 group-data-[dragging]:opacity-100"
                         >{{ clockOf(boundary) }}</span
                       >
                     </div>
