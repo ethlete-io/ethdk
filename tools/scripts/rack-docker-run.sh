@@ -33,6 +33,13 @@ cp -ru --remove-destination "$mirror/objects/." "$local_mirror/objects/"
 git -C "$work" fetch --quiet --force --depth 2 "$local_mirror" "$sha"
 git -C "$work" checkout --quiet --force --detach FETCH_HEAD
 git -C "$work" clean -fdxq -e node_modules -e .yarn/cache -e target
+rr_home="${mirror%/*}/ethlete-rr"
+if [ -f "$rr_home/lfs-lists/$sha" ]; then
+  mkdir -p "$HOME/rack-linux/lfs"
+  cp -ru "$rr_home/lfs/." "$HOME/rack-linux/lfs/"
+  . "$rr_home/remote-guard.sh"
+  rr_lfs "$work" "$HOME/rack-linux/lfs" "$rr_home/lfs-lists/$sha"
+fi
 
 docker image inspect "$image" >/dev/null 2>&1 || docker pull --quiet "$image"
 # The CI image has no C linker or Rust; Studio e2e builds its design host with cargo. The tag follows the base

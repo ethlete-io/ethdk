@@ -23,6 +23,17 @@ rr_fetch() {
   return 0
 }
 
+# Usage: rr_lfs <work> <store> <list> replaces the Git LFS pointer files of a checkout with the objects in <store>;
+# each <list> line is "<oid> <path>".
+rr_lfs() {
+  local work=$1 store=$2 list=$3 oid path n=0
+  while IFS=' ' read -r oid path; do
+    [ -f "$store/$oid" ] || continue
+    cp -f "$store/$oid" "$work/$path" && n=$((n + 1))
+  done <"$list"
+  echo "[remote-run] lfs: $n files"
+}
+
 rr_guard() {
   local slot=$1 job beat code
   shift

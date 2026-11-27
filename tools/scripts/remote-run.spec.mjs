@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { gitEnv } from './git-test-env.mjs';
-import { LINUX_IMAGE, neededCacheFiles, parseArgs, remoteScript } from './remote-run.mjs';
+import { LINUX_IMAGE, lfsFiles, neededCacheFiles, parseArgs, remoteScript } from './remote-run.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'remote-run.mjs');
 const SHA = 'a'.repeat(40);
@@ -427,4 +427,56 @@ test('--yarn-cache is a rack Linux option and picks the cache files the lockfile
     neededCacheFiles(`${info}\n`, (path) => path !== '/c/b-ssh-y-10c0.zip'),
     ['/c/a-npm-1-x-10c0.zip'],
   );
+});
+
+test('lfsFiles reads oid and path of git lfs ls-files --long, also a path with spaces', () => {
+  const a = 'a'.repeat(64);
+  const b = 'b1'.repeat(32);
+  assert.deepEqual(lfsFiles(`${a} * fonts/x.ttf\n${b} - img/a b.png\nnoise\n`, '/r/.git/lfs/objects'), [
+    { oid: a, path: 'fonts/x.ttf', file: `/r/.git/lfs/objects/aa/aa/${a}` },
+    { oid: b, path: 'img/a b.png', file: `/r/.git/lfs/objects/b1/b1/${b}` },
+  ]);
+});
+
+test('rr_lfs replaces the pointer files whose object is in the store and leaves the others', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-lfs-'));
+  try {
+    mkdirSync(join(dir, 'work', 'img'), { recursive: true });
+    mkdirSync(join(dir, 'store'));
+    writeFileSync(join(dir, 'work', 'img', 'a b.png'), 'pointer');
+    writeFileSync(join(dir, 'work', 'img', 'c.png'), 'pointer');
+    writeFileSync(join(dir, 'store', 'o1'), 'real');
+    writeFileSync(join(dir, 'list'), 'o1 img/a b.png\no2 img/c.png\n');
+    const guard = join(dirname(SCRIPT), 'remote-guard.sh');
+    const result = spawnSync('bash', ['-c', `. ${guard}; rr_lfs ${dir}/work ${dir}/store ${dir}/list`], {
+      encoding: 'utf8',
+    });
+    assert.match(result.stdout, /lfs: 1 files/);
+    assert.equal(readFileSync(join(dir, 'work', 'img', 'a b.png'), 'utf8'), 'real');
+    assert.equal(readFileSync(join(dir, 'work', 'img', 'c.png'), 'utf8'), 'pointer');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the remote script stores the lfs list of the commit and fills the checkout from it after the checkout', () => {
+  const lfsList = `${'c'.repeat(64)} fonts/x.ttf\n`;
+  const native = remoteScript({ sha: SHA, slot: 'w1', suite: 'true', host: 'mac', lfsList, guard: '' });
+  assert.match(native, new RegExp(`lfs-lists/\\$sha" <<'REMOTE_RUN_LFS'\\n${lfsList}REMOTE_RUN_LFS`));
+  assert.ok(native.indexOf('rr_lfs "$work"') > native.indexOf('worktree add'));
+  assert.doesNotMatch(remoteScript({ sha: SHA, slot: 'w1', suite: 'true', host: 'mac', guard: '' }), /REMOTE_RUN_LFS/);
+
+  const helper = readFileSync(join(dirname(SCRIPT), 'rack-docker-run.sh'), 'utf8');
+  const rack = remoteScript({
+    sha: SHA,
+    slot: 'w1',
+    suite: 'true',
+    host: 'rack',
+    linux: true,
+    rackHelper: helper,
+    lfsList,
+    guard: '',
+  });
+  assert.match(rack, /REMOTE_RUN_LFS/);
+  assert.ok(helper.indexOf('rr_lfs "$work"') > helper.indexOf('checkout --quiet --force'));
 });

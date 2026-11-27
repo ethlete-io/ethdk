@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -183,6 +183,7 @@ export const remoteScript = ({
   env = [],
   forward = [],
   caller,
+  lfsList,
   guard = readFileSync(GUARD, 'utf8'),
 }) => {
   const wrapped = withForward(suite, forward, caller);
@@ -208,6 +209,13 @@ main() {
   cat > "$HOME/ethlete-rr/remote-guard.sh" <<'REMOTE_RUN_GUARD'
 ${guard}REMOTE_RUN_GUARD
   ${
+    lfsList
+      ? `mkdir -p "$HOME/ethlete-rr/lfs-lists"
+  cat > "$HOME/ethlete-rr/lfs-lists/$sha" <<'REMOTE_RUN_LFS'
+${lfsList}REMOTE_RUN_LFS`
+      : ':'
+  }
+  ${
     !rackLinux
       ? `if [ -e "$work/.git" ]; then
     git -C "$work" checkout --quiet --force --detach "$sha" || return 1
@@ -215,6 +223,10 @@ ${guard}REMOTE_RUN_GUARD
   else
     git -C "$mirror" worktree prune
     git -C "$mirror" -c core.longpaths=true worktree add --quiet --detach "$work" "$sha" || return 1
+  fi
+  if [ -f "$HOME/ethlete-rr/lfs-lists/$sha" ]; then
+    . "$HOME/ethlete-rr/remote-guard.sh"
+    rr_lfs "$work" "$HOME/ethlete-rr/lfs" "$HOME/ethlete-rr/lfs-lists/$sha"
   fi
   echo "[remote-run] $(hostname) $work at $(git -C "$work" rev-parse --short HEAD)"`
       : 'echo "[remote-run] $(hostname) WSL ethlete container run"'
@@ -320,9 +332,12 @@ export const remoteRun = async (opts) => {
     const seeded = await seedYarnCache(host, opts.slot, runId, tee);
     if (seeded !== 0) return end(seeded, 'yarn cache seed failed');
   }
+  const lfs = await seedLfs(host, sha, runId, tee);
+  if (lfs.code !== 0) return end(lfs.code, 'lfs seed failed');
   const code = await runSsh(
     host,
     remoteScript({
+      lfsList: lfs.list,
       fetch: opts.fetch,
       env: (opts.env ?? []).map((name) => [name, process.env[name]]),
       forward: opts.forward ?? [],
@@ -375,25 +390,15 @@ const seedYarnCache = async (host, slot, runId, tee) => {
   const missing = needed.filter((path) => !have.has(basename(path)));
   tee(`[remote-run] yarn-cache: ${needed.length} needed, ${missing.length} to copy\n`, process.stdout);
   if (!missing.length) return 0;
-  const dir = mkdtempSync(join(tmpdir(), 'remote-run-yarn-'));
-  const tar = join(dir, 'cache.tar');
   const remoteTar = `ethlete-rr/yarn-${runId}.tar`;
-  try {
-    const packed = spawnSync('tar', ['-cf', tar, '-C', dirname(missing[0]), ...missing.map((p) => basename(p))], {
-      encoding: 'utf8',
-    });
-    if (packed.status !== 0) {
-      tee(`[remote-run] yarn-cache: tar failed: ${packed.stderr.trim()}\n`, process.stderr);
-      return 1;
-    }
-    const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, tar, `${host.ssh}:${remoteTar}`], { encoding: 'utf8' });
-    if (copy.status !== 0) {
-      tee(`[remote-run] yarn-cache: scp failed: ${copy.stderr.trim()}\n`, process.stderr);
-      return copy.status ?? 1;
-    }
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  const sent = sendTar(
+    host,
+    ['-C', dirname(missing[0]), ...missing.map((p) => basename(p))],
+    remoteTar,
+    'yarn-cache',
+    tee,
+  );
+  if (sent !== 0) return sent;
   return runSsh(
     host,
     wslScript(
@@ -403,6 +408,79 @@ const seedYarnCache = async (host, slot, runId, tee) => {
     ),
     { onData: tee },
   );
+};
+
+const sendTar = (host, tarArgs, remoteTar, label, tee) => {
+  const dir = mkdtempSync(join(tmpdir(), 'remote-run-tar-'));
+  const tar = join(dir, 'send.tar');
+  try {
+    const packed = spawnSync('tar', ['-cf', tar, ...tarArgs], { encoding: 'utf8' });
+    if (packed.status !== 0) {
+      tee(`[remote-run] ${label}: tar failed: ${packed.stderr.trim()}\n`, process.stderr);
+      return 1;
+    }
+    const copy = spawnSync('scp', ['-q', ...SSH_OPTIONS, tar, `${host.ssh}:${remoteTar}`], { encoding: 'utf8' });
+    if (copy.status !== 0) {
+      tee(`[remote-run] ${label}: scp failed: ${copy.stderr.trim()}\n`, process.stderr);
+      return copy.status ?? 1;
+    }
+    return 0;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+};
+
+/** The Git LFS files of a commit from `git lfs ls-files --long <sha>` output, with their object file here. */
+export const lfsFiles = (lsFiles, objectsDir) =>
+  lsFiles
+    .split('\n')
+    .map((line) => line.match(/^([0-9a-f]{64}) [*-] (.+)$/))
+    .filter(Boolean)
+    .map(([, oid, path]) => ({ oid, path, file: join(objectsDir, oid.slice(0, 2), oid.slice(2, 4), oid) }));
+
+/**
+ * Copies the Git LFS objects of the commit that the remote store lacks and returns the "<oid> <path>" list the
+ * remote side uses to replace the pointer files of its checkout; a git bundle carries no LFS objects.
+ */
+const seedLfs = async (host, sha, runId, tee) => {
+  const listed = git(['lfs', 'ls-files', '--long', sha], { maxBuffer: 1 << 28 });
+  if (listed.status !== 0 || !listed.stdout.trim()) return { code: 0 };
+  const gitDir = git(['rev-parse', '--path-format=absolute', '--git-common-dir']).stdout.trim();
+  const objectsDir = join(gitDir, 'lfs', 'objects');
+  const files = lfsFiles(listed.stdout, objectsDir);
+  const here = files.filter(({ file }) => existsSync(file));
+  if (here.length < files.length) {
+    tee(`[remote-run] lfs: ${files.length - here.length} objects are not fetched here\n`, process.stderr);
+  }
+  let listing = '';
+  const ls = await runSsh(host, 'mkdir -p "$HOME/ethlete-rr/lfs" && ls "$HOME/ethlete-rr/lfs"\n', {
+    onData: (chunk, stream) => (stream === process.stdout ? (listing += chunk) : tee(chunk, stream)),
+  });
+  if (ls !== 0) return { code: ls };
+  const have = new Set(listing.split(/\r?\n/));
+  const missing = [
+    ...new Set(here.filter(({ oid }) => !have.has(oid)).map(({ file }) => file.slice(objectsDir.length + 1))),
+  ];
+  tee(`[remote-run] lfs: ${here.length} files, ${missing.length} objects to copy\n`, process.stdout);
+  if (missing.length) {
+    const dir = mkdtempSync(join(tmpdir(), 'remote-run-lfs-'));
+    const names = join(dir, 'names');
+    writeFileSync(names, `${missing.join('\n')}\n`);
+    const remoteTar = `ethlete-rr/lfs-${runId}.tar`;
+    try {
+      const sent = sendTar(host, ['-C', objectsDir, '--transform', 's,.*/,,', '-T', names], remoteTar, 'lfs', tee);
+      if (sent !== 0) return { code: sent };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    const unpacked = await runSsh(
+      host,
+      `tar -C "$HOME/ethlete-rr/lfs" -xf "$HOME/${remoteTar}"; c=$?; rm -f "$HOME/${remoteTar}"; exit $c\n`,
+      { onData: tee },
+    );
+    if (unpacked !== 0) return { code: unpacked };
+  }
+  return { code: 0, list: here.map(({ oid, path }) => `${oid} ${path}\n`).join('') };
 };
 
 const fetchOutputs = async (host, runId, tee) => {
