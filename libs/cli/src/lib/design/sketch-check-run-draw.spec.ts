@@ -8,6 +8,7 @@ import {
   identicalRenderLines,
   restLikeStateWarnings,
   variantChangesShown,
+  variantsThatDoNotLoad,
 } from './ready-shots';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
@@ -142,6 +143,23 @@ describe('sketch check', { timeout: 120_000 }, () => {
     expect(warms).toHaveLength(4);
     expect(new Set(warms).size).toBe(1);
     expect(warms[0]?.perRun).toBe(true);
+  });
+
+  it('still compares the variants that draw when another variant does not load', async () => {
+    const target = await sketched();
+
+    vi.mocked(identicalRenderLines).mockClear();
+    vi.mocked(variantsThatDoNotLoad).mockResolvedValueOnce(['variant a failed to load']);
+    vi.mocked(identicalRenderLines).mockResolvedValueOnce([
+      'components/button variant c draws the same pixels as variant b',
+    ]);
+
+    await designSketch({ target, argv: ['check', ID, '--product', 'acme'], invocation: 'et design' });
+
+    expect(identicalRenderLines).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledWith(
+      'ready will refuse: components/button variant c draws the same pixels as variant b',
+    );
   });
 
   it('reads the render inspect cache on every check, so a second check of an unchanged variant draws nothing', async () => {

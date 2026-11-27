@@ -2133,6 +2133,17 @@ const checkedShots = async (
       ...[roundNoteRefusalOf(sketch) ?? []].flat(),
     ]);
 
+    if (!failed) {
+      const renders = await timedPhase('identical', () =>
+        sketchRenderLines({ target, config, product, sketch, warm: shots }),
+      );
+
+      refuse(
+        unloaded.length > 0 ? renders.refusals.filter((line) => !line.includes('was not compared')) : renders.refusals,
+      );
+      renders.warnings.forEach((warning) => console.warn(warning));
+    }
+
     if (!failed && unloaded.length === 0) {
       refuse(
         await timedPhase('mark-drift', () => sampleMarkDriftLines({ target, config, product, sketch, warm: shots })),
@@ -2148,12 +2159,6 @@ const checkedShots = async (
           interactionRepeatLines({ target, config, product, sketch, warm: shots }),
         ),
       );
-      const renders = await timedPhase('identical', () =>
-        sketchRenderLines({ target, config, product, sketch, warm: shots }),
-      );
-
-      refuse(renders.refusals);
-      renders.warnings.forEach((warning) => console.warn(warning));
       (
         await timedPhase('rest-like', () => restLikeStateWarnings({ target, config, product, sketch, warm: shots }))
       ).forEach((warning) => console.warn(warning));
