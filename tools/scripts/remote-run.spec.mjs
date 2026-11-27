@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -191,7 +200,11 @@ test('a native run installs and runs the suite inside its slot checkout', () => 
   mkdirSync(bin);
   writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
   writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\npwd > "$HOME/yarn-cwd"\n');
-  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\npwd > "$HOME/suite-cwd"\n');
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), '24.17.0\n');
+  writeFileSync(
+    join(bin, 'node'),
+    '#!/usr/bin/env bash\n[ "$1" = --version ] && { echo v24.17.0; exit 0; }\npwd > "$HOME/suite-cwd"\n',
+  );
   for (const name of ['git', 'yarn', 'node']) chmodSync(join(bin, name), 0o755);
   try {
     const result = spawnSync('bash', ['-c', script], {
@@ -205,6 +218,42 @@ test('a native run installs and runs the suite inside its slot checkout', () => 
   } finally {
     rmSync(work, { recursive: true, force: true });
   }
+});
+
+test('a native run refuses a node that is not the pinned version and cannot be replaced', () => {
+  const script = remoteScript({ sha: SHA, slot: 'w1', suite: 'node --test a.spec.mjs', host: 'mac', linux: false });
+  const work = mkdtempSync(join(tmpdir(), 'remote-run-node-pin-'));
+  const home = join(work, 'home');
+  const bin = join(work, 'bin');
+  mkdirSync(join(home, 'ethlete-rr', 'w1', '.git'), { recursive: true });
+  mkdirSync(join(home, 'ethlete-mirror.git'), { recursive: true });
+  mkdirSync(bin);
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), '24.17.0\n');
+  writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\ntouch "$HOME/yarn-ran"\n');
+  writeFileSync(join(bin, 'npm'), '#!/usr/bin/env bash\nexit 1\n');
+  writeFileSync(join(bin, 'node'), '#!/usr/bin/env bash\necho v26.13.0\n');
+  for (const name of ['git', 'yarn', 'npm', 'node']) chmodSync(join(bin, name), 0o755);
+  try {
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /cannot install node 24\.17\.0/);
+    assert.equal(existsSync(join(home, 'yarn-ran')), false);
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+});
+
+test('the Linux container and the rack helper pin node to .node-version before the install', () => {
+  const container = remoteScript({ sha: SHA, slot: 'w1', suite: 'true', host: 'mac', linux: true });
+  assert.ok(
+    container.indexOf('.node-version') > 0 && container.indexOf('.node-version') < container.indexOf('yarn install'),
+  );
+  const helper = readFileSync(join(dirname(SCRIPT), 'rack-docker-run.sh'), 'utf8');
+  assert.ok(helper.indexOf('.node-version') > 0 && helper.indexOf('.node-version') < helper.indexOf('yarn install'));
 });
 
 test('the rack helper holds a per-slot lock before it touches the slot checkout', () => {
@@ -291,11 +340,12 @@ test('a native suite that fails still packs its outputs and keeps its exit code'
   mkdirSync(bin);
   writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
   writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), process.version);
   for (const name of ['git', 'yarn']) chmodSync(join(bin, name), 0o755);
   try {
     const result = spawnSync('bash', ['-c', script], {
       encoding: 'utf8',
-      env: { PATH: `${bin}:/usr/bin:/bin`, HOME: home },
+      env: { PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`, HOME: home },
     });
     assert.equal(result.status, 1, result.stdout + result.stderr);
     const listed = spawnSync('tar', ['-tf', join(home, 'ethlete-rr', 'out-r2.tar')], { encoding: 'utf8' }).stdout;
@@ -381,6 +431,7 @@ test('--forward lets the suite reach a server of the caller through 127.0.0.1', 
   mkdirSync(bin);
   writeFileSync(join(bin, 'git'), '#!/usr/bin/env bash\nexit 0\n');
   writeFileSync(join(bin, 'yarn'), '#!/usr/bin/env bash\nexit 0\n');
+  writeFileSync(join(home, 'ethlete-rr', 'w1', '.node-version'), process.version);
   for (const name of ['git', 'yarn']) chmodSync(join(bin, name), 0o755);
   const script = remoteScript({
     sha: SHA,

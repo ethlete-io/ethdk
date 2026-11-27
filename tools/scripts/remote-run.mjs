@@ -113,12 +113,18 @@ const envExports = (env, rackLinux) =>
 
 const outTar = (runId) => `ethlete-rr/out-${runId}.tar`;
 
+export const nodePin = (prefix, fail) => `pin=$(tr -d 'v \\r\\n' < .node-version) || ${fail}
+[ "$(node --version 2>/dev/null)" = "v$pin" ] || npm install --global --silent --prefix ${prefix} node@$pin >/dev/null || { echo "[remote-run] cannot install node $pin" >&2; ${fail}; }
+export PATH=${prefix}/bin:$PATH
+[ "$(node --version)" = "v$pin" ] || { echo "[remote-run] node $(node --version) is not the pinned v$pin" >&2; ${fail}; }`;
+
 const nativeRun = (
   suite,
   fetch,
   runId,
 ) => `  export PATH="$HOME/.local/node/bin:$HOME/.local/bin:$PATH" COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NX_NO_CLOUD=true
   cd "$work" || return 1
+  ${nodePin('"$HOME/.local/node-pin"', 'return 1')}
   local started=$SECONDS
   yarn install --immutable > "$work/.remote-run-install.log" 2>&1 || { tail -40 "$work/.remote-run-install.log"; return 1; }
   echo "[remote-run] install $((SECONDS - started))s"
@@ -133,6 +139,7 @@ const nativeRun = (
 const containerSetup = `[ -x /opt/tools/bin/corepack ] || npm install --global --silent --prefix /opt/tools corepack >/dev/null
 export PATH=/opt/tools/bin:$PATH COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 corepack enable --install-directory /opt/tools/bin
+${nodePin('/opt/tools', 'exit 1')}
 started=$SECONDS
 yarn install --immutable >/tmp/yarn-install.log 2>&1 || { tail -40 /tmp/yarn-install.log; exit 1; }
 echo "[remote-run] install $((SECONDS - started))s"

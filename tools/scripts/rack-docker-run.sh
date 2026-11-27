@@ -70,6 +70,9 @@ exec docker run --rm --init --ipc=host --label "ethlete-rr-slot=$slot" "${env_ar
 [ -x /opt/tools/bin/corepack ] || npm install --global --silent --prefix /opt/tools corepack >/dev/null || exit 1
 export PATH=/opt/tools/bin:$PATH
 corepack enable --install-directory /opt/tools/bin || exit 1
+pin=$(tr -d "v \r\n" < .node-version) || exit 1
+[ "$(node --version 2>/dev/null)" = "v$pin" ] || npm install --global --silent --prefix /opt/tools node@$pin >/dev/null || { echo "[rack-linux] cannot install node $pin" >&2; exit 1; }
+[ "$(node --version)" = "v$pin" ] || { echo "[rack-linux] node $(node --version) is not the pinned v$pin" >&2; exit 1; }
 started=$SECONDS
 yarn install --immutable >/tmp/yarn-install.log 2>&1 || { tail -40 /tmp/yarn-install.log; exit 1; }
 echo "[rack-linux] install $((SECONDS - started))s"
