@@ -46,12 +46,18 @@ const describeHolder = (machine, n) => {
 };
 
 let interrupted = false;
+let stopJob = (_signal) => undefined;
+let runTmpToRemove;
 
 // The kill-with-parent watchdog of the running job takes the job's process tree down once this process exits.
 const callerPid = process.ppid;
 if (process.env.HEAVY_NO_CALLER_WATCH !== '1') {
-  setInterval(() => {
-    if (process.ppid === callerPid) return;
+  let leaving = false;
+  setInterval(async () => {
+    if (process.ppid === callerPid || leaving) return;
+    leaving = true;
+    stopJob('SIGKILL');
+    for (let i = 0; i < 40 && runTmpToRemove && !removeRunTmp(runTmpToRemove); i++) await sleep(50);
     process.exit(128 + signalNumber.SIGTERM);
   }, pollMs).unref();
 }
@@ -79,6 +85,7 @@ const tryRun = (argv, { label, machine, n, run, cwd, env = process.env, onStart 
     }
     child.kill(signal);
   };
+  stopJob = forward;
   for (const s of forwarded) process.on(s, forward);
   return teeRun(run, argv, {
     wrap: (command) => [
@@ -164,6 +171,7 @@ const run = async (command, wanted, remoteOpts) => {
   const remotes = snapshot ? machines.filter((machine) => machine !== 'tank') : [];
   const entry = registerRun({ machine: remotes[0] ?? tankName, label: `heavy ${label}`, command: label });
   const runTmp = runTmpDir();
+  runTmpToRemove = runTmp;
   const env = { ...process.env, TMPDIR: runTmp };
   const attempts = [
     ...remotes.flatMap((machine) =>
