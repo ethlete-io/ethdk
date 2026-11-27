@@ -22,7 +22,7 @@ import { promisify } from 'node:util';
 import { holderLine, takeHeavyLock } from '../../../tools/scripts/heavy-run-lock.mjs';
 import { enterOwnScope } from '../../../tools/scripts/own-scope.mjs';
 import { listingHold } from '../../../tools/scripts/studio-e2e-listing-hold.mjs';
-import { ensureCli, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
+import { ensureCli, ensureLibBuilds, withStudio } from '../../../tools/scripts/verify-studio-headless.mjs';
 import { CANVAS, listingWait, sketchCells } from './probe-helpers.mjs';
 import { noMatchLineOf } from './case-filter.mjs';
 import { copyPart } from './copy-part.mjs';
@@ -7288,6 +7288,7 @@ const lead = async () => {
 
   try {
     ensureCli();
+    ensureLibBuilds();
     const children = new Set();
     let builtOk = !scratch;
     let fixturesAsked = false;

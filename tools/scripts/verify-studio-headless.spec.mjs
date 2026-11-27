@@ -11,6 +11,7 @@ import {
   buildStudio,
   designChildState,
   designProject,
+  ensureLibBuilds,
   linkWorkspaceDist,
   missingBuildInputs,
   serveOnlyAnswer,
@@ -53,6 +54,32 @@ test('answers nothing when both builds exist', () => {
   writeFileSync(join(checkout, 'dist/libs/components/package.json'), '{}');
 
   assert.deepEqual(missingBuildInputs(checkout, entry), []);
+});
+
+test('builds the design libs a fresh checkout lacks before the design server renders from them', () => {
+  const checkout = tempDir('studio-headless-libs-');
+  const runs = [];
+
+  mkdirSync(join(checkout, 'dist/libs/core'), { recursive: true });
+  writeFileSync(join(checkout, 'dist/libs/core/package.json'), '{}');
+
+  assert.deepEqual(ensureLibBuilds(checkout, { run: (...args) => runs.push(args.slice(0, 2)), log: () => undefined }), [
+    'components',
+  ]);
+  assert.deepEqual(runs, [['npx', ['nx', 'run-many', '-t', 'build', '-p', 'components']]]);
+});
+
+test('builds nothing when every design lib is built', () => {
+  const checkout = tempDir('studio-headless-libs-');
+  const runs = [];
+
+  for (const lib of ['core', 'components']) {
+    mkdirSync(join(checkout, 'dist/libs', lib), { recursive: true });
+    writeFileSync(join(checkout, 'dist/libs', lib, 'package.json'), '{}');
+  }
+
+  assert.deepEqual(ensureLibBuilds(checkout, { run: (...args) => runs.push(args), log: () => undefined }), []);
+  assert.deepEqual(runs, []);
 });
 
 const linkedCopy = () => {

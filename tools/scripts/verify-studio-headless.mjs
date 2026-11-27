@@ -166,6 +166,29 @@ export const ensureCli = () => {
   if (staleCliBuildMessage({ root, buildDir })) throw new Error('dist/libs/cli is still stale after npx nx build cli');
 };
 
+export const DESIGN_LIBS = ['core', 'components'];
+
+/**
+ * Builds the libs the design server renders from (`DESIGN_LIBS`) when their `dist` is missing, as a fresh checkout
+ * (a rack slot, a clean clone) has it. Answers the built project names.
+ */
+export const ensureLibBuilds = (
+  workspace = root,
+  { exists = existsSync, run = execFileSync, log = (line) => console.log(line) } = {},
+) => {
+  const missing = DESIGN_LIBS.filter((lib) => !exists(join(workspace, 'dist/libs', lib, 'package.json')));
+
+  if (!missing.length) return [];
+  log(`[canvas-e2e] dist/libs/{${missing.join(',')}} missing, building: npx nx run-many -t build -p ${missing}`);
+  run('npx', ['nx', 'run-many', '-t', 'build', '-p', missing.join(',')], {
+    cwd: workspace,
+    stdio: 'inherit',
+    env: { ...process.env, NX_NO_CLOUD: 'true' },
+  });
+
+  return missing;
+};
+
 export const STUDIO_BUILD_MAX_WAIT_MS = 15 * 60_000;
 
 /**
