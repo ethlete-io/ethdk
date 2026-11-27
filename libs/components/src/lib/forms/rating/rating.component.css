@@ -132,7 +132,7 @@
     }
 
     .et-rating-icon-base {
-      color: color-mix(in srgb, var(--et-surface-tint, currentColor) 32%, transparent);
+      color: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 32%, transparent);
     }
 
     .et-rating-icon-fill {
@@ -174,7 +174,7 @@
 
     /* custom icon templates render per-step — expose the state for their own styling */
     .et-rating-icon[data-state] {
-      color: color-mix(in srgb, var(--et-surface-tint, currentColor) 32%, transparent);
+      color: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 32%, transparent);
 
       &[data-state='full'],
       &[data-state='half'] {

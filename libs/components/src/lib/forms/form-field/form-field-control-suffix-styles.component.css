@@ -60,13 +60,13 @@
         color: var(--et-surface-text, currentColor);
 
         &::before {
-          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 20%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 20%, transparent);
         }
       }
     }
 
     &:active::before {
-      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 28%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 28%, transparent);
     }
 
     &:focus-visible::before {

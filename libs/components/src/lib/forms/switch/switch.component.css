@@ -58,7 +58,11 @@
       width: var(--et-switch-track-width);
       height: var(--et-switch-track-height);
       border-radius: calc(var(--et-switch-track-height) / 2);
-      background-color: color-mix(in srgb, var(--et-surface-tint, currentColor) 38%, transparent);
+      background-color: color-mix(
+        in srgb,
+        var(--et-surface-tint, var(--et-surface-text, currentColor)) 38%,
+        transparent
+      );
     }
 
     :where(et-choice-field[data-error])

@@ -15,7 +15,7 @@
 
     th {
       font-weight: 700;
-      background: color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
+      background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 8%, transparent);
     }
   }
 }

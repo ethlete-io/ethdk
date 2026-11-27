@@ -134,7 +134,11 @@
       @media (hover: hover) {
         &:hover:not(:disabled, [aria-disabled='true']) {
           border-color: var(--et-surface-control-text-hover, currentColor);
-          background-color: color-mix(in srgb, var(--et-surface-tint, currentColor) 6%, transparent);
+          background-color: color-mix(
+            in srgb,
+            var(--et-surface-tint, var(--et-surface-text, currentColor)) 6%,
+            transparent
+          );
         }
       }
 

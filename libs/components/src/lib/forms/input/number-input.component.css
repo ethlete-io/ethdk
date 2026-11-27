@@ -60,13 +60,13 @@
 
       @media (hover: hover) {
         &:hover {
-          background: color-mix(in srgb, var(--et-surface-tint, currentColor) 12%, transparent);
+          background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 12%, transparent);
           color: var(--et-surface-text, currentColor);
         }
       }
 
       &:active {
-        background: color-mix(in srgb, var(--et-surface-tint, currentColor) 20%, transparent);
+        background: color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 20%, transparent);
       }
 
       &:disabled {

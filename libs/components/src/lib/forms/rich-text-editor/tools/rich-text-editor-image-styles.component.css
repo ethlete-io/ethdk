@@ -43,7 +43,7 @@
       background:
         linear-gradient(to right, var(--et-tone-fill, currentColor) 0 0) no-repeat left bottom /
           var(--_et-rte-image-progress, 0%) 3px,
-        color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
+        color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 8%, transparent);
       -webkit-user-select: all;
       user-select: all;
 

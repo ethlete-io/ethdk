@@ -65,7 +65,11 @@
       ):not([aria-readonly='true'])
       .et-checkbox-group-select-all-box {
       border-color: var(--et-surface-text, currentColor);
-      background-color: color-mix(in srgb, var(--et-surface-tint, currentColor) 8%, transparent);
+      background-color: color-mix(
+        in srgb,
+        var(--et-surface-tint, var(--et-surface-text, currentColor)) 8%,
+        transparent
+      );
     }
   }
 

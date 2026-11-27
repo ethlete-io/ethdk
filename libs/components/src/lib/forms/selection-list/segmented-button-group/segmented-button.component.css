@@ -126,7 +126,7 @@
         color: var(--et-surface-text, currentColor);
         background-color: var(
           --et-segmented-button-hover-fill,
-          color-mix(in srgb, var(--et-surface-tint, currentColor) 10%, transparent)
+          color-mix(in srgb, var(--et-surface-tint, var(--et-surface-text, currentColor)) 10%, transparent)
         );
       }
     }
