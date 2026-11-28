@@ -16,8 +16,17 @@ const fakeTank = ({ p50s, loads = [1] }) => {
   let clock = 0;
   let loadIndex = 0;
   const runs = [...p50s];
+  const cwds = [];
+  const removed = [];
   return {
-    runCaptured: async () => caseOutput(runs.shift()),
+    runCaptured: async (_command, _args, options) => {
+      cwds.push(options?.cwd);
+      return caseOutput(runs.shift());
+    },
+    makeScratch: () => 'scratch-dir',
+    removeScratch: (dir) => removed.push(dir),
+    cwds,
+    removed,
     load: () => loads[Math.min(loadIndex++, loads.length - 1)],
     sleep: async (ms) => {
       clock += ms;
@@ -68,4 +77,15 @@ test('smoke.mjs runs the step and fails the smoke on its message', () => {
   const smoke = readFileSync(new URL('./smoke.mjs', import.meta.url), 'utf8');
   assert.match(smoke, /runWebkitZoomStep\(\)/);
   assert.match(smoke, /webkitFailure/);
+});
+
+test('all runs happen in one scratch copy that is removed afterwards, also after a throw', async () => {
+  const tank = fakeTank({ p50s: [19, 19, 19] });
+  await runWebkitZoomStep(tank);
+  assert.deepEqual(tank.cwds, ['scratch-dir', 'scratch-dir', 'scratch-dir']);
+  assert.deepEqual(tank.removed, ['scratch-dir']);
+
+  const broken = fakeTank({ p50s: [] });
+  await assert.rejects(runWebkitZoomStep({ ...broken, runCaptured: async () => Promise.reject(new Error('x')) }));
+  assert.deepEqual(broken.removed, ['scratch-dir']);
 });
