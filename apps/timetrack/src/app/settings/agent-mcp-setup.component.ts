@@ -19,7 +19,11 @@ import { agentMcpLines } from './agent-mcp-lines';
       @for (line of lines(); track line.client) {
         <div class="flex items-center gap-2">
           <span class="w-24 shrink-0 text-small text-et-surface-text-muted">{{ line.client }}</span>
-          <code [title]="line.command" class="min-w-0 flex-1 break-all text-small">{{ line.command }}</code>
+          <code [title]="line.command" class="min-w-0 flex-1 text-small">
+            @for (segment of line.command.split('/'); track $index) {
+              <span [textContent]="$last ? segment : segment + '/'"></span><wbr />
+            }
+          </code>
           <button (click)="copy(line.client, line.command)" et-button size="sm" variant="outline" type="button">
             {{ copied() === line.client ? 'Copied' : 'Copy' }}
           </button>
