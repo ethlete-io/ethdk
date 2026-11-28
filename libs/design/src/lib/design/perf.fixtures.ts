@@ -3,7 +3,7 @@ import { join, resolve } from 'path';
 import { PerformanceObserver } from 'perf_hooks';
 import { interval, tap } from 'rxjs';
 
-export const PERF_DIR = resolve(__dirname, '../../../../tmp/perf');
+export const PERF_DIR = resolve(__dirname, '../../../../../tmp/perf');
 
 export const recordPerf = (name: string, measurements: Record<string, unknown>) => {
   mkdirSync(PERF_DIR, { recursive: true });
