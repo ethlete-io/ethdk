@@ -109,7 +109,7 @@ Left out, it defaults to `{ "@ethlete/*": "node_modules/@ethlete/*" }` in a chec
 so a consumer repo only sets `base`. A checkout that builds its own packages maps them, for example
 `{ "@ethlete/*": "dist/libs/*" }`.
 
-Run anywhere inside a repo checkout that has `libs/cli`, `et design` refuses with exit 1 and prints the rebuild command (`NX_NO_CLOUD=true npx nx build cli`) when the `libs/cli` sources differ from what the running build was made from. The check compares a hash of `src`, `design` and `playwright` with the one `nx build cli` records in `build-info.json`. A checkout without `libs/cli` sources, as with an installed package, skips it.
+Run anywhere inside a repo checkout that has `libs/cli`, `et design` refuses with exit 1 and prints the rebuild command (`NX_NO_CLOUD=true npx nx build cli`) when the `libs/cli` sources differ from what the running build was made from. The check compares a hash of `src`, `design` and `playwright`, plus `src` and `design` of a sibling `libs/design`, with the one `nx build cli` records in `build-info.json`. A checkout without `libs/cli` sources, as with an installed package, skips it.
 
 `generated` lists stylesheets a command generates from one part, for example SDK theme classes generated
 from a colours part:

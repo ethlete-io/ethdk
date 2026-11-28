@@ -45,6 +45,8 @@ const STOP_GRACE: Duration = Duration::from_secs(3);
 
 const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
 
+const DESIGN_LIB_SOURCE_DIRS: [&str; 2] = ["src", "design"];
+
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
 /// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
@@ -545,9 +547,19 @@ fn source_files(dir: &Path) -> Vec<PathBuf> {
 fn cli_source_hash(cli_root: &Path) -> String {
     let mut hash = Sha256::new();
 
-    for dir in CLI_SOURCE_DIRS {
-        let path = cli_root.join(dir);
+    let design_root = cli_root.join("..").join("design");
+    let roots = CLI_SOURCE_DIRS
+        .iter()
+        .map(|dir| (cli_root.join(dir), cli_root.to_path_buf(), PathBuf::new()))
+        .chain(DESIGN_LIB_SOURCE_DIRS.iter().map(|dir| {
+            (
+                design_root.join(dir),
+                design_root.clone(),
+                Path::new("..").join("design"),
+            )
+        }));
 
+    for (path, root, prefix) in roots {
         if !path.exists() {
             continue;
         }
@@ -562,8 +574,8 @@ fn cli_source_hash(cli_root: &Path) -> String {
             };
 
             hash.update(
-                file.strip_prefix(cli_root)
-                    .unwrap_or(&file)
+                prefix
+                    .join(file.strip_prefix(&root).unwrap_or(&file))
                     .to_string_lossy()
                     .as_bytes(),
             );

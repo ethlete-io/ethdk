@@ -6,6 +6,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 const PINNED_COMMIT_FILE = 'pinned-commit';
 
 const SOURCE_DIRS = ['src', 'design', 'playwright'];
+const DESIGN_LIB_SOURCE_DIRS = ['src', 'design'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
 
 const filesOf = (dir: string): string[] =>
@@ -14,13 +15,17 @@ const filesOf = (dir: string): string[] =>
     .flatMap((entry) => (entry.isDirectory() ? filesOf(join(dir, entry.name)) : [join(dir, entry.name)]))
     .filter((file) => !IGNORED_SUFFIXES.some((suffix) => file.endsWith(suffix)));
 
-/** Hash of the CLI sources that end up in a build: contents and paths, not mtimes. */
+/** Hash of the CLI sources that end up in a build, including the sibling `libs/design` the build bundles: contents and paths, not mtimes. */
 export const cliSourceHash = (cliRoot: string) => {
   const hash = createHash('sha256');
 
-  for (const dir of SOURCE_DIRS) {
-    const path = join(cliRoot, dir);
+  const designRoot = join(cliRoot, '..', 'design');
+  const roots = [
+    ...SOURCE_DIRS.map((dir) => join(cliRoot, dir)),
+    ...DESIGN_LIB_SOURCE_DIRS.map((dir) => join(designRoot, dir)),
+  ];
 
+  for (const path of roots) {
     if (!existsSync(path)) continue;
 
     for (const file of filesOf(path).sort()) {
@@ -61,7 +66,7 @@ export const staleCliBuildMessage = (options: { root: string; buildDir: string }
   if (recorded === cliSourceHash(cliRoot)) return undefined;
 
   return [
-    'This CLI build is stale: libs/cli sources differ from what dist/libs/cli was built from,',
+    'This CLI build is stale: libs/cli or libs/design sources differ from what dist/libs/cli was built from,',
     'so its results can be wrong (`nx compile cli` does not refresh dist). Rebuild it:',
     '',
     '  NX_NO_CLOUD=true npx nx build cli',
