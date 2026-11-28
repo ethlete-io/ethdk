@@ -1,7 +1,7 @@
 # Fable lead prompt, after the weekly reset 28.11. 14:00
 
-Tom starts each in a fresh session (`agent-sessions run <name>`), for a full Fable limit. The SDK decoupling is builder row B913 (Tom 28.11.), not Fable work. Paste the block as the
-first prompt. Both run beside the builder (`ethlete-sdk-b1`) and the doc session: claim paths before editing
+Tom starts it in a fresh session (`agent-sessions run <name>`), for a full Fable limit. The SDK decoupling is builder row B913 (Tom 28.11.), not Fable work. Paste the block as the
+first prompt. It runs beside the builder (`ethlete-sdk-b1`) and the doc session: claim paths before editing
 (`ethlete-agent-sessions` skill), take rows from `plans/QUEUE.md` only after telling the builder.
 
 ## 1. Perf hunt
