@@ -48,3 +48,20 @@ Status: planning, 28.11.2026. Built by the builder as rows B912 (step 1) and B91
 
 Done when: `@ethlete/cli` and `@ethlete/agent-rules` build and publish with Studio and Timetrack deleted from the
 workspace, and fifagg's `.mcp.json` still opens the design MCP.
+
+## Suspects after step 2 (Codex review, 28.11.)
+
+Each fix needs a bite that is red on HEAD; without one the finding stays a Suspect.
+
+1. `tools/scripts/e2e-check.mjs:28`: the sentinel skips the hash check for revisions with the guard still at
+   `libs/cli/src/lib/source-hash.ts`, so a stale dist passes.
+2. `tools/scripts/studio-code.mjs:214`: the pinned cli cache keys only on `libs/cli`, so a commit that touches only
+   `libs/cli-core` or `libs/design` can serve an older build.
+3. `libs/cli-core/src/lib/source-hash.ts:8` and `design_server.rs:46`: both hashes omit `libs/cli/package.json`,
+   which the build copies into the dist.
+4. `libs/cli/src/design-boundary.spec.ts:211`: the live scan omits `libs/cli-core`.
+5. `libs/cli-core/src/lib/source-hash.spec.ts:109` and `design_server.rs:1228`: the fixture has no `cli-core/src`
+   file, so a dropped hash root stays green.
+6. `libs/cli-core/src/lib/source-hash.spec.ts:54`: the design-edit test writes to `libs/cli/design`, not
+   `libs/design/design`.
+7. `libs/cli/scripts/compile.spec.mts:79`: the layout test never checks that the `cli-core` targets are emitted.
