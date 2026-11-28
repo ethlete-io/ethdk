@@ -1,0 +1,46 @@
+import { Component, inputBinding, output } from '@angular/core';
+import { createOverlayOpener, OverlayDefinition } from '@ethlete/components';
+
+type NameDialogResult = { name: string; isDefault: boolean };
+
+@Component({ selector: 'app-a-name-dialog', template: '' })
+class NameDialogComponent {}
+
+declare const NAME_DIALOG: OverlayDefinition<NameDialogComponent, NameDialogResult>;
+
+@Component({ selector: 'app-a-toolbar', template: '' })
+export class ToolbarComponent {
+  savedViewAction = output<{ kind: 'save' | 'rename'; name: string }>();
+
+  private completeOverlay: ((result: NameDialogResult | null) => void) | null = null;
+  private nameDialog = createOverlayOpener(NAME_DIALOG, {
+    afterClosed: (result) => {
+      const complete = this.completeOverlay;
+      this.completeOverlay = null;
+      complete?.(result);
+    },
+  });
+
+  protected openSaveDialog(origin: MouseEvent) {
+    this.completeOverlay = (result) => {
+      if (result) {
+        this.savedViewAction.emit({ kind: 'save', name: result.name });
+      }
+    };
+
+    this.nameDialog.open({
+      origin,
+      bindings: [inputBinding('data', () => ({ name: '', isDefault: false }))],
+    });
+  }
+
+  protected openRenameDialog() {
+    this.completeOverlay = (result) => {
+      if (result) {
+        this.savedViewAction.emit({ kind: 'rename', name: result.name });
+      }
+    };
+
+    this.nameDialog.open({ bindings: [inputBinding('data', () => ({ name: 'View', isDefault: false }))] });
+  }
+}

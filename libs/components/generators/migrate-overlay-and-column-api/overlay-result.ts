@@ -348,6 +348,51 @@ const declarationOf = (masked: string, name: string) => {
   return null;
 };
 
+const fieldCallbackParam = (masked: string, field: string) => {
+  const declaration = new RegExp(
+    `(?:^|\\n)[ \\t]*(?:(?:public|private|protected|readonly|static|override)\\s+)*${escapeRegExp(field)}\\s*[?!]?\\s*:`,
+  ).exec(masked);
+  if (!declaration) return null;
+
+  const typeStart = (declaration.index ?? 0) + declaration[0].length;
+  const lineEnd = masked.indexOf('\n', typeStart);
+
+  for (let at = masked.indexOf('(', typeStart); at !== -1 && at < lineEnd; at = masked.indexOf('(', at + 1)) {
+    const fn = parseFunctionAt(masked, at);
+    if (fn?.param && fn.param.typeStart !== -1) return fn.param;
+  }
+
+  return null;
+};
+
+const rewriteCallbackField = (source: string, masked: string, field: string, directCalls: number) => {
+  const param = fieldCallbackParam(masked, field);
+  if (!param) return null;
+
+  const typeEdit = rewriteType(source, masked, param.typeStart, param.typeEnd);
+  if (!typeEdit) return null;
+
+  const id = escapeRegExp(field);
+  const calls = [...masked.matchAll(new RegExp(`\\bthis\\.${id}\\s*(?:\\?\\.)?\\(`, 'g'))].length;
+  if (calls !== directCalls) return null;
+
+  const edits: Edit[] = [typeEdit];
+
+  for (const assignment of masked.matchAll(new RegExp(`\\bthis\\.${id}\\s*=(?![=>])\\s*`, 'g'))) {
+    const valueStart = (assignment.index ?? 0) + assignment[0].length;
+    if (/^(?:null|undefined)(?![\w$])/.test(masked.slice(valueStart))) continue;
+
+    const fn = parseFunctionAt(masked, valueStart);
+    if (!fn) return null;
+
+    const rewrite = rewriteFunction(source, masked, fn);
+    if (rewrite.shadowed || rewrite.unguarded) return null;
+    edits.push(...rewrite.edits);
+  }
+
+  return edits;
+};
+
 const countUses = (masked: string, name: string) =>
   [...masked.matchAll(new RegExp(`(?<![\\w$])${escapeRegExp(name)}(?![\\w$])`, 'g'))].length;
 
@@ -485,6 +530,18 @@ export const migrateOverlayResult = (source: string, masked: string) => {
 
       if (declarationOf(masked, callee)) {
         resolveReference(callee, callOffset, 2);
+        continue;
+      }
+
+      const body = masked.slice(fn.bodyStart, fn.bodyEnd);
+      const alias = new RegExp(
+        `\\b(?:const|let)\\s+${escapeRegExp(callee)}\\s*=\\s*this\\.([A-Za-z_$][\\w$]*)\\s*;`,
+      ).exec(body)?.[1];
+      const field = alias ?? (call[0].startsWith('this.') ? callee : null);
+      const fieldEdits = field ? rewriteCallbackField(source, masked, field, alias ? 0 : 1) : null;
+
+      if (fieldEdits) {
+        edits.push(...fieldEdits);
       } else if (hasUnguardedUse(masked, param, fn.bodyStart, fn.bodyEnd)) {
         findings.push(
           finding(

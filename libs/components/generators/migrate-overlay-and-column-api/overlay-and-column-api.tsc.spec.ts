@@ -59,8 +59,8 @@ describe('migrate-overlay-and-column-api against the current @ethlete/components
     const after = migrateOverlayAndColumnApiInFile(fixture('hand-fix'));
     const reported = new Set(after.findings.map((entry) => entry.line));
 
-    expect(typeErrors('hand-fix', after.content)).toEqual(['8: TS2345', '18: TS2345']);
-    expect(reported).toEqual(new Set([8, 18]));
+    expect(typeErrors('hand-fix', after.content)).toEqual(['8: TS2345']);
+    expect(reported).toEqual(new Set([8]));
   }, 60_000);
 
   it('rewrites a config object shared by several openers and reads of a typed column host', () => {
@@ -77,5 +77,14 @@ describe('migrate-overlay-and-column-api against the current @ethlete/components
     ]);
     expect(after.findings).toEqual([]);
     expect(typeErrors('shared-config', after.content)).toEqual([]);
+  }, 60_000);
+
+  it('rewrites the nullable result type of a callback field the result is forwarded to', () => {
+    const before = fixture('nullable-callback-field');
+    const after = migrateOverlayAndColumnApiInFile(before);
+
+    expect(typeErrors('nullable-callback-field', before)).toEqual(['20: TS2345']);
+    expect(after.findings).toEqual([]);
+    expect(typeErrors('nullable-callback-field', after.content)).toEqual([]);
   }, 60_000);
 });
