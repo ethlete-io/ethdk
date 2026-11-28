@@ -85,6 +85,8 @@ describe('background-design-commands', () => {
     'node dist/libs/cli/src/index.js design check',
     'node dist/libs/cli/src/index.js design sketch ready studio foo',
     'cd apps && node dist/libs/cli/src/index.js design compare studio',
+    'node dist/libs/design/src/bin.js design check',
+    'node dist/libs/design/src/bin.js design sketch ready studio foo',
     'npx nx studio:e2e ethlete-studio',
   ])('moves the %s form into the background', (command) => {
     expect(decisionOf({ command })).toBe('allow');
@@ -104,6 +106,7 @@ describe('background-design-commands', () => {
   it.each([
     'yarn design compare --help',
     'node dist/libs/cli/src/index.js design check -h',
+    'node dist/libs/design/src/bin.js design check -h',
     'yarn design --help',
     'yarn design shot studio x',
     'yarn design sketch start studio x',

@@ -14,8 +14,8 @@ A Bash call from a sub-agent (hook input `agent_id`) gets `export ET_AGENT_ID=<i
 process it starts carries the id and `agent-sessions stop-own` can tell sibling sub-agents apart. This
 shares the hook because parallel hooks cannot both rewrite one command.
 
-Matches the `yarn design ...`, `node dist/libs/cli/src/index.js design ...` and
-`npx nx ... studio:e2e` forms at command position only. Quoted text, heredoc bodies and
+Matches the `yarn design ...`, `node dist/libs/cli/src/index.js design ...`,
+`node dist/libs/design/src/bin.js design ...` and `npx nx ... studio:e2e` forms at command position only. Quoted text, heredoc bodies and
 arguments of other commands (`echo`, `git commit`, `grep`) are ignored, so free text that
 mentions a command does not trip the hook.
 
