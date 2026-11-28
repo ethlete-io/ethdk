@@ -566,13 +566,11 @@ fn cli_source_hash(cli_root: &Path) -> String {
                 Path::new("..").join("design"),
             )
         }))
-        .chain(CLI_CORE_SOURCE_DIRS.iter().map(|dir| {
-            (
-                core_root.join(dir),
-                core_root.clone(),
-                Path::new("..").join("cli-core"),
-            )
-        }));
+        .chain(
+            CLI_CORE_SOURCE_DIRS
+                .iter()
+                .map(|dir| (core_root.join(dir), core_root.clone(), Path::new("..").join("cli-core"))),
+        );
 
     for (path, root, prefix) in roots {
         if !path.exists() {
