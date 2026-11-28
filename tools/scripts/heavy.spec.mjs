@@ -170,9 +170,13 @@ const callerKilled = async ({ waiting }) => {
   await waitFor(() => holders.every((j) => j.out.includes('started-')));
   const pidFile = join(dir, 'heavy.pid');
   const jobPidFile = join(dir, 'job.pid');
+  const errFile = join(dir, 'heavy.err');
   const caller = spawn(
     'sh',
-    ['-c', `node ${script} run -- sh -c 'echo $$ > ${jobPidFile}; exec sleep 30' & echo $! > ${pidFile}; wait`],
+    [
+      '-c',
+      `node ${script} run -- sh -c 'echo $$ > ${jobPidFile}; exec sleep 30' 2> ${errFile} & echo $! > ${pidFile}; wait`,
+    ],
     {
       env: {
         ...process.env,
@@ -188,7 +192,7 @@ const callerKilled = async ({ waiting }) => {
   spawned.add(caller);
   await waitFor(() => existsSync(pidFile));
   const heavyPid = Number(readFileSync(pidFile, 'utf8'));
-  if (waiting) await sleep(500);
+  if (waiting) await waitFor(() => existsSync(errFile) && readFileSync(errFile, 'utf8').includes('slots are taken'));
   else await waitFor(() => existsSync(jobPidFile));
   process.kill(caller.pid, 'SIGKILL');
   let gone = false;
