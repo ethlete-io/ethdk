@@ -38,7 +38,7 @@ const harness = ({ head, base }) => {
   };
 };
 
-const design = ['libs/cli/src/lib/design/studio-api.ts'];
+const design = ['libs/design/src/lib/design/studio-api.ts'];
 
 test('a loaded machine where base and head are both slow passes', async () => {
   const run = harness({ base: samples(18.52, 16.58, 15.63), head: samples(20.43, 18.28, 15.97) });

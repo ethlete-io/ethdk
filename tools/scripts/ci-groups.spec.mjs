@@ -16,6 +16,7 @@ const roots = {
   core: 'libs/core',
   components: 'libs/components',
   cli: 'libs/cli',
+  design: 'libs/design',
   'eslint-plugin': 'libs/eslint-plugin',
   'ethlete-studio': 'apps/ethlete-studio',
   'timetrack-app': 'apps/timetrack',
@@ -23,7 +24,8 @@ const roots = {
 };
 const dependencies = {
   components: ['core'],
-  cli: ['components', 'eslint-plugin'],
+  cli: ['design', 'eslint-plugin'],
+  design: ['cli', 'components', 'eslint-plugin'],
   'ethlete-studio': ['cli', 'components', 'core'],
   'timetrack-app': ['timetrack', 'core', 'components'],
 };
@@ -57,28 +59,28 @@ test('a lib both apps import runs every group through the affected graph', () =>
   });
 });
 
-test('a design tool change runs the cli checks in the Studio group, not the SDK group', () => {
-  const selection = select(['libs/cli/src/lib/design/server.ts'], ['cli', 'ethlete-studio']);
+test('a design tool change runs the design and cli checks in the Studio group, not the SDK group', () => {
+  const selection = select(['libs/design/src/lib/design/server.ts'], ['cli', 'design', 'ethlete-studio']);
 
-  assert.deepEqual(summary(selection), { sdk: null, studio: ['cli', 'ethlete-studio'], timetrack: null });
+  assert.deepEqual(summary(selection), { sdk: null, studio: ['cli', 'design', 'ethlete-studio'], timetrack: null });
 });
 
-test('a cli change outside the design tool keeps cli in the SDK group', () => {
+test('a cli change next to a design tool change keeps cli and design in the SDK group', () => {
   const selection = select(
-    ['libs/cli/src/lib/design/server.ts', 'libs/cli/src/lib/update/plan.ts'],
-    ['cli', 'ethlete-studio'],
+    ['libs/design/src/lib/design/server.ts', 'libs/cli/src/lib/update/plan.ts'],
+    ['cli', 'design', 'ethlete-studio'],
   );
 
-  assert.deepEqual(summary(selection), { sdk: ['cli'], studio: ['ethlete-studio'], timetrack: null });
+  assert.deepEqual(summary(selection), { sdk: ['cli', 'design'], studio: ['ethlete-studio'], timetrack: null });
 });
 
-test('a design tool change next to a change in a cli dependency keeps cli in the SDK group', () => {
+test('a design tool change next to a change in a design dependency keeps cli and design in the SDK group', () => {
   const selection = select(
-    ['libs/cli/src/lib/design/server.ts', 'libs/eslint-plugin/src/index.ts'],
-    ['cli', 'eslint-plugin', 'ethlete-studio'],
+    ['libs/design/src/lib/design/server.ts', 'libs/eslint-plugin/src/index.ts'],
+    ['cli', 'design', 'eslint-plugin', 'ethlete-studio'],
   );
 
-  assert.deepEqual(summary(selection).sdk, ['cli', 'eslint-plugin']);
+  assert.deepEqual(summary(selection).sdk, ['cli', 'design', 'eslint-plugin']);
 });
 
 test('plans and changesets alone run nothing', () => {
@@ -115,6 +117,7 @@ test('a change to the CEF action runs only the app groups, other actions run eve
     'cli',
     'components',
     'core',
+    'design',
     'eslint-plugin',
   ]);
 });
@@ -206,7 +209,7 @@ test('a shared CI helper runs every group whose workflows call it, in full', () 
       }),
     ),
     {
-      sdk: ['cli', 'components', 'core', 'eslint-plugin'],
+      sdk: ['cli', 'components', 'core', 'design', 'eslint-plugin'],
       studio: ['ethlete-studio'],
       timetrack: ['timetrack', 'timetrack-app'],
     },

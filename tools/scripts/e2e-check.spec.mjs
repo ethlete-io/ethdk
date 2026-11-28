@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import * as check from './e2e-check.mjs';
 import { judgeSuiteRun, runSuite } from './e2e-check.mjs';
-import { mapChanged, suiteInvocation } from './e2e-map.mjs';
+import { mapChanged, STUDIO_MAP, suiteInvocation } from './e2e-map.mjs';
 import { gitEnv, gitExec } from './git-test-env.mjs';
 
 const scratchDirs = [];
@@ -106,15 +106,24 @@ test('the canvas e2e file itself runs every view, another e2e file only itself',
 });
 
 test('the design frame page and the frame-scrollbar fixture run the frame-scrollbar e2e', () => {
-  assert.deepEqual(mapChanged(['libs/cli/design/web/frame.html']).suites, ['frame-scrollbar']);
+  assert.deepEqual(mapChanged(['libs/design/design/web/frame.html']).suites, ['frame-scrollbar']);
   assert.deepEqual(
     mapChanged(['apps/ethlete-studio/e2e/fixtures/frame-scrollbar/.ethlete/design/app-a/elements/card/card.ts']).suites,
     ['frame-scrollbar'],
   );
 });
 
+test('every literal path in the Studio map names a file that exists', () => {
+  const literal = STUDIO_MAP.map((entry) => entry.glob).filter((glob) => !/[*?]/.test(glob));
+
+  assert.deepEqual(
+    literal.filter((path) => !existsSync(path)),
+    [],
+  );
+});
+
 test('the design frame script runs the frame-link e2e', () => {
-  assert.deepEqual(mapChanged(['libs/cli/design/web/frame.ts']).suites, ['frame-link']);
+  assert.deepEqual(mapChanged(['libs/design/design/web/frame.ts']).suites, ['frame-link']);
 });
 
 test('a canvas view suite runs canvas.e2e with --view', () => {

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { decode, encode } from '@jridgewell/sourcemap-codec';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { layOutPackage, swapIntoPlace } from './compile.mjs';
 
 const tree = (root: string, files: Record<string, string>) => {
@@ -90,6 +91,57 @@ describe('layOutPackage', () => {
 
     expect(sourcesOf('src/index.js.map')).toEqual(['../../../libs/cli/src/index.ts']);
     expect(sourcesOf('src/lib/design/serve.js.map')).toEqual(['../../../../../libs/design/src/lib/design/serve.ts']);
+  });
+
+  it('points every source map at an existing source from the place the build is moved to', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'compile-'));
+    const emitted = join(repo, 'tmp/cli-build-run-1-tsc');
+    const run = join(repo, 'tmp/cli-build-run-1');
+    const final = join(repo, 'dist/libs/cli');
+    const map = (sources: string[]) => JSON.stringify({ version: 3, sources, mappings: '' });
+
+    tree(repo, { 'libs/cli/src/index.ts': '', 'libs/design/src/lib/design/serve.ts': '' });
+    tree(emitted, {
+      'cli/src/index.js': '',
+      'cli/src/index.js.map': map(['../../../../libs/cli/src/index.ts']),
+      'design/src/lib/design/serve.js': '',
+      'design/src/lib/design/serve.js.map': map(['../../../../../../libs/design/src/lib/design/serve.ts']),
+    });
+
+    layOutPackage(emitted, run, final);
+
+    for (const file of ['src/index.js.map', 'src/lib/design/serve.js.map']) {
+      const { sources } = JSON.parse(readFileSync(join(run, file), 'utf8')) as { sources: string[] };
+
+      expect(sources.map((source) => existsSync(resolve(dirname(join(final, file)), source)))).toEqual([true]);
+    }
+  });
+
+  it('keeps a mapped position on its code after an alias on the same line is rewritten', () => {
+    const { emitted, run } = emit();
+    const line = 'const design_1 = require("@ethlete/design"); design_1.go();';
+    const column = line.indexOf('design_1.go');
+
+    tree(emitted, {
+      'cli/src/index.js': `${line}\n`,
+      'cli/src/index.js.map': JSON.stringify({
+        version: 3,
+        sources: ['../../../../libs/cli/src/index.ts'],
+        mappings: encode([
+          [
+            [0, 0, 0, 0],
+            [column, 0, 0, 7],
+          ],
+        ]),
+      }),
+    });
+
+    layOutPackage(emitted, run);
+
+    const written = readFileSync(join(run, 'src/index.js'), 'utf8');
+    const { mappings } = JSON.parse(readFileSync(join(run, 'src/index.js.map'), 'utf8')) as { mappings: string };
+
+    expect(decode(mappings)[0]?.map(([generated]) => generated)).toEqual([0, written.indexOf('design_1.go')]);
   });
 
   it('refuses an alias whose target is not part of the package', () => {

@@ -313,7 +313,7 @@ jobs:
         run: |
           if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BASE^{commit}"; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$BASE" HEAD -- apps/ethlete-studio libs/cli/src/lib/design; then
+          elif git diff --quiet "$BASE" HEAD -- apps/ethlete-studio libs/design; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"

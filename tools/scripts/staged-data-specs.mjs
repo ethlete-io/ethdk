@@ -15,19 +15,28 @@ export const specsForData = (files, map) =>
 // A hook runs with GIT_DIR and GIT_INDEX_FILE set; specs that `git init` a temp repo would otherwise write into this one.
 const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit', env: gitEnv() }).status ?? 1;
 
-export const runSpecs = (specs) => {
-  const vitest = specs.filter((spec) => spec.endsWith('.spec.ts'));
+const LIB_SPEC = /^(libs\/[^/]+)\/(.+\.spec\.ts)$/;
+
+export const specCommands = (specs) => {
+  const byLib = new Map();
+
+  for (const [, lib, spec] of specs.map((path) => LIB_SPEC.exec(path)).filter(Boolean))
+    byLib.set(lib, [...(byLib.get(lib) ?? []), spec]);
+
   const node = specs.filter((spec) => spec.endsWith('.spec.mjs'));
-  const statuses = [];
 
-  if (vitest.length)
-    statuses.push(
-      run('npx', ['vitest', 'run', '--root', 'libs/cli', ...vitest.map((s) => s.replace('libs/cli/', ''))]),
-    );
-  if (node.length) statuses.push(run('node', ['--test', ...node]));
-
-  return statuses.every((status) => status === 0) ? 0 : 1;
+  return [
+    ...[...byLib].map(([lib, libSpecs]) => ['npx', ['vitest', 'run', '--root', lib, ...libSpecs]]),
+    ...(node.length ? [['node', ['--test', ...node]]] : []),
+  ];
 };
+
+export const runSpecs = (specs) =>
+  specCommands(specs)
+    .map(([command, args]) => run(command, args))
+    .every((status) => status === 0)
+    ? 0
+    : 1;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const map = JSON.parse(readFileSync(join(root, 'tools/scripts/data-spec-map.json'), 'utf8'));

@@ -7,7 +7,7 @@ import { markRunLogFailed, startRunLog } from './run-log.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const RUNNER = 'apps/ethlete-studio/e2e/canvas.e2e.mjs';
-const SHARED = ['libs/cli/src/lib/design/serve.ts', 'libs/cli/src/lib/design/studio-api.ts'];
+const SHARED = ['libs/design/src/lib/design/serve.ts', 'libs/design/src/lib/design/studio-api.ts'];
 
 export const RUNS = 3;
 export const HOLD_LISTINGS_MS = 14000;

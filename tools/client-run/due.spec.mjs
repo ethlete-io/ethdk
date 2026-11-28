@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
@@ -87,6 +87,13 @@ describe('clientCommitsSince', () => {
     assert.deepEqual(calls, [
       { command: 'git', args: ['rev-list', '--count', 'abc123..HEAD', '--', ...CLIENT_PATHS], cwd: '/repo' },
     ]);
+  });
+
+  it('counts only client paths that exist in this checkout', () => {
+    assert.deepEqual(
+      CLIENT_PATHS.filter((path) => !existsSync(join(import.meta.dirname, '../..', path))),
+      [],
+    );
   });
 
   it('gives null when git fails', () => {

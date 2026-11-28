@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import {
@@ -12,6 +12,8 @@ import {
   judgeP6,
   ownersOf,
   P1_TARGETS,
+  P7_ROOT,
+  P7_SPECS,
   p2RunOf,
   p5RunOf,
   phasesOf,
@@ -305,5 +307,16 @@ describe('vitestTotalsOf', () => {
   it('reads failed tests, and null without a totals line', () => {
     assert.deepEqual(vitestTotalsOf('      Tests  2 failed | 6 passed (8)'), { passed: 6, failed: 2 });
     assert.equal(vitestTotalsOf('Error: no config'), null);
+  });
+});
+
+describe('P7', () => {
+  it('names specs that exist under the lib it runs vitest in', () => {
+    const root = join(import.meta.dirname, '../..', P7_ROOT);
+
+    assert.deepEqual(
+      P7_SPECS.filter((spec) => !existsSync(join(root, spec))),
+      [],
+    );
   });
 });

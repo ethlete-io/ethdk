@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { tempDir } from './temp-dir.mjs';
@@ -46,14 +46,22 @@ test('hunks inside the cases name only those cases', () => {
 });
 
 test('a shared server file runs every page group, a file outside the triggers none', () => {
-  assert.equal(affectedCases(new Map([['libs/cli/src/lib/design/serve.ts', [10]]]), spans).all, true);
-  assert.equal(affectedCases(new Map([['libs/cli/src/lib/design/studio-api.ts', [10]]]), spans).all, true);
-  assert.deepEqual(affectedCases(new Map([['libs/cli/src/lib/design/other.ts', [10]]]), spans), {
+  assert.equal(affectedCases(new Map([['libs/design/src/lib/design/serve.ts', [10]]]), spans).all, true);
+  assert.equal(affectedCases(new Map([['libs/design/src/lib/design/studio-api.ts', [10]]]), spans).all, true);
+  assert.deepEqual(affectedCases(new Map([['libs/design/src/lib/design/other.ts', [10]]]), spans), {
     all: false,
     cases: [],
     reasons: [],
   });
-  assert.deepEqual(TRIGGERS, [RUNNER, 'libs/cli/src/lib/design/serve.ts', 'libs/cli/src/lib/design/studio-api.ts']);
+  assert.deepEqual(TRIGGERS, [
+    RUNNER,
+    'libs/design/src/lib/design/serve.ts',
+    'libs/design/src/lib/design/studio-api.ts',
+  ]);
+  assert.deepEqual(
+    TRIGGERS.filter((file) => !existsSync(join(import.meta.dirname, '../..', file))),
+    [],
+  );
 });
 
 test('reads every case of the current runner with its name', () => {

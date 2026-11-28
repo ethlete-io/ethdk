@@ -76,7 +76,7 @@ jobs:
           SLOW: ${{ matrix.slow }}
           RUNS: ${{ inputs.runs || '2' }}
         run: |
-          mapfile -t specs < <(node tools/scripts/spec-files.mjs libs/cli/vitest.config.mts apps/ethlete-studio/vite.config.mts)
+          mapfile -t specs < <(node tools/scripts/spec-files.mjs libs/cli/vitest.config.mts libs/design/vitest.config.mts apps/ethlete-studio/vite.config.mts)
           echo "${#specs[@]} spec files, --slow $SLOW, --runs $RUNS"
           set -o pipefail
           if [ "$SLOW" = 1 ]; then slow=(--load 0); else slow=(--slow "$SLOW"); fi

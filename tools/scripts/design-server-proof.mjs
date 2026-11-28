@@ -230,6 +230,8 @@ export const P2_SHOT = ['components/zoom-chip', '--state', 'out'];
 export const P3_COMPARE = ['components/zoom-chip', '--product', 'studio'];
 export const P4_TARGETS = { idleMs: 60_000, waitMs: 90_000 };
 export const P6_TARGETS = { blockMs: 1_000, systemWarmMs: 300, openPointsColdMs: 1_500 };
+export const P7_ROOT = 'libs/design';
+
 export const P7_SPECS = [
   'src/lib/design/system/sketch/sketch-checker.spec.ts',
   'src/lib/design/resident/server.spec.ts',
@@ -623,7 +625,7 @@ const proveP6 = async (options) => {
 
 const proveP7 = (options) => {
   const result = spawnSync('npx', ['vitest', 'run', ...P7_SPECS], {
-    cwd: join(options.target, 'libs/cli'),
+    cwd: join(options.target, P7_ROOT),
     encoding: 'utf8',
     env: { ...process.env, TMUX: '' },
   });

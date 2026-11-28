@@ -4,7 +4,14 @@ import { rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stripVTControlCharacters } from 'node:util';
-import { CI_LIKE, hasTaskset, loadPassTriggers, pinnedCommand, startBusyLoops } from './ci-like-load.mjs';
+import {
+  CI_LIKE,
+  hasTaskset,
+  LOAD_PASS_TRIGGERS,
+  loadPassTriggers,
+  pinnedCommand,
+  startBusyLoops,
+} from './ci-like-load.mjs';
 import { holderLine } from './heavy-run-lock.mjs';
 
 export const FIRST_LISTING_LIMIT_MS = 15_000;
@@ -176,7 +183,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const limit = Number(valueOf('--limit-ms') ?? FIRST_LISTING_LIMIT_MS);
   const built = resolve(args.find((arg) => !arg.startsWith('--') && !flagValues.has(arg)) ?? '.');
   const baseBuilt = valueOf('--base');
-  const result = await firstListingStep(['libs/cli/src/lib/design/'], {
+  const result = await firstListingStep(LOAD_PASS_TRIGGERS, {
     measure: (options) => timeFirstListing(built, options),
     prepareBase: async () => {
       if (!baseBuilt) throw new Error('no --base <built checkout> given');

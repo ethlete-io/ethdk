@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { loadPassTriggers, pinnedCommand, startBusyLoops } from './ci-like-load.mjs';
+import { LOAD_PASS_TRIGGERS, loadPassTriggers, pinnedCommand, startBusyLoops } from './ci-like-load.mjs';
 
 test('pins a command with taskset and leaves it alone without', () => {
   assert.deepEqual(pinnedCommand('node', ['x'], { taskset: true, cores: '0-3' }).args, [
@@ -18,9 +18,13 @@ test('pins a command with taskset and leaves it alone without', () => {
     args: ['x'],
     note: 'ran unpinned: no taskset on this machine',
   });
-  assert.deepEqual(loadPassTriggers(['libs/cli/src/lib/design/x.ts', 'libs/cli/src/y.ts']), [
-    'libs/cli/src/lib/design/x.ts',
+  assert.deepEqual(loadPassTriggers(['libs/design/src/lib/design/x.ts', 'libs/cli/src/y.ts']), [
+    'libs/design/src/lib/design/x.ts',
   ]);
+  assert.deepEqual(
+    LOAD_PASS_TRIGGERS.filter((dir) => !existsSync(join(import.meta.dirname, '../..', dir))),
+    [],
+  );
 });
 
 test('a second load generator refuses while the first holds the heavy run lock, and starts once it is released', async () => {

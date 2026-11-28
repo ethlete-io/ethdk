@@ -11,8 +11,7 @@ const APP_GROUP_PROJECTS = {
   timetrack: ['timetrack-app', 'timetrack', 'timetrack-e2e', 'timetrack-vscode'],
 };
 
-const DESIGN_TOOL = 'libs/cli/src/lib/design/';
-const DESIGN_TOOL_PROJECT = 'cli';
+const DESIGN_TOOL_PROJECTS = ['design', 'cli'];
 
 const FORCE = true;
 
@@ -147,15 +146,18 @@ export const selectGroups = ({
     for (const project of rule?.projects ?? []) projects[groupOf(project)].add(project);
   }
 
-  const designToolFiles = changedFiles.filter((file) => ownerOf(file, roots) === DESIGN_TOOL_PROJECT);
+  const [designTool, designToolHost] = DESIGN_TOOL_PROJECTS;
+  const owners = changedFiles.map((file) => ownerOf(file, roots));
   const designToolOnly =
-    affectedSet.has(DESIGN_TOOL_PROJECT) &&
-    designToolFiles.length > 0 &&
-    designToolFiles.every((file) => file.startsWith(DESIGN_TOOL)) &&
-    ![...dependencyClosure(DESIGN_TOOL_PROJECT, dependencies)].some((dep) => affectedSet.has(dep));
+    affectedSet.has(designTool) &&
+    owners.includes(designTool) &&
+    !owners.includes(designToolHost) &&
+    !DESIGN_TOOL_PROJECTS.flatMap((project) => [...dependencyClosure(project, dependencies)]).some(
+      (dep) => !DESIGN_TOOL_PROJECTS.includes(dep) && affectedSet.has(dep),
+    );
 
   for (const project of affectedSet) {
-    const group = designToolOnly && project === DESIGN_TOOL_PROJECT ? 'studio' : groupOf(project);
+    const group = designToolOnly && DESIGN_TOOL_PROJECTS.includes(project) ? 'studio' : groupOf(project);
     projects[group].add(project);
   }
 

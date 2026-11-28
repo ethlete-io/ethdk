@@ -7,7 +7,7 @@ export const DEFAULT_MAX_AGE_DAYS = 7;
 
 /** The repo paths whose change makes the client agent see a different tool: design cli, its skills, the order, the sandbox. */
 export const CLIENT_PATHS = [
-  'libs/cli/src/lib/design',
+  'libs/design/src/lib/design',
   'libs/agent-rules/content/skills',
   'tools/client-run/order.md',
   'tools/client-run/expect.json',

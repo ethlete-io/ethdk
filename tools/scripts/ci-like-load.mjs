@@ -6,7 +6,7 @@ import { holderLine, takeHeavyLock } from './heavy-run-lock.mjs';
 
 export const CI_LIKE = { cores: '0-3', workers: 2, busyLoops: 12, shard: '1/6' };
 
-export const LOAD_PASS_TRIGGERS = ['libs/cli/src/lib/design/'];
+export const LOAD_PASS_TRIGGERS = ['libs/design/src/lib/design/'];
 
 export const loadPassTriggers = (files) =>
   files.filter((file) => LOAD_PASS_TRIGGERS.some((dir) => file.startsWith(dir)));
