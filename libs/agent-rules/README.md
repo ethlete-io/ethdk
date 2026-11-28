@@ -49,7 +49,7 @@ Marker-block files (`AGENTS.md`, `.github/copilot-instructions.md`) are only rew
 between `<!-- ethlete:agent-rules:start -->` and `:end` - everything you wrote around
 them survives.
 
-When the repo has `@ethlete/cli` installed, `sync` also registers its design MCP server
+When the repo has the `et` binary installed (`node_modules/.bin/et`), `sync` also registers its design MCP server
 (`et design mcp` through the `packageRunner`, for example `yarn et design mcp`) as `ethlete-design`: in `.mcp.json` for Claude Code and in
 `.codex/config.toml` for Codex. Only that entry is written; other servers and tables
 stay as they are.

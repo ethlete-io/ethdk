@@ -23,10 +23,14 @@ const repo = (options: {
     join(root, 'package.json'),
     JSON.stringify({
       packageManager: options.packageManager,
-      dependencies: options.cli ? { '@ethlete/cli': '1.0.0' } : {},
     }),
     'utf8',
   );
+
+  if (options.cli) {
+    mkdirSync(join(root, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(join(root, 'node_modules', '.bin', 'et'), '', 'utf8');
+  }
 
   return root;
 };
@@ -39,7 +43,7 @@ const run = (root: string) => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('et design mcp registration', () => {
-  it('writes nothing without @ethlete/cli', () => {
+  it('writes nothing without the et binary', () => {
     const root = repo({ cli: false });
 
     run(root);

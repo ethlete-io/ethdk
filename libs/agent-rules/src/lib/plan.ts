@@ -9,7 +9,7 @@ import {
   TOPOLOGY_CONFIG_FILE_NAME,
 } from './config';
 import { designMcpCommandVar, packageRunnerVar } from './render';
-import { filterContent, isPackageInstalled, SkippedItem } from './filter';
+import { filterContent, isBinInstalled, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
 import { emitAgentsSkills } from './targets/agents-skills';
@@ -319,7 +319,7 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
     files.push(...emitCopilot({ context, existing: readExisting(config.root, COPILOT_FILE) }));
   }
 
-  if (isPackageInstalled(config.root, '@ethlete/cli')) {
+  if (isBinInstalled(config.root, 'et')) {
     if (config.targets.includes('claude')) {
       files.push(
         emitClaudeMcp({

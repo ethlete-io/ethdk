@@ -43,6 +43,8 @@ export const isPackageInstalled = (root: string, packageName: string) => {
   return Object.prototype.hasOwnProperty.call(declared, packageName);
 };
 
+export const isBinInstalled = (root: string, binary: string) => existsSync(join(root, 'node_modules', '.bin', binary));
+
 export const filterContent = (items: ContentItem[], config: SyncConfig): FilterResult => {
   const kept: ContentItem[] = [];
   const skipped: SkippedItem[] = [];

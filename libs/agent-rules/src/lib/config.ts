@@ -215,7 +215,7 @@ export type BuilderIdleConfig = {
  *   a handoff instead of writing the handoff file automatically.
  *
  * Where the sibling checkouts live (`sdkSourcePath`, `apiRepoPaths`, `apiRepoBranches`) is not here:
- * it moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` reads the same values.
+ * it moved to `ethlete.config.local.json`, which the `et` CLI owns, because `et` reads the same values.
  *
  * No secret belongs here any more. Jira is reached through the Timetrack app, which holds the token
  * in the machine's keychain — one secret per machine rather than one per checkout.
@@ -244,13 +244,13 @@ export const LOCAL_CONFIG_KEYS: (keyof LocalConfig)[] = [
 ];
 
 /**
- * Repo topology moved to `@ethlete/cli`'s `ethlete.config.local.json`, because `et` needs it too.
+ * Repo topology moved to `ethlete.config.local.json`, which the `et` CLI owns, because `et` needs it too.
  * Still recognised here so a checkout that has not moved them yet gets told where they went
  * instead of an "unsupported key" warning.
  */
 export const MOVED_LOCAL_CONFIG_KEYS = ['sdkSourcePath', 'apiRepoPaths', 'apiRepoBranches'];
 
-/** Named only to point a migration at it. `@ethlete/cli` owns the file and validates its values. */
+/** Named only to point a migration at it. The `et` CLI owns the file and validates its values. */
 export const TOPOLOGY_CONFIG_FILE_NAME = 'ethlete.config.local.json';
 
 export const readLocalConfig = (root: string): LocalConfigState => {
