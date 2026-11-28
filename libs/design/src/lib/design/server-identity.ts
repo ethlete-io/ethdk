@@ -19,6 +19,8 @@ export type ServerIdentity = {
   /** Whether `projectRoot` and the asked-for root are one folder, symlinks resolved; absent when no root was asked. */
   rootMatches?: boolean;
   installed: ServerBuild | null;
+  /** Whether the running tool was loaded from the project's installed CLI. */
+  runsInstalledCli?: boolean;
   /** The process that serves; a server restarted from a new build answers with a new one. */
   pid: number;
   /** `studio` when Ethlete Studio started the server and owns its lifetime, `terminal` otherwise. */
@@ -66,6 +68,7 @@ export const serverIdentityOf = (projectRoot: string) => {
       projectRoot,
       ...(root ? { rootMatches: sameProjectRoot(projectRoot, root) } : {}),
       installed,
+      runsInstalledCli: packageRoot !== null && sameProjectRoot(join(packageRoot, 'src/lib/design'), __dirname),
       pid: process.pid,
       owner: startedByStudio() ? 'studio' : 'terminal',
       cliRoot: __dirname,
@@ -77,9 +80,8 @@ export const serverIdentityOf = (projectRoot: string) => {
 export type ServerVerdict = { verdict: 'ok'; message: null } | { verdict: 'restart' | 'update'; message: string };
 
 /**
- * Decides what a design server needs. `restart`: the project's installed cli differs from the
- * running one and is newer by build time. `update`: the server runs what is installed, and that is
- * older than Studio expects by API level or, when `expectedBuiltAt` is given, by build time.
+ * Asks for a restart when a newer build has replaced the CLI the server runs from.
+ * Otherwise, asks for an update when the running tool falls below Studio's API level or minimum build time.
  */
 export const judgeServerIdentity = (options: {
   expectedApiLevel: number;
@@ -96,22 +98,28 @@ export const judgeServerIdentity = (options: {
     };
   }
 
-  const { installed, stamp, builtAt, apiLevel } = identity;
+  const { installed, runsInstalledCli, stamp, builtAt, apiLevel } = identity;
 
-  if (installed && installed.stamp.build !== stamp.build && installed.builtAt > builtAt) {
+  if (
+    runsInstalledCli !== false &&
+    installed &&
+    installed.builtAt > builtAt &&
+    (installed.stamp.version !== stamp.version || installed.stamp.build !== stamp.build)
+  ) {
     return {
       verdict: 'restart',
       message: `@ethlete/cli in ${project} was updated after the design server started (running ${stamp.version}, installed ${installed.stamp.version}). Restart the server.`,
     };
   }
 
-  const installedMatches = !installed || installed.stamp.build === stamp.build;
   const tooOld = apiLevel < expectedApiLevel || (expectedBuiltAt !== undefined && builtAt < expectedBuiltAt);
 
-  if (installedMatches && tooOld) {
+  if (tooOld) {
     return {
       verdict: 'update',
-      message: `The design server for ${project} runs an older @ethlete/cli (${stamp.version}) than Studio expects. Update @ethlete/cli in ${project}.`,
+      message:
+        `The design server for ${project} runs an older design tool (${stamp.version}) than Studio expects. ` +
+        (runsInstalledCli === false ? 'Update the running design tool.' : `Update @ethlete/cli in ${project}.`),
     };
   }
 

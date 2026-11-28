@@ -159,6 +159,30 @@ describe('judgeServerIdentity', () => {
     expect(judgeServerIdentity({ expectedApiLevel: 2, identity: identity({ installed: null }) }).verdict).toBe('ok');
   });
 
+  it('keeps a current tool running from outside the project when its installed cli has a later build time', () => {
+    const project = projectWithCli({ code: 'project build', builtAt: 1_000_000 });
+    const running = { ...serverIdentityOf(project)(), builtAt: 0 };
+
+    expect(judgeServerIdentity({ expectedApiLevel: STUDIO_API_LEVEL, identity: running }).verdict).toBe('ok');
+  });
+
+  it.each([{ expectedApiLevel: 3 }, { expectedApiLevel: 2, expectedBuiltAt: 3000 }])(
+    'asks for an update when the bundled tool falls below Studio requirements %j',
+    (expectations) => {
+      const result = judgeServerIdentity({
+        ...expectations,
+        identity: identity({
+          owner: 'studio',
+          runsInstalledCli: false,
+          installed: { stamp: stamp('bbb'), builtAt: 3000 },
+        }),
+      });
+
+      expect(result.verdict).toBe('update');
+      expect(result.message).toContain('Update the running design tool.');
+    },
+  );
+
   it('asks for an update when the api level is below expected, even with equal build times', () => {
     const result = judgeServerIdentity({
       expectedApiLevel: 2,
@@ -169,10 +193,13 @@ describe('judgeServerIdentity', () => {
     expect(result.verdict).toBe('update');
   });
 
-  it('asks for a restart when the installed cli is newer than the running one', () => {
+  it('asks for a restart when the running cli was replaced by a newer version with the same build hash', () => {
     const result = judgeServerIdentity({
       expectedApiLevel: 2,
-      identity: identity({ installed: { stamp: stamp('bbb'), builtAt: 3000 } }),
+      identity: identity({
+        runsInstalledCli: true,
+        installed: { stamp: stamp('aaa', '3.0.0-next.27'), builtAt: 3000 },
+      }),
     });
 
     expect(result.verdict).toBe('restart');
