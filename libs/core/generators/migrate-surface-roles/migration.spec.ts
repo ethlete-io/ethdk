@@ -48,4 +48,18 @@ describe('migrate-surface-roles', () => {
       '.sheet-item:hover {\n  background: color-mix(in srgb, var(--et-surface-tint) 8%, transparent);\n  color: var(--et-surface-control-text);\n}\n',
     );
   });
+
+  it('warns with file and line for a hand fix without failing', async () => {
+    tree.write('apps/app-a/src/a.css', '.a {\n  color: var(--et-surface-on-interaction);\n}\n');
+
+    const task = await migrateSurfaceRoles(tree, { skipFormat: true });
+
+    expect(task).toBeUndefined();
+    const output = vi
+      .mocked(console.log)
+      .mock.calls.map((call) => call.join(' '))
+      .join('\n');
+    expect(output).toContain('WARN');
+    expect(output).toMatch(/apps\/app-a\/src\/a\.css:2:/);
+  });
 });
