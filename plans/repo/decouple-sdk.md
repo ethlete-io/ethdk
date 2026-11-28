@@ -13,10 +13,11 @@ Status: planning, 28.11.2026. Built after the weekly reset by a Fable lead with 
 - `@ethlete/agent-rules` and `@ethlete/cli` import no app code and talk to an app only through its running interface.
   A Timetrack or Studio failure never blocks an SDK release.
 
-## Open
+## Hooks and CI scope (human, 28.11.)
 
-- Hooks that belong to an app (`design-live-check`, `background-design-commands`): recommendation is a Claude plugin
-  per app (MCP server + hooks), MCP alone for Codex/Cursor. Waits on the human.
+- Each app ships a Claude plugin (MCP server + its hooks); Codex and Cursor get the MCP server alone.
+- A change in one project runs only that project's CI: Studio work runs no SDK or Timetrack checks, and the same holds
+  for every other project.
 
 ## Couplings to cut (from the inventory)
 
