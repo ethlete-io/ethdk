@@ -1,48 +1,240 @@
-import { readdirSync, readFileSync } from 'fs';
-import { dirname, join, relative, resolve, sep } from 'path';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { dirname, join, relative, sep } from 'path';
 import ts from 'typescript';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
-const DESIGN_DIR = join(__dirname, 'lib', 'design');
-const COMMAND_WIRING = { file: join(__dirname, 'index.ts'), specifier: './lib/design' };
-const DESIGN_WRITE_HELPER = join(DESIGN_DIR, 'system', 'design-file.ts');
+const COMMAND_WIRING_SPECIFIER = './lib/design';
+const COMMAND_WIRING_NAME = 'designCommand';
+
+const NON_LITERAL_LOADS_ALLOWED = new Set<string>([
+  'lib/design/browser.ts',
+  'lib/design/commit-hunks.ts',
+  'lib/design/render-worker.ts',
+]);
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}${sep}`);
 
-const sourceFiles = () =>
-  (readdirSync(__dirname, { recursive: true }) as string[])
+const sourceFiles = (root: string) =>
+  (readdirSync(root, { recursive: true }) as string[])
     .filter((name) => name.endsWith('.ts'))
-    .map((name) => join(__dirname, name));
+    .map((name) => join(root, name));
 
-const relativeImportsOf = (file: string) =>
-  ts
-    .preProcessFile(readFileSync(file, 'utf8'), true, true)
-    .importedFiles.map(({ fileName }) => fileName)
-    .filter((specifier) => specifier.startsWith('.'))
-    .map((specifier) => ({ specifier, target: resolve(dirname(file), specifier) }));
+const cliCompilerOptions = (() => {
+  const path = join(__dirname, '..', 'tsconfig.lib.json');
+  const config = ts.parseJsonConfigFileContent(ts.readConfigFile(path, ts.sys.readFile).config, ts.sys, dirname(path));
 
-const offenders = (rows: { file: string; specifier: string }[]) =>
-  rows.map(({ file, specifier }) => `${relative(__dirname, file)} -> ${specifier}`);
+  return config.options;
+})();
+
+interface Layout {
+  root: string;
+  options: ts.CompilerOptions;
+}
+
+const designDirOf = (layout: Layout) => join(layout.root, 'lib', 'design');
+
+interface Load {
+  specifier: string | null;
+  names: string[] | 'all';
+}
+
+const loadsOf = (file: string): Load[] => {
+  const loads: Load[] = [];
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+
+  const visit = (node: ts.Node) => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteralLike(node.moduleSpecifier)) {
+      const bindings = node.importClause?.namedBindings;
+      const namedOnly = !node.importClause?.name && bindings && ts.isNamedImports(bindings);
+
+      loads.push({
+        specifier: node.moduleSpecifier.text,
+        names: namedOnly ? bindings.elements.map((element) => (element.propertyName ?? element.name).text) : 'all',
+      });
+    } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) {
+      loads.push({ specifier: node.moduleSpecifier.text, names: 'all' });
+    } else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference) &&
+      ts.isStringLiteralLike(node.moduleReference.expression)
+    ) {
+      loads.push({ specifier: node.moduleReference.expression.text, names: 'all' });
+    } else if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === 'require'))
+    ) {
+      const [argument] = node.arguments;
+
+      loads.push({ specifier: argument && ts.isStringLiteralLike(argument) ? argument.text : null, names: 'all' });
+    } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) {
+      loads.push({
+        specifier: ts.isStringLiteral(node.argument.literal) ? node.argument.literal.text : null,
+        names: 'all',
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(source);
+
+  return loads;
+};
+
+const resolvedTarget = (layout: Layout, file: string, specifier: string) => {
+  const resolved = ts.resolveModuleName(specifier, file, layout.options, ts.sys).resolvedModule;
+
+  if (resolved) return resolved.resolvedFileName.split('/').join(sep);
+
+  return specifier.startsWith('.') ? join(dirname(file), specifier) : null;
+};
+
+const localLoadsOf = (layout: Layout, file: string) =>
+  loadsOf(file).flatMap((load) => {
+    if (load.specifier === null) return [{ ...load, target: null as string | null, unresolvable: true }];
+
+    const target = resolvedTarget(layout, file, load.specifier);
+
+    return target && !target.includes(`${sep}node_modules${sep}`) ? [{ ...load, target, unresolvable: false }] : [];
+  });
+
+const describeRow = (layout: Layout, file: string, specifier: string | null) =>
+  `${relative(layout.root, file)} -> ${specifier ?? '<non-literal import()/require()>'}`;
+
+const nonLiteralOffenders = (layout: Layout, files: string[]) =>
+  files
+    .filter((file) => !NON_LITERAL_LOADS_ALLOWED.has(relative(layout.root, file)))
+    .flatMap((file) =>
+      localLoadsOf(layout, file)
+        .filter((load) => load.unresolvable)
+        .map(() => describeRow(layout, file, null)),
+    );
+
+const outsideImportsOfDesign = (layout: Layout, files: string[]) =>
+  files
+    .filter((file) => !isInside(designDirOf(layout), file))
+    .flatMap((file) => localLoadsOf(layout, file).map((load) => ({ file, ...load })))
+    .filter(({ target }) => target !== null && isInside(designDirOf(layout), target))
+    .filter(
+      ({ file, specifier, names }) =>
+        !(
+          file === join(layout.root, 'index.ts') &&
+          specifier === COMMAND_WIRING_SPECIFIER &&
+          names !== 'all' &&
+          names.length === 1 &&
+          names[0] === COMMAND_WIRING_NAME
+        ),
+    )
+    .map(({ file, specifier }) => describeRow(layout, file, specifier));
+
+const designWritesBypassingJournal = (layout: Layout, files: string[]) =>
+  files
+    .filter(
+      (file) => isInside(designDirOf(layout), file) && file !== join(designDirOf(layout), 'system', 'design-file.ts'),
+    )
+    .flatMap((file) => localLoadsOf(layout, file).map((load) => ({ file, ...load })))
+    .filter(({ target }) => target === join(layout.root, 'lib', 'json-file.ts'))
+    .map(({ file, specifier }) => describeRow(layout, file, specifier));
+
+const fixtureLayout = (files: Record<string, string>): Layout => {
+  const root = mkdtempSync(join(tmpdir(), 'design-boundary-'));
+
+  for (const [name, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, name)), { recursive: true });
+    writeFileSync(join(root, name), text);
+  }
+
+  return {
+    root,
+    options: {
+      ...cliCompilerOptions,
+      baseUrl: root,
+      paths: { '@ethlete/cli/sketch-frames': ['lib/design/frames.ts'] },
+    },
+  };
+};
 
 describe('the design boundary in libs/cli', () => {
-  const files = sourceFiles();
+  const layout: Layout = { root: __dirname, options: cliCompilerOptions };
+  const files = sourceFiles(__dirname);
 
   it('keeps every file outside lib/design from importing it, except the et design command wiring', () => {
-    const rows = files
-      .filter((file) => !isInside(DESIGN_DIR, file))
-      .flatMap((file) => relativeImportsOf(file).map((row) => ({ file, ...row })))
-      .filter(({ target }) => isInside(DESIGN_DIR, target))
-      .filter(({ file, specifier }) => !(file === COMMAND_WIRING.file && specifier === COMMAND_WIRING.specifier));
-
-    expect(offenders(rows)).toEqual([]);
+    expect(outsideImportsOfDesign(layout, files)).toEqual([]);
   });
 
   it('sends every design write through design-file, so the write journal sees it', () => {
-    const rows = files
-      .filter((file) => isInside(DESIGN_DIR, file) && file !== DESIGN_WRITE_HELPER)
-      .flatMap((file) => relativeImportsOf(file).map((row) => ({ file, ...row })))
-      .filter(({ target }) => target === join(__dirname, 'lib', 'json-file'));
+    expect(designWritesBypassingJournal(layout, files)).toEqual([]);
+  });
 
-    expect(offenders(rows)).toEqual([]);
+  it('has no import() or require() whose target is computed, so no load can slip past the two checks', () => {
+    expect(nonLiteralOffenders(layout, files)).toEqual([]);
+  });
+});
+
+describe('the design boundary checks', () => {
+  const fixtures: Layout[] = [];
+  const fixture = (files: Record<string, string>) => {
+    const made = fixtureLayout(files);
+
+    fixtures.push(made);
+
+    return { layout: made, files: sourceFiles(made.root) };
+  };
+
+  afterAll(() => fixtures.forEach(({ root }) => rmSync(root, { recursive: true, force: true })));
+
+  const designFiles = {
+    'lib/design/index.ts': 'export const designCommand = 1;',
+    'lib/design/frames.ts': 'export {};',
+  };
+
+  it('catches a path alias that resolves inside design', () => {
+    const { layout, files } = fixture({
+      ...designFiles,
+      'lib/core.ts': "import { x } from '@ethlete/cli/sketch-frames';",
+    });
+
+    expect(outsideImportsOfDesign(layout, files)).toEqual(['lib/core.ts -> @ethlete/cli/sketch-frames']);
+  });
+
+  it('catches a .js specifier that resolves to json-file.ts', () => {
+    const { layout, files } = fixture({
+      ...designFiles,
+      'lib/json-file.ts': 'export {};',
+      'lib/design/system/writer.ts': "import '../../json-file.js';",
+    });
+
+    expect(designWritesBypassingJournal(layout, files)).toEqual(['lib/design/system/writer.ts -> ../../json-file.js']);
+  });
+
+  it('lets index.ts import only designCommand from design', () => {
+    const wiring = (text: string) => fixture({ ...designFiles, 'index.ts': text });
+    const rowsOf = (text: string) => {
+      const { layout, files } = wiring(text);
+
+      return outsideImportsOfDesign(layout, files);
+    };
+
+    expect(rowsOf("import { designCommand } from './lib/design';")).toEqual([]);
+    expect(rowsOf("export * from './lib/design';")).toHaveLength(1);
+    expect(rowsOf("import * as design from './lib/design';")).toHaveLength(1);
+    expect(rowsOf("import { designCommand, other } from './lib/design';")).toHaveLength(1);
+  });
+
+  it('catches an import() or require() that design is loaded through, and rejects a computed one', () => {
+    const { layout, files } = fixture({
+      ...designFiles,
+      'lib/literal.ts': "export const a = () => import('./design');",
+      'lib/required.ts': "export const b = require('./design/frames');",
+      'lib/computed.ts': "export const c = () => import('./' + 'design');",
+    });
+
+    expect(outsideImportsOfDesign(layout, files).sort()).toEqual([
+      'lib/literal.ts -> ./design',
+      'lib/required.ts -> ./design/frames',
+    ]);
+    expect(nonLiteralOffenders(layout, files)).toEqual(['lib/computed.ts -> <non-literal import()/require()>']);
   });
 });

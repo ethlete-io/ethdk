@@ -253,6 +253,7 @@ describe.concurrent('a merge killed at any write leaves the old or the new state
   beforeAll(async () => {
     bundleDir = mkdtempSync(join(tmpdir(), 'cli-merge-journal-bundle-'));
     CHILD = join(bundleDir, 'child.cjs');
+    let prettierStubs = 0;
     await build({
       entryPoints: [CHILD_SOURCE],
       outfile: CHILD,
@@ -271,18 +272,23 @@ describe.concurrent('a merge killed at any write leaves the old or the new state
 export const typecheck = () => ({ kind: 'ok' });
 export const typecheckAsync = async () => ({ kind: 'ok' });`,
             }));
-            build.onLoad({ filter: /system.prettier\.ts$/ }, (args) => ({
-              loader: 'ts',
-              contents: readFileSync(args.path, 'utf8').replace(
-                'export const prettierBinOf = (target: string) => {',
-                'export const prettierBinOf = (target: string) => {\n  if (target) return null;',
-              ),
-            }));
+            build.onLoad({ filter: /lib.prettier\.ts$/ }, (args) => {
+              prettierStubs += 1;
+
+              return {
+                loader: 'ts',
+                contents: readFileSync(args.path, 'utf8').replace(
+                  'export const prettierBinOf = (target: string) => {',
+                  'export const prettierBinOf = (target: string) => {\n  if (target) return null;',
+                ),
+              };
+            });
           },
         },
       ],
       define: { __dirname: JSON.stringify(resolve(__dirname, '../..')) },
     });
+    expect(prettierStubs).toBe(1);
   });
 
   afterAll(() => rmSync(bundleDir, { recursive: true, force: true }));
