@@ -45,6 +45,9 @@ Status: planning, 28.11.2026. Built by the builder as rows B912 (step 1) and B91
 3. Studio bundles `libs/design`; host starts the bundled tool (3); `et design` forwarder (4).
 4. Timetrack MCP replaces `ethlete-agents timetrack` (5); Studio MCP served by the app.
 5. One-way cli/agent-rules edge (6); app skills and hooks leave agent-rules (7, Open).
+   Skills done in c4e01b4931. Left for the per-app Claude plugin: the agent-rules hooks
+   `background-design-commands.py` and `design-live-check.py` name `et design` and `studio:e2e`;
+   they move into Studio's plugin.
 
 Done when: `@ethlete/cli` and `@ethlete/agent-rules` build and publish with Studio and Timetrack deleted from the
 workspace, and fifagg's `.mcp.json` still opens the design MCP.
