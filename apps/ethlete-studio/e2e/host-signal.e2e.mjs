@@ -22,18 +22,22 @@ const STABLE_POLL_MS = 20;
 const STABLE_POLLS = 5;
 const STDERR_TAIL = 2000;
 const LOG_TAIL = 4000;
+const WINDOW_ATTEMPTS = 3;
+const STOP_TIMEOUT_MS = 5000;
 
 // A thread name marks a moment inside cef::initialize: Chrome_IOThread starts while Chromium has
-// reset the signals to their default, CrShutdownDetector right when Chromium installs its own handlers.
+// reset the signals to their default, CrShutdownDetector shortly before Chromium installs its own
+// handlers, so those cases also wait until the signal is caught again. The host is frozen at that
+// moment and signalled while frozen; a host that had already reached setup missed the window.
 const CASES = [
   { name: 'sigint', signal: 'SIGINT' },
   { name: 'sigint-inherited-ignore', signal: 'SIGINT', ignoreInterrupt: true },
   { name: 'sigterm', signal: 'SIGTERM' },
   { name: 'sighup', signal: 'SIGHUP' },
   { name: 'sigint-during-cef-init', signal: 'SIGINT', atThread: 'Chrome_IOThread' },
-  { name: 'sigint-at-chromium-handlers', signal: 'SIGINT', atThread: 'CrShutdownDetec' },
-  { name: 'sigterm-at-chromium-handlers', signal: 'SIGTERM', atThread: 'CrShutdownDetec' },
-  { name: 'sighup-at-chromium-handlers', signal: 'SIGHUP', atThread: 'CrShutdownDetec' },
+  { name: 'sigint-at-chromium-handlers', signal: 'SIGINT', atThread: 'CrShutdownDetec', caughtAgain: true },
+  { name: 'sigterm-at-chromium-handlers', signal: 'SIGTERM', atThread: 'CrShutdownDetec', caughtAgain: true },
+  { name: 'sighup-at-chromium-handlers', signal: 'SIGHUP', atThread: 'CrShutdownDetec', caughtAgain: true },
 ];
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -114,14 +118,37 @@ const launch = (ignoreInterrupt) => {
   return { child, exit, home, setUp, stderrTail, diagnostics };
 };
 
-const waitForThread = (pid, name) => {
+const allStopped = (pid) => {
+  try {
+    return readdirSync(`/proc/${pid}/task`).every((task) => {
+      try {
+        return /^\d+ \(.*\) [tT] /s.test(readFileSync(`/proc/${pid}/task/${task}/stat`, 'utf8'));
+      } catch {
+        return true;
+      }
+    });
+  } catch {
+    return false;
+  }
+};
+
+const freezeAt = (pid, { atThread, signal, caughtAgain, setUp }) => {
   const by = Date.now() + READY_TIMEOUT_MS;
 
   while (Date.now() < by && existsSync(`/proc/${pid}`)) {
-    if (hasThread(pid, name)) return true;
+    if (!hasThread(pid, atThread) || (caughtAgain && !catches(pid, signal))) continue;
+
+    process.kill(pid, 'SIGSTOP');
+    const stopBy = Date.now() + STOP_TIMEOUT_MS;
+
+    while (!allStopped(pid)) {
+      if (Date.now() > stopBy) return { error: `the host did not stop within ${STOP_TIMEOUT_MS} ms` };
+    }
+
+    return { missed: setUp(), caught: catches(pid, signal) };
   }
 
-  return false;
+  return { error: `the host never started thread ${atThread}${caughtAgain ? ` and caught ${signal}` : ''}` };
 };
 
 const waitUntilReady = async ({ pid, child, signal, setUp, stderrTail, diagnostics }) => {
@@ -142,14 +169,19 @@ const waitUntilReady = async ({ pid, child, signal, setUp, stderrTail, diagnosti
   return undefined;
 };
 
-const runCase = async ({ name, signal, ignoreInterrupt, atThread }) => {
+const runAttempt = async ({ name, signal, ignoreInterrupt, atThread, caughtAgain }) => {
   const { child, exit, home, setUp, stderrTail, diagnostics } = launch(ignoreInterrupt);
   const pid = child.pid;
 
   try {
+    const faults = [];
+
     if (atThread) {
-      if (!waitForThread(pid, atThread))
-        return { name, ok: false, detail: `the host never started thread ${atThread}\n${diagnostics()}` };
+      const frozen = freezeAt(pid, { atThread, signal, caughtAgain, setUp });
+
+      if (frozen.error) return { name, ok: false, detail: `${frozen.error}\n${diagnostics()}` };
+      if (frozen.missed) return { name, missed: true };
+      if (!frozen.caught) faults.push(`${signal} was not caught at ${atThread} before setup`);
     } else {
       const notReady = await waitUntilReady({ pid, child, signal, setUp, stderrTail, diagnostics });
 
@@ -158,6 +190,7 @@ const runCase = async ({ name, signal, ignoreInterrupt, atThread }) => {
 
     const sentAt = Date.now();
     process.kill(pid, signal);
+    if (atThread) process.kill(pid, 'SIGCONT');
 
     const ended = await Promise.race([exit, sleep(EXIT_LIMIT_MS).then(() => null)]);
 
@@ -169,22 +202,40 @@ const runCase = async ({ name, signal, ignoreInterrupt, atThread }) => {
     }
 
     const expected = 128 + constants.signals[signal];
-    const faults = [
+    faults.push(
       !ended && `still running ${EXIT_LIMIT_MS} ms after ${signal}`,
       ended?.signal && `killed by ${ended.signal} without its own exit path`,
       ended && !ended.signal && ended.code !== expected && `exit code ${ended.code}, expected ${expected}`,
       left.length > 0 && `${left.length} processes of its group left after ${EXIT_LIMIT_MS} ms`,
-    ].filter(Boolean);
+    );
+    const found = faults.filter(Boolean);
+    const moment = atThread ? `, signalled at ${atThread} before setup` : '';
 
     return {
       name,
-      ok: faults.length === 0,
-      detail: faults.length ? faults.join('; ') : `exit ${ended.code} after ${ended.at - sentAt} ms`,
+      ok: found.length === 0,
+      detail: found.length ? found.join('; ') : `exit ${ended.code} after ${ended.at - sentAt} ms${moment}`,
     };
   } finally {
     killGroup(pid);
     rmSync(home, { recursive: true, force: true });
   }
+};
+
+const runCase = async (testCase) => {
+  for (let attempt = 1; attempt <= WINDOW_ATTEMPTS; attempt++) {
+    const result = await runAttempt(testCase);
+
+    if (!result.missed) return result;
+
+    console.log(`RETRY ${testCase.name}: the host reached setup before the signal (attempt ${attempt})`);
+  }
+
+  return {
+    name: testCase.name,
+    ok: false,
+    detail: `missed the window: the host reached setup before the signal in all ${WINDOW_ATTEMPTS} attempts`,
+  };
 };
 
 if (process.platform === 'win32') {
