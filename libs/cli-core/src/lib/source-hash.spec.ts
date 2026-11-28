@@ -57,6 +57,14 @@ describe('staleCliBuildMessage', () => {
     expect(staleCliBuildMessage({ root, buildDir })).toBeDefined();
   });
 
+  it('refuses after an edit in libs/cli/package.json, which the build copies into the dist', () => {
+    write(join(root, 'libs/cli/package.json'), '{"version":"1.0.0"}');
+    record();
+    write(join(root, 'libs/cli/package.json'), '{"version":"2.0.0"}');
+
+    expect(staleCliBuildMessage({ root, buildDir })).toBeDefined();
+  });
+
   it('refuses when the build recorded no hash', () => {
     write(join(buildDir, 'build-info.json'), JSON.stringify({ builtAt: 'x' }));
 
@@ -66,7 +74,7 @@ describe('staleCliBuildMessage', () => {
   it('ignores specs, markdown and files outside the source folders', () => {
     write(join(root, 'libs/cli/src/a.spec.ts'), 'x');
     write(join(root, 'libs/cli/src/NOTES.md'), 'x');
-    write(join(root, 'libs/cli/package.json'), '{}');
+    write(join(root, 'libs/cli/project.json'), '{}');
 
     expect(staleCliBuildMessage({ root, buildDir })).toBeUndefined();
   });

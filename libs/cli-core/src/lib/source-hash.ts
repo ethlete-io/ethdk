@@ -8,6 +8,7 @@ const PINNED_COMMIT_FILE = 'pinned-commit';
 const SOURCE_DIRS = ['src', 'design', 'playwright'];
 const DESIGN_LIB_SOURCE_DIRS = ['src', 'design'];
 const CLI_CORE_SOURCE_DIRS = ['src'];
+const CLI_SOURCE_FILES = ['package.json'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
 
 const filesOf = (dir: string): string[] =>
@@ -20,7 +21,7 @@ export const toPosixPath = (path: string, separator: string = sep) => path.split
 
 export const compareBytes = (a: string, b: string) => Buffer.compare(Buffer.from(a), Buffer.from(b));
 
-/** Hash of the CLI sources that end up in a build, including the sibling `libs/design` and `libs/cli-core` the build bundles: contents and paths, not mtimes. */
+/** Hash of the CLI sources that end up in a build, including `libs/cli/package.json` and the sibling `libs/design` and `libs/cli-core` the build bundles: contents and paths, not mtimes. */
 export const cliSourceHash = (cliRoot: string) => {
   const hash = createHash('sha256');
 
@@ -45,6 +46,17 @@ export const cliSourceHash = (cliRoot: string) => {
       hash.update(readFileSync(file));
       hash.update('\0');
     }
+  }
+
+  for (const name of CLI_SOURCE_FILES) {
+    const file = join(cliRoot, name);
+
+    if (!existsSync(file)) continue;
+
+    hash.update(name);
+    hash.update('\0');
+    hash.update(readFileSync(file));
+    hash.update('\0');
   }
 
   return hash.digest('hex');

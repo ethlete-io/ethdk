@@ -49,6 +49,8 @@ const DESIGN_LIB_SOURCE_DIRS: [&str; 2] = ["src", "design"];
 
 const CLI_CORE_SOURCE_DIRS: [&str; 1] = ["src"];
 
+const CLI_SOURCE_FILES: [&str; 1] = ["package.json"];
+
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
 /// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
@@ -598,6 +600,17 @@ fn cli_source_hash(cli_root: &Path) -> String {
             hash.update(content);
             hash.update([0]);
         }
+    }
+
+    for name in CLI_SOURCE_FILES {
+        let Ok(content) = std::fs::read(cli_root.join(name)) else {
+            continue;
+        };
+
+        hash.update(name.as_bytes());
+        hash.update([0]);
+        hash.update(content);
+        hash.update([0]);
     }
 
     hash.finalize().iter().map(|byte| format!("{byte:02x}")).collect()
@@ -1275,6 +1288,25 @@ mod tests {
         assert!(cli_build_is_stale(&cli, &info));
 
         std::fs::write(&info, "{}").expect("a file");
+        assert!(cli_build_is_stale(&cli, &info));
+
+        std::fs::remove_dir_all(&root).expect("cleaned up");
+    }
+
+    #[test]
+    fn a_cli_build_is_stale_after_an_edit_in_the_package_json_the_build_copies() {
+        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-cli-manifest", std::process::id()));
+        let cli = root.join("cli");
+        let info = root.join("build-info.json");
+
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(cli.join("src")).expect("a directory");
+        std::fs::write(cli.join("src/index.ts"), "export {};").expect("a file");
+        std::fs::write(cli.join("package.json"), r#"{"version":"1.0.0"}"#).expect("a file");
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+
+        std::fs::write(cli.join("package.json"), r#"{"version":"2.0.0"}"#).expect("a file");
+
         assert!(cli_build_is_stale(&cli, &info));
 
         std::fs::remove_dir_all(&root).expect("cleaned up");

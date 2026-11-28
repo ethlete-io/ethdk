@@ -1,1 +1,2 @@
 tools/scripts/clean-slate-run/overlays/
+libs/cli-core/fixtures/source-hash/cli/package.json
