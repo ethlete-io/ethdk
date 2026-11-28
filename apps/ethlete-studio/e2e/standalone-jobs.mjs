@@ -55,7 +55,7 @@ export const runStandalone = (job, { built, port, env = process.env }) =>
 
       done({
         ok: code === 0,
-        detail: code === 0 ? verdicts.join(' | ') : `exited with ${code}\n${output.slice(-3000)}`,
+        detail: code === 0 ? verdicts.join(' | ') : `exited with ${code}\n${output.slice(-6000)}`,
         ms: performance.now() - startedAt,
         cases: casesOf(verdicts),
       });

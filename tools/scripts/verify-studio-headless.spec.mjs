@@ -360,3 +360,14 @@ test('designChildState names a live child, an exited child and the last output l
   assert.doesNotMatch(exited, /line 9\n/);
   assert.match(await designChildState(undefined), /no design child.*\n\(none\)$/s);
 });
+
+test('designChildState cuts long output lines and names how long the child has been quiet', async () => {
+  const state = await designChildState(
+    { pid: 7, exitCode: 1, signalCode: null, output: `${'x'.repeat(50)}\nshort`, lastOutputAt: Date.now() - 2000 },
+    40,
+    10,
+  );
+
+  assert.match(state, /, last output \d{4,} ms ago,/);
+  assert.match(state, /\nxxxxxxxxxx\.\.\.\nshort$/);
+});

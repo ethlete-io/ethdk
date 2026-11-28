@@ -74,6 +74,7 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
       output += chunk;
       log(chunk);
       child.output = output;
+      child.lastOutputAt = Date.now();
       if (echo) process.stderr.write(chunk);
       const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(stripVTControlCharacters(output))?.[1];
 
@@ -107,7 +108,7 @@ const stopDesignChild = async (child) => {
   });
 };
 
-export const designChildState = async (child, tailLines = 40) => {
+export const designChildState = async (child, tailLines = 40, lineChars = Infinity) => {
   if (child?.exitCode === null && child.signalCode === null)
     await new Promise((done) => {
       const timer = setTimeout(done, EXIT_GRACE_MS);
@@ -118,6 +119,7 @@ export const designChildState = async (child, tailLines = 40) => {
     .split('\n')
     .filter(Boolean)
     .slice(-tailLines)
+    .map((line) => (line.length > lineChars ? `${line.slice(0, lineChars)}...` : line))
     .join('\n');
   const life = !child
     ? 'no design child'
@@ -125,7 +127,9 @@ export const designChildState = async (child, tailLines = 40) => {
       ? `design child pid ${child.pid} alive`
       : `design child pid ${child.pid} exited, code ${child.exitCode}, signal ${child.signalCode}`;
 
-  return `${life}, last output lines:\n${tail || '(none)'}`;
+  const quiet = child?.lastOutputAt === undefined ? '' : `, last output ${Date.now() - child.lastOutputAt} ms ago`;
+
+  return `${life}${quiet}, last output lines:\n${tail || '(none)'}`;
 };
 
 export const startDesignServer = (checkout, stamp, echo = false, entry = cliEntry) =>
@@ -506,7 +510,7 @@ export const withStudio = async (
       designPort: design.port,
       restartDesign,
       studioServer,
-      designChildState: () => designChildState(design?.child),
+      designChildState: (...shape) => designChildState(design?.child, ...shape),
     });
   } finally {
     await browser?.close();

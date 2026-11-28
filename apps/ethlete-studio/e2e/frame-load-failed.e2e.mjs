@@ -371,13 +371,45 @@ const probeListening = (designPort) =>
     socket.once('error', (error) => done(`refuses a new connection (${error.code})`));
   });
 
+const RESET_TAIL_LINES = 8;
+const RESET_LINE_CHARS = 200;
+const QUEUE_PROBE_TIMEOUT_MS = 10_000;
+
+const descriptorsOf = (pid) => {
+  try {
+    const limit = /Max open files\s+(\S+)/.exec(readFileSync(`/proc/${pid}/limits`, 'utf8'))?.[1];
+
+    return `${readdirSync(`/proc/${pid}/fd`).length} of ${limit} fds`;
+  } catch (error) {
+    return `fds unreadable (${error.code})`;
+  }
+};
+
+const probeQueue = async (designPort) => {
+  const startedAt = performance.now();
+
+  try {
+    const answer = await (
+      await fetch(`http://[::1]:${designPort}/__design/queue`, {
+        signal: AbortSignal.timeout(QUEUE_PROBE_TIMEOUT_MS),
+      })
+    ).json();
+
+    return `a fresh queue poll answers in ${Math.round(performance.now() - startedAt)} ms (${JSON.stringify(answer).slice(0, 200)})`;
+  } catch (error) {
+    return `a fresh queue poll fails after ${Math.round(performance.now() - startedAt)} ms (${error.cause?.code ?? error.name})`;
+  }
+};
+
 const describeReset = async (designPort, error, childState) => {
   const pids = designServerPids();
   const status = pids.map((pid) => {
     try {
       const fields = readFileSync(`/proc/${pid}/status`, 'utf8');
 
-      return `pid ${pid} ${/State:\s*(.+)/.exec(fields)?.[1]}, ${/VmRSS:\s*(.+)/.exec(fields)?.[1]}`;
+      return `pid ${pid} ${/State:\s*(.+)/.exec(fields)?.[1]}, ${/VmRSS:\s*(.+)/.exec(fields)?.[1]}, threads ${
+        /Threads:\s*(.+)/.exec(fields)?.[1]
+      }, ${descriptorsOf(pid)}`;
     } catch {
       return `pid ${pid} gone`;
     }
@@ -386,9 +418,9 @@ const describeReset = async (designPort, error, childState) => {
 
   return `${error.cause?.code ?? error.code ?? error.message} on the queue poll: design server process ${
     status.length ? status.join('; ') : 'not found (exited)'
-  }, port ${await probeListening(designPort)}, since the last queue answer ${idle}, load ${loadavg()
+  }, port ${await probeListening(designPort)}, ${await probeQueue(designPort)}, since the last queue answer ${idle}, load ${loadavg()
     .map((value) => value.toFixed(1))
-    .join(' ')}\n${await childState()}`;
+    .join(' ')}\n${await childState(RESET_TAIL_LINES, RESET_LINE_CHARS)}`;
 };
 
 const queueOf = async (designPort, childState) => {
