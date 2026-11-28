@@ -34,7 +34,15 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
-import { copyConsumer, installedVersions, pendingSmokeMigrations, runSmokeMigrations } from './migrations.mjs';
+import {
+  changedFiles,
+  copyConsumer,
+  installedVersions,
+  judgeSmokeBuild,
+  pendingSmokeMigrations,
+  runSmokeMigrations,
+  snapshotFiles,
+} from './migrations.mjs';
 import { runWebkitZoomStep } from './webkit-zoom-step.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -93,6 +101,23 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'])
     process.exit(130);
   });
 process.on('exit', restoreAll);
+
+const runCaptured = (command, commandArgs, options) =>
+  new Promise((resolvePromise) => {
+    console.log(`  $ ${command} ${commandArgs.join(' ')}`);
+    const child = spawn(command, commandArgs, { stdio: ['inherit', 'pipe', 'pipe'], ...options });
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+      process.stdout.write(chunk);
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+      process.stderr.write(chunk);
+    });
+    child.on('exit', (code) => resolvePromise({ code: code ?? 1, output }));
+    child.on('error', () => resolvePromise({ code: 1, output }));
+  });
 
 const run = (command, commandArgs, options) =>
   new Promise((resolvePromise) => {
@@ -284,13 +309,17 @@ const smokePage = async (browser, url, appConfig) => {
 const smokeApp = async (name) => {
   const appConfig = config[name];
   const root = appRoot(name);
-  const result = { name, failures: [], notes: [] };
+  const result = { name, failures: [], notes: [], warnings: [] };
   const output = mkdtempSync(join(tmpdir(), `release-smoke-${name}-`));
 
   console.log(`\n${name}: swapping the SDK build into ${root}/node_modules/@ethlete`);
   const from = installedVersions(scopeDir(name), appConfig.libs);
   swapIn(name);
   let buildCode;
+  let buildOutput = '';
+  let migrationLines = [];
+  let rewritten = new Set();
+  let verdict;
   let scratch;
   try {
     scratch = copyConsumer(root);
@@ -299,32 +328,36 @@ const smokeApp = async (name) => {
     console.log(
       `  ${pending.length} et update migration(s) pending for ${JSON.stringify(from)} -> ${JSON.stringify(to)}`,
     );
-    const lines = runSmokeMigrations({ sdkRoot, root: scratch, pending });
-    for (const line of lines) console.log(`  migration ${line}`);
-    result.notes.push(...lines.map((line) => `migration ${line}`));
-    const failedMigration = lines.find((line) => / (failed|not-run)\b/.test(line));
-    if (failedMigration) {
-      result.failures.push(`et update migration did not apply in the copy: ${failedMigration}`);
-      rmSync(output, { recursive: true, force: true });
-      return result;
+    const before = snapshotFiles(scratch);
+    migrationLines = runSmokeMigrations({ sdkRoot, root: scratch, pending });
+    rewritten = changedFiles(before, snapshotFiles(scratch));
+    for (const line of migrationLines) console.log(`  migration ${line}`);
+    result.notes.push(...migrationLines.map((line) => `migration ${line}`));
+    if (migrationLines.some((line) => / (failed|not-run)\b/.test(line))) buildCode = 0;
+    else {
+      const built = await runCaptured(
+        'npx',
+        [
+          'nx',
+          'run',
+          `${appConfig.project}:build${appConfig.configuration ? `:${appConfig.configuration}` : ''}`,
+          `--output-path=${output}`,
+          '--skip-nx-cache',
+        ],
+        { cwd: scratch, env: { ...process.env, CI: 'true', NX_DAEMON: 'false', NX_NO_CLOUD: 'true', NX_TUI: 'false' } },
+      );
+      buildCode = built.code;
+      buildOutput = built.output;
     }
-    buildCode = await run(
-      'npx',
-      [
-        'nx',
-        'run',
-        `${appConfig.project}:build${appConfig.configuration ? `:${appConfig.configuration}` : ''}`,
-        `--output-path=${output}`,
-        '--skip-nx-cache',
-      ],
-      { cwd: scratch, env: { ...process.env, CI: 'true', NX_DAEMON: 'false', NX_NO_CLOUD: 'true', NX_TUI: 'false' } },
-    );
+    verdict = judgeSmokeBuild({ migrationLines, buildCode, buildOutput, rewritten, root: scratch });
   } finally {
     restore(name);
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   }
-  if (buildCode !== 0) {
-    result.failures.push(`production build exited with ${buildCode}`);
+  result.failures.push(...verdict.failures);
+  result.warnings.push(...verdict.warnings);
+  for (const warning of verdict.warnings) console.warn(`  ${warning}`);
+  if (buildCode !== 0 || verdict.failures.length) {
     rmSync(output, { recursive: true, force: true });
     return result;
   }
@@ -391,8 +424,9 @@ const webkitFailure = await runWebkitZoomStep();
 if (webkitFailure) results.push({ name: 'webkit zoom gate', failures: [webkitFailure], notes: [] });
 
 console.log('\nRelease smoke summary');
-for (const { name, failures, notes } of results) {
-  console.log(`${failures.length ? '✖' : '✔'} ${name}`);
+for (const { name, failures, notes, warnings } of results) {
+  console.log(`${failures.length ? '✖' : warnings.length ? '⚠' : '✔'} ${name}`);
+  for (const warning of warnings) console.warn(`  ${warning}`);
   for (const note of notes) console.log(`    ${note}`);
   for (const failure of failures) console.error(`  ✖ ${failure}`);
 }

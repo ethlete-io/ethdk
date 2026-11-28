@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, normalize, relative } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -62,9 +63,89 @@ export const copyConsumer = (appRoot) => {
 export const runSmokeMigrations = ({ sdkRoot, root, pending }) => {
   const { run } = loadUpdate(sdkRoot);
   const manager = { name: 'npm', install: ['npm', 'install'], run: ['npx'] };
-  const outcomes = run.runPendingMigrations({ root, manager, pending, dryRun: false });
+  let outcomes;
+  try {
+    outcomes = run.runPendingMigrations({ root, manager, pending, dryRun: false });
+  } catch (error) {
+    return [`migration runner threw (${error instanceof Error ? error.message : String(error)}) failed`];
+  }
   return outcomes.map(
     (outcome) =>
       `${outcome.pending.packageName}:${outcome.pending.migration.name} ${outcome.state}${outcome.reason ? ` (${outcome.reason})` : ''}`,
   );
+};
+
+/** Maps every file under `root` (node_modules and .git excluded) to a content hash. */
+export const snapshotFiles = (root) => {
+  const hashes = new Map();
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === '.git') continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile())
+        hashes.set(relative(root, path), createHash('sha1').update(readFileSync(path)).digest('hex'));
+    }
+  };
+  walk(root);
+  return hashes;
+};
+
+/** Files added, removed or changed between two snapshots. */
+export const changedFiles = (before, after) =>
+  new Set([...new Set([...before.keys(), ...after.keys()])].filter((file) => before.get(file) !== after.get(file)));
+
+const ANSI = /\u001b\[[0-9;]*m/g;
+const PAREN_ERROR = /^(.+?)\((\d+),(\d+)\): error (TS\d+): (.*)$/;
+const COLON_ERROR = /^(?:\[ERROR\] |Error: )?(.+?):(\d+):(\d+) - error (TS\d+): (.*)$/;
+
+/** Compiler errors in TS (`path(line,col): error TSxxxx`) or Angular (`path:line:col - error TSxxxx`) format. */
+export const parseBuildErrors = (output) =>
+  output
+    .replace(ANSI, '')
+    .split(/\r?\n/)
+    .flatMap((line) => {
+      const match = PAREN_ERROR.exec(line.trim()) ?? COLON_ERROR.exec(line.trim());
+      return match
+        ? [{ file: match[1], line: Number(match[2]), column: Number(match[3]), code: match[4], message: match[5] }]
+        : [];
+    });
+
+/** Splits build errors into those in a file a migration rewrote (fail) and those in untouched consumer state (warn). */
+export const classifyBuildErrors = ({ errors, rewritten, root }) => {
+  const rewrittenErrors = [];
+  const untouchedErrors = [];
+  for (const error of errors) {
+    const file = isAbsolute(error.file) ? relative(root, error.file) : normalize(error.file);
+    (rewritten.has(file) ? rewrittenErrors : untouchedErrors).push({ ...error, file });
+  }
+  return { rewrittenErrors, untouchedErrors };
+};
+
+export const formatBuildError = (error) => `${error.file}:${error.line}:${error.column} ${error.code} ${error.message}`;
+
+/** Decides FAIL (failures) or WARN (warnings) for one consumer after its migrations ran and its build finished. */
+export const judgeSmokeBuild = ({ migrationLines, buildCode, buildOutput, rewritten, root }) => {
+  const failures = [];
+  const warnings = [];
+  const failedMigration = migrationLines.find((line) => / (failed|not-run)\b/.test(line));
+  if (failedMigration) {
+    failures.push(`et update migration did not apply in the copy: ${failedMigration}`);
+    return { failures, warnings };
+  }
+  if (buildCode === 0) return { failures, warnings };
+  const { rewrittenErrors, untouchedErrors } = classifyBuildErrors({
+    errors: parseBuildErrors(buildOutput),
+    rewritten,
+    root,
+  });
+  if (rewrittenErrors.length || !untouchedErrors.length) {
+    failures.push(`production build exited with ${buildCode}`);
+    for (const error of rewrittenErrors)
+      failures.push(`build error in a file a migration rewrote: ${formatBuildError(error)}`);
+    return { failures, warnings };
+  }
+  for (const error of untouchedErrors)
+    warnings.push(`WARN consumer build red in a file no pending migration touched: ${formatBuildError(error)}`);
+  return { failures, warnings };
 };

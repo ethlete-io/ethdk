@@ -1,0 +1,8 @@
+[96msrc/a.ts[0m:[93m1[0m:[93m31[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'interactionColor' does not exist in type '{ x: number; }'.
+
+[7m1[0m const a: {x: number} = {x: 1, interactionColor: 2};
+[7m [0m [91m                              ~~~~~~~~~~~~~~~~[0m
+
+
+Found 1 error in src/a.ts[90m:1[0m
+
