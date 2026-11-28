@@ -48,7 +48,14 @@ describe('et design mcp', () => {
         run,
         request: { id: 1, method: 'initialize', params: { protocolVersion: '2025-03-26' } },
       }),
-    ).toMatchObject({ id: 1, result: { protocolVersion: '2025-03-26', capabilities: { tools: {} } } });
+    ).toMatchObject({
+      id: 1,
+      result: {
+        protocolVersion: '2025-03-26',
+        capabilities: { tools: {} },
+        instructions: expect.stringContaining('Hard rules for products and sketches'),
+      },
+    });
     expect(await mcpAnswerOf({ target: '/w', run, request: { method: 'notifications/initialized' } })).toBeNull();
     expect(await mcpAnswerOf({ target: '/w', run, request: { id: 2, method: 'nope' } })).toMatchObject({
       error: { code: -32601 },
@@ -82,6 +89,7 @@ describe('et design mcp', () => {
       'comment_reply',
       'inbox',
       'inbox_done',
+      'design_guide',
     ]);
     expect(tools['call']).toEqual(['call', 'variant']);
     expect(tools['motion_shots']).toEqual(['part', 'motion']);
@@ -89,6 +97,23 @@ describe('et design mcp', () => {
     expect(tools['part_ready']).toEqual(['part', 'by']);
     expect(tools['sketch_variant']).toEqual(['part', 'variant', 'from', 'by']);
     expect(tools['comment_reply']).toEqual(['id', 'text', 'by']);
+  });
+
+  it('reads a guide topic and lists the topics without one', async () => {
+    const call = (args: Record<string, string>) =>
+      mcpAnswerOf({
+        target: '/w',
+        run: vi.fn(),
+        request: { id: 1, method: 'tools/call', params: { name: 'design_guide', arguments: args } },
+      });
+
+    expect(await call({})).toMatchObject({
+      result: { isError: false, content: [{ text: expect.stringContaining('shots') }] },
+    });
+    expect(await call({ topic: 'shots' })).toMatchObject({
+      result: { isError: false, content: [{ text: expect.stringContaining('et design shot') }] },
+    });
+    expect(await call({ topic: 'nope' })).toMatchObject({ result: { isError: true } });
   });
 
   it('refuses a call without a required input and runs nothing', async () => {

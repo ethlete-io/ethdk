@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
 import { createInterface } from 'readline';
+import { MCP_GUIDE, MCP_INSTRUCTIONS } from './mcp-instructions';
 import { callsRootOf, DEFAULT_PORT, portOf, readConfig } from './design-config';
 import { buildStampOf } from './stamp';
 import { withinLimit } from './wait';
@@ -93,6 +94,20 @@ const readCall = (args: Record<string, string>, context: ToolContext): ToolResul
     ],
     isError: false,
   };
+};
+
+const readGuide = (args: Record<string, string>): ToolResult => {
+  const topic = args['topic'] ?? '';
+  const text = MCP_GUIDE[topic];
+
+  if (text === undefined) {
+    return {
+      content: [{ type: 'text', text: `Topics: ${Object.keys(MCP_GUIDE).join(', ')}.` }],
+      isError: topic !== '',
+    };
+  }
+
+  return { content: [{ type: 'text', text }], isError: false };
 };
 
 const callCheckArgvOf = (args: Record<string, unknown>, context: ToolContext) => {
@@ -300,6 +315,15 @@ export const MCP_TOOLS: ToolSpec[] = [
     positional: [{ name: 'id', description: 'The comment id.', required: true }],
     values: [{ name: 'note', flag: '--note', description: 'The new note of the part.', required: true }, BY],
   },
+  {
+    name: 'design_guide',
+    description:
+      'Read one topic of the design guide: products-and-sketches, inbox, flows, check-and-notes, ' +
+      'order-and-design-system or shots. Without a topic it lists them.',
+    command: [],
+    values: [{ name: 'topic', flag: '--topic', description: 'The topic to read.' }],
+    read: readGuide,
+  },
 ];
 
 const inputsOf = (tool: ToolSpec) => [
@@ -392,6 +416,7 @@ export const mcpAnswerOf = async (options: { target: string; request: Request; r
       protocolVersion: typeof asked === 'string' ? asked : MCP_PROTOCOL_VERSION,
       capabilities: { tools: {} },
       serverInfo: { name: 'ethlete-design', version: buildStampOf().version },
+      instructions: MCP_INSTRUCTIONS,
     });
   }
 
