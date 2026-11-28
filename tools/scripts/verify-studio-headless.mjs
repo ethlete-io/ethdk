@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -34,6 +44,15 @@ export const serveStatic = (dir, answer) =>
     response.end(readFileSync(path));
   });
 
+export const designServerLogFile = (pid, env = process.env) => {
+  const dir = resolve(root, env['STUDIO_E2E_LOG_DIR'] ?? 'tmp/studio-e2e-logs');
+  const shard = (env['STUDIO_E2E_SHARD'] ?? 'local').replace(/\W+/g, '-');
+
+  mkdirSync(dir, { recursive: true });
+
+  return join(dir, `design-server-${shard}-${pid}.log`);
+};
+
 const spawnDesignServer = (checkout, stamp, echo, entry) =>
   new Promise((resolvePort, reject) => {
     stamp(`design server starting in ${checkout}`);
@@ -41,10 +60,19 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
       cwd: checkout,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    const logFile = designServerLogFile(child.pid);
+    const log = (text) => {
+      try {
+        appendFileSync(logFile, text);
+      } catch {
+        process.stderr.write(`[design server log] cannot write ${logFile}\n`);
+      }
+    };
     let output = '';
     let ready = false;
     const onData = (chunk) => {
       output += chunk;
+      log(chunk);
       child.output = output;
       if (echo) process.stderr.write(chunk);
       const port = /Local:\s+https?:\/\/localhost:(\d+)/.exec(stripVTControlCharacters(output))?.[1];
@@ -58,7 +86,10 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
 
     child.stdout.on('data', onData);
     child.stderr.on('data', onData);
-    child.on('exit', (code) => reject(new Error(`design server exited with ${code}\n${output}`)));
+    child.on('exit', (code, signal) => {
+      log(`\n[design server exited, code ${code}, signal ${signal}]\n`);
+      reject(new Error(`design server exited with ${code}\n${output}`));
+    });
   });
 
 const EXIT_GRACE_MS = 500;

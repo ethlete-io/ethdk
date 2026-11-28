@@ -107,6 +107,14 @@ jobs:
           path: ${{ runner.temp }}/studio-e2e.log
           retention-days: 7
 
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: studio-e2e-server-log-${{ matrix.shard }}
+          path: tmp/studio-e2e-logs
+          if-no-files-found: ignore
+          retention-days: 7
+
   rust:
     name: Rust host
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}

@@ -202,6 +202,36 @@ else { console.log('  Local:   http://localhost:' + port + '/'); setInterval(() 
   }
 });
 
+test('a design server that exits with an error leaves its stderr in the shard log file', async () => {
+  const dir = tempDir('design-crashlog-');
+  const entry = join(dir, 'fake-cli.cjs');
+  const logs = join(dir, 'logs');
+  const before = { dir: process.env['STUDIO_E2E_LOG_DIR'], shard: process.env['STUDIO_E2E_SHARD'] };
+
+  writeFileSync(entry, `console.error('ECONNRESET boom'); process.exitCode = 1;`);
+  process.env['STUDIO_E2E_LOG_DIR'] = logs;
+  process.env['STUDIO_E2E_SHARD'] = '9/10';
+
+  try {
+    await assert.rejects(
+      startDesignServer(dir, () => undefined, false, entry),
+      /exited with 1/,
+    );
+    const [file, ...rest] = readdirSync(logs);
+
+    assert.equal(rest.length, 0);
+    assert.match(file, /^design-server-9-10-\d+\.log$/);
+    assert.match(readFileSync(join(logs, file), 'utf8'), /ECONNRESET boom[\s\S]*exited, code 1/);
+  } finally {
+    for (const [key, value] of [
+      ['STUDIO_E2E_LOG_DIR', before.dir],
+      ['STUDIO_E2E_SHARD', before.shard],
+    ])
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+  }
+});
+
 const withServeOnly = async (answer, run) => {
   const dir = tempDir('studio-serve-only-');
   const { createServer } = await import('node:http');
