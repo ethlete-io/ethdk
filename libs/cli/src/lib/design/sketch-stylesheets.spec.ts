@@ -184,7 +184,8 @@ describe('a product stylesheet drawn for a sketch variant', () => {
 
   it('is what a frame of a variant that draws a part stylesheet of its own loads', async () => {
     const { vite } = await serveAcme();
-    const env = String((await vite.pluginContainer.load('\0virtual:design-explore/env'))?.toString() ?? '');
+    const loaded = await vite.pluginContainer.load('\0virtual:design-explore/env');
+    const env = typeof loaded === 'string' ? loaded : String(loaded?.code ?? '');
 
     expect(env).toMatch(
       /\n {6}"a": \(\) => Promise\.resolve\(\)\.then\(\(\) => import\("[^"]*acme\/styles\.css\?design-product=acme&design-sketch=foundations%2Fpalette&design-variant=a"\)\),\n/u,
