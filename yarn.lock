@@ -4419,6 +4419,35 @@ __metadata:
 "@ethlete/design@workspace:libs/design":
   version: 0.0.0-use.local
   resolution: "@ethlete/design@workspace:libs/design"
+  dependencies:
+    "@tailwindcss/node": "npm:4.3.3"
+    "@tailwindcss/postcss": "npm:4.3.3"
+    jiti: "npm:2.7.0"
+    postcss: "npm:8.5.34"
+    postcss-selector-parser: "npm:7.1.7"
+    rxjs: "npm:^7.8.0"
+    typescript: "npm:6.0.3"
+    vite: "npm:8.4.0"
+  peerDependencies:
+    "@angular/compiler": ^22.0.0
+    "@angular/core": ^22.0.0
+    "@angular/forms": ^22.0.0
+    "@angular/platform-browser": ^22.0.0
+    "@angular/platform-server": ^22.0.0
+    playwright: ^1.50.0
+  peerDependenciesMeta:
+    "@angular/compiler":
+      optional: true
+    "@angular/core":
+      optional: true
+    "@angular/forms":
+      optional: true
+    "@angular/platform-browser":
+      optional: true
+    "@angular/platform-server":
+      optional: true
+    playwright:
+      optional: true
   languageName: unknown
   linkType: soft
 

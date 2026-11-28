@@ -33,7 +33,7 @@ import { request as httpsRequest } from 'node:https';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
+import { assertCompleteBuild } from '../../libs/cli-core/scripts/move-into-place.mts';
 import {
   changedFiles,
   copyConsumer,

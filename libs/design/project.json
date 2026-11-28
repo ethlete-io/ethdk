@@ -6,7 +6,11 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "nx:noop"
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/design/scripts/build.mts dist/libs/design"
+      }
     },
     "test": {
       "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/design"],

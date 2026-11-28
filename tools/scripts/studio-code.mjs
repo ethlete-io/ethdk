@@ -244,7 +244,10 @@ const compileWithNx = (root, output, log) => {
 
   const info =
     compile.status === 0 &&
-    spawnSync(process.execPath, ['libs/cli/scripts/write-build-info.mts', output], { cwd: root, encoding: 'utf8' });
+    spawnSync(process.execPath, ['libs/cli-core/scripts/write-build-info.mts', output], {
+      cwd: root,
+      encoding: 'utf8',
+    });
 
   if (!info || info.status !== 0) {
     log(`${compile.stdout}${compile.stderr}${info ? `${info.stdout}${info.stderr}` : ''}`.trim());

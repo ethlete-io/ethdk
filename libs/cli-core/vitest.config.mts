@@ -7,7 +7,7 @@ export default defineConfig({
     name: 'cli-core',
     environment: 'node',
     globals: true,
-    include: ['src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
     exclude: [...configDefaults.exclude],
     setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', '../cli/vitest.setup.ts'],
     maxWorkers: specWorkers,

@@ -20,7 +20,7 @@ use crate::error::{StudioError, StudioResult};
 /// Where the design tool lives once a checkout installs it, and where this repository builds it.
 /// Used only when the app ships no copy; the first entry that exists wins, and `ETHLETE_CLI`
 /// overrules all of them.
-const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/libs/cli/src/index.js"];
+const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/libs/design/src/bin.js"];
 
 /// The product name `tauri.conf.json` gives the app. Tauri builds the resource directory out of it
 /// on Linux, so the two must stay equal.
@@ -45,19 +45,17 @@ const POLL: Duration = Duration::from_millis(250);
 
 const STOP_GRACE: Duration = Duration::from_secs(3);
 
-const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
-
-const DESIGN_LIB_SOURCE_DIRS: [&str; 2] = ["src", "design"];
+const DESIGN_SOURCE_DIRS: [&str; 2] = ["src", "design"];
 
 const CLI_CORE_SOURCE_DIRS: [&str; 1] = ["src"];
 
-const CLI_SOURCE_FILES: [&str; 1] = ["package.json"];
+const DESIGN_SOURCE_FILES: [&str; 1] = ["package.json"];
 
-const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
+const BUILD_INFO: &str = "dist/libs/design/build-info.json";
 
 const SHIPPED_BUILD_INFO: &str = "dist/apps/ethlete-studio/cli-runtime/build-info.json";
 
-/// Renews the runtime, which a development build starts in place of `dist/libs/cli` once it exists.
+/// Renews the runtime, which a development build starts in place of `dist/libs/design` once it exists.
 const CLI_BUILD: [&str; 3] = ["nx", "run", "ethlete-studio:cli-runtime"];
 
 /// Written by `libs/design/src/lib/design/crash-log.ts`, one entry per crash.
@@ -95,7 +93,7 @@ pub struct ServerState {
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum StaleReason {
-    /// This repository's `dist/libs/cli` was built from other sources than `libs/cli` holds now.
+    /// This repository's design build was built from other sources than `libs/design` holds now.
     CliBuildOutdated,
     /// The server answers no stamp, or another one than the cli Studio would start it with.
     Stamp,
@@ -511,10 +509,10 @@ async fn judged(
 fn built_cli_outdated() -> bool {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
 
-    cli_build_is_stale(&root.join("libs/cli"), &built_cli_info(&root))
+    cli_build_is_stale(&root.join("libs/design"), &built_cli_info(&root))
 }
 
-/// The build-info of the copy a development build starts: the runtime once one is built, else `dist/libs/cli`.
+/// The build-info of the copy a development build starts: the runtime once one is built, else `dist/libs/design`.
 fn built_cli_info(root: &Path) -> PathBuf {
     let shipped = root.join(SHIPPED_BUILD_INFO);
 
@@ -525,7 +523,7 @@ fn built_cli_info(root: &Path) -> PathBuf {
 }
 
 /// A missing or unreadable build-info.json is not stale: there is no build to compare with.
-fn cli_build_is_stale(cli_root: &Path, build_info: &Path) -> bool {
+fn cli_build_is_stale(design_root: &Path, build_info: &Path) -> bool {
     let Ok(text) = std::fs::read_to_string(build_info) else {
         return false;
     };
@@ -533,7 +531,7 @@ fn cli_build_is_stale(cli_root: &Path, build_info: &Path) -> bool {
         return false;
     };
 
-    info.get("sourceHash").and_then(Value::as_str) != Some(cli_source_hash(cli_root).as_str())
+    info.get("sourceHash").and_then(Value::as_str) != Some(design_source_hash(design_root).as_str())
 }
 
 fn source_files(dir: &Path) -> Vec<PathBuf> {
@@ -566,22 +564,14 @@ fn posix_path(path: &str, separator: char) -> String {
     path.split(separator).collect::<Vec<_>>().join("/")
 }
 
-/// Mirrors `cliSourceHash` in libs/cli-core/src/lib/source-hash.ts.
-fn cli_source_hash(cli_root: &Path) -> String {
+/// Mirrors `designSourceHash` in libs/cli-core/src/lib/source-hash.ts.
+fn design_source_hash(design_root: &Path) -> String {
     let mut hash = Sha256::new();
 
-    let design_root = cli_root.join("..").join("design");
-    let core_root = cli_root.join("..").join("cli-core");
-    let roots = CLI_SOURCE_DIRS
+    let core_root = design_root.join("..").join("cli-core");
+    let roots = DESIGN_SOURCE_DIRS
         .iter()
-        .map(|dir| (cli_root.join(dir), cli_root.to_path_buf(), PathBuf::new()))
-        .chain(DESIGN_LIB_SOURCE_DIRS.iter().map(|dir| {
-            (
-                design_root.join(dir),
-                design_root.clone(),
-                Path::new("..").join("design"),
-            )
-        }))
+        .map(|dir| (design_root.join(dir), design_root.to_path_buf(), PathBuf::new()))
         .chain(
             CLI_CORE_SOURCE_DIRS
                 .iter()
@@ -616,8 +606,8 @@ fn cli_source_hash(cli_root: &Path) -> String {
         }
     }
 
-    for name in CLI_SOURCE_FILES {
-        let Ok(content) = std::fs::read(cli_root.join(name)) else {
+    for name in DESIGN_SOURCE_FILES {
+        let Ok(content) = std::fs::read(design_root.join(name)) else {
             continue;
         };
 
@@ -722,8 +712,8 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Log>
 fn reachable_cli(checkout: &str) -> StudioResult<(PathBuf, Option<String>)> {
     entry_of(Path::new(checkout), shipped_cli).ok_or_else(|| {
         StudioError::Rejected(format!(
-            "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
-             `npx nx build cli`, or point ETHLETE_CLI at a src/index.js."
+            "No copy of the design tool is reachable for {checkout}. Build one with \
+             `npx nx build design`, or point ETHLETE_CLI at a design entry."
         ))
     })
 }
@@ -1198,10 +1188,10 @@ mod tests {
     }
 
     #[test]
-    fn the_cli_source_hash_matches_the_typescript_one() {
-        let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
+    fn the_design_source_hash_matches_the_typescript_one() {
+        let expected = std::fs::read_to_string(fixture().join("expected-design-hash.txt")).expect("an expected hash");
 
-        assert_eq!(cli_source_hash(&fixture().join("cli")), expected.trim());
+        assert_eq!(design_source_hash(&fixture().join("design")), expected.trim());
     }
 
     #[test]
@@ -1212,19 +1202,19 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
-    fn the_cli_source_hash_skips_symlinks() {
+    fn the_design_source_hash_skips_symlinks() {
         let root = std::env::temp_dir().join(format!("ethlete-studio-{}-b918", std::process::id()));
         let src = root.join("src");
 
         std::fs::create_dir_all(&src).expect("a directory");
         std::fs::write(src.join("a.ts"), "a").expect("a file");
 
-        let before = cli_source_hash(&root);
+        let before = design_source_hash(&root);
 
         std::os::unix::fs::symlink(src.join("a.ts"), src.join("link.ts")).expect("a link");
         std::os::unix::fs::symlink(&src, src.join("loop")).expect("a link");
 
-        assert_eq!(cli_source_hash(&root), before);
+        assert_eq!(design_source_hash(&root), before);
 
         std::fs::remove_dir_all(&root).expect("cleanup");
     }
@@ -1233,11 +1223,11 @@ mod tests {
     fn a_cli_build_is_stale_when_its_recorded_hash_differs_from_the_sources() {
         let root = std::env::temp_dir().join(format!("ethlete-studio-{}-cli-build", std::process::id()));
         let info = root.join("build-info.json");
-        let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
+        let expected = std::fs::read_to_string(fixture().join("expected-design-hash.txt")).expect("an expected hash");
 
         std::fs::create_dir_all(&root).expect("a directory");
 
-        let cli = fixture().join("cli");
+        let cli = fixture().join("design");
 
         assert!(!cli_build_is_stale(&cli, &info));
 
@@ -1263,7 +1253,7 @@ mod tests {
         std::fs::create_dir_all(cli.join("src")).expect("a directory");
         std::fs::write(cli.join("src/index.ts"), "export {};").expect("a file");
         std::fs::write(cli.join("package.json"), r#"{"version":"1.0.0"}"#).expect("a file");
-        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, design_source_hash(&cli))).expect("a file");
 
         std::fs::write(cli.join("package.json"), r#"{"version":"2.0.0"}"#).expect("a file");
 
@@ -1741,7 +1731,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(cli.join("src")).expect("a directory");
         std::fs::write(cli.join("src/index.ts"), "export {};").expect("a file");
-        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, design_source_hash(&cli))).expect("a file");
 
         let judge = || {
             judged_with(
@@ -1766,7 +1756,7 @@ mod tests {
         assert!(changed.stale);
         assert_eq!(changed.stale_reason, Some(StaleReason::CliBuildOutdated));
 
-        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, cli_source_hash(&cli))).expect("a file");
+        std::fs::write(&info, format!(r#"{{"sourceHash":"{}"}}"#, design_source_hash(&cli))).expect("a file");
 
         let rebuilt = judge().await.expect("a state");
 

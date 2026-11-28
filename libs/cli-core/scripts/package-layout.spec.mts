@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFil
 import { decode, encode } from '@jridgewell/sourcemap-codec';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { layOutPackage, swapIntoPlace } from './compile.mjs';
+import { layOutPackage, swapIntoPlace } from './package-layout.mjs';
 
 const tree = (root: string, files: Record<string, string>) => {
   for (const [path, content] of Object.entries(files)) {

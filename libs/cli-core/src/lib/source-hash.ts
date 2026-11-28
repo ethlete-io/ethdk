@@ -5,10 +5,10 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 // Must match PINNED_FILE in tools/scripts/studio-code.mjs.
 const PINNED_COMMIT_FILE = 'pinned-commit';
 
-const SOURCE_DIRS = ['src', 'design', 'playwright'];
-const DESIGN_LIB_SOURCE_DIRS = ['src', 'design'];
+const CLI_SOURCE_DIRS = ['src', 'design', 'playwright'];
+const DESIGN_SOURCE_DIRS = ['src', 'design'];
 const CLI_CORE_SOURCE_DIRS = ['src'];
-const CLI_SOURCE_FILES = ['package.json'];
+const MANIFESTS = ['package.json'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
 
 const filesOf = (dir: string): string[] =>
@@ -21,23 +21,14 @@ export const toPosixPath = (path: string, separator: string = sep) => path.split
 
 export const compareBytes = (a: string, b: string) => Buffer.compare(Buffer.from(a), Buffer.from(b));
 
-/** Hash of the CLI sources that end up in a build, including `libs/cli/package.json` and the sibling `libs/design` and `libs/cli-core` the build bundles: contents and paths, not mtimes. */
-export const cliSourceHash = (cliRoot: string) => {
+const sourceHashOf = (base: string, sourceDirs: string[]) => {
   const hash = createHash('sha256');
 
-  const designRoot = join(cliRoot, '..', 'design');
-  const coreRoot = join(cliRoot, '..', 'cli-core');
-  const roots = [
-    ...SOURCE_DIRS.map((dir) => join(cliRoot, dir)),
-    ...DESIGN_LIB_SOURCE_DIRS.map((dir) => join(designRoot, dir)),
-    ...CLI_CORE_SOURCE_DIRS.map((dir) => join(coreRoot, dir)),
-  ];
-
-  for (const path of roots) {
+  for (const path of sourceDirs) {
     if (!existsSync(path)) continue;
 
     const files = filesOf(path)
-      .map((file) => ({ file, key: toPosixPath(relative(cliRoot, file)) }))
+      .map((file) => ({ file, key: toPosixPath(relative(base, file)) }))
       .sort((a, b) => compareBytes(a.key, b.key));
 
     for (const { file, key } of files) {
@@ -48,8 +39,8 @@ export const cliSourceHash = (cliRoot: string) => {
     }
   }
 
-  for (const name of CLI_SOURCE_FILES) {
-    const file = join(cliRoot, name);
+  for (const name of MANIFESTS) {
+    const file = join(base, name);
 
     if (!existsSync(file)) continue;
 
@@ -61,6 +52,21 @@ export const cliSourceHash = (cliRoot: string) => {
 
   return hash.digest('hex');
 };
+
+/** Hash of the CLI sources that end up in a build, including `libs/cli/package.json` and the sibling `libs/design` and `libs/cli-core` the build bundles: contents and paths, not mtimes. */
+export const cliSourceHash = (cliRoot: string) =>
+  sourceHashOf(cliRoot, [
+    ...CLI_SOURCE_DIRS.map((dir) => join(cliRoot, dir)),
+    ...DESIGN_SOURCE_DIRS.map((dir) => join(cliRoot, '..', 'design', dir)),
+    ...CLI_CORE_SOURCE_DIRS.map((dir) => join(cliRoot, '..', 'cli-core', dir)),
+  ]);
+
+/** Hash of the design tool sources a build of `libs/design` holds, including its `package.json` and the `libs/cli-core` it bundles. */
+export const designSourceHash = (designRoot: string) =>
+  sourceHashOf(designRoot, [
+    ...DESIGN_SOURCE_DIRS.map((dir) => join(designRoot, dir)),
+    ...CLI_CORE_SOURCE_DIRS.map((dir) => join(designRoot, '..', 'cli-core', dir)),
+  ]);
 
 const cliRootAbove = (start: string): string | undefined => {
   const dir = resolve(start);

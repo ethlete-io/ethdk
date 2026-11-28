@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runtimeManifestOf } from './design-cli-runtime.mjs';
 
-test('the runtime carries the Studio version and the dependencies of @ethlete/cli, not the cli itself', () => {
+test('the runtime carries the Studio version and the dependencies libs/design declares', () => {
   const manifest = runtimeManifestOf({
-    cliManifest: { name: '@ethlete/cli', version: '3.0.0', dependencies: { vite: '8.4.0' }, peerDependencies: {} },
+    designManifest: { name: '@ethlete/design', version: '0.0.0', private: true, dependencies: { vite: '8.4.0' } },
     studioManifest: { version: '0.2.0' },
   });
 

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cliSourceHash, compareBytes, staleCliBuildMessage, toPosixPath } from './source-hash';
+import { cliSourceHash, compareBytes, designSourceHash, staleCliBuildMessage, toPosixPath } from './source-hash';
 
 describe('staleCliBuildMessage', () => {
   let root: string;
@@ -117,6 +117,37 @@ describe('cliSourceHash fixture', () => {
     const fixtures = resolve(__dirname, '../../fixtures/source-hash');
 
     expect(cliSourceHash(join(fixtures, 'cli'))).toBe(readFileSync(join(fixtures, 'expected-hash.txt'), 'utf8').trim());
+  });
+});
+
+describe('designSourceHash fixture', () => {
+  it('matches the hash the Studio host checks against', () => {
+    const fixtures = resolve(__dirname, '../../fixtures/source-hash');
+
+    expect(designSourceHash(join(fixtures, 'design'))).toBe(
+      readFileSync(join(fixtures, 'expected-design-hash.txt'), 'utf8').trim(),
+    );
+  });
+
+  it('covers the libs/cli-core it bundles and leaves libs/cli out', () => {
+    const root = mkdtempSync(join(tmpdir(), 'b913-'));
+
+    try {
+      mkdirSync(join(root, 'design/src'), { recursive: true });
+      mkdirSync(join(root, 'cli-core/src'), { recursive: true });
+      mkdirSync(join(root, 'cli/src'), { recursive: true });
+      writeFileSync(join(root, 'design/src/a.ts'), 'a');
+      writeFileSync(join(root, 'cli-core/src/c.ts'), 'c');
+      const before = designSourceHash(join(root, 'design'));
+
+      writeFileSync(join(root, 'cli/src/b.ts'), 'b');
+      expect(designSourceHash(join(root, 'design'))).toBe(before);
+
+      writeFileSync(join(root, 'cli-core/src/c.ts'), 'changed');
+      expect(designSourceHash(join(root, 'design'))).not.toBe(before);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
