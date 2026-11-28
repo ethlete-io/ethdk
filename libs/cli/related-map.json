@@ -1,5 +1,6 @@
 {
   "sourceWide": [
+    "src/design-boundary.spec.ts",
     "src/lib/design/render-missing-dist.spec.ts",
     "src/lib/design/runtime-imports.spec.ts",
     "src/lib/design/studio-api-level.spec.ts",
