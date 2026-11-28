@@ -582,6 +582,8 @@ export type SketchTarget = {
   interactions?: string[];
   /** The states this variant draws as the part is now. Missing from the quick list and from an `@ethlete/cli` older than folded states. */
   unchanged?: string[];
+  /** The states a partial compare (`&first=`) has not compared yet: neither changed nor unchanged so far. */
+  pending?: string[];
   /** The states this variant adds and drops against the part now, and its part note when that differs. Missing from an `@ethlete/cli` older than this field. */
   changes?: SketchTargetChanges;
   /** Where each changed state differs from the part now, by state. Missing while no compare is kept and from an `@ethlete/cli` older than this field. */

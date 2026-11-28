@@ -362,8 +362,19 @@ const comparedOf = async (options: {
   pictureOf?: PictureOf;
   keptStates?: KeptStates;
   problem: unknown;
+  states?: string[];
+  pending?: string[];
 }) => {
   if (options.problem) return { unchanged: [] };
+
+  const { pending, ...compared } = options;
+
+  if (pending) {
+    const unchanged = await unchangedForFoldOf({ ...compared, store: options.keptStates });
+    const kept = await keptComparisonOf({ ...compared, pictured: !!options.pictureOf });
+
+    return { unchanged, pending, ...(kept ? { crops: kept.changes } : {}) };
+  }
 
   const unchanged = await unchangedForFoldOf({ ...options, store: options.keptStates });
   const kept = await keptComparisonOf({ ...options, pictured: !!options.pictureOf });
@@ -387,6 +398,7 @@ const partTargetsOf = async ({
   keptStates,
   signal,
   compare,
+  first,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
@@ -396,6 +408,7 @@ const partTargetsOf = async ({
   keptStates?: KeptStates;
   signal?: AbortSignal;
   compare: boolean;
+  first?: number;
 }) => {
   const currentPart = product.parts.find((entry) => partKeyOf(entry) === part);
   const currentFile = currentPart?.file;
@@ -433,7 +446,19 @@ const partTargetsOf = async ({
       ...('widths' in widths ? { widths: widths.widths } : {}),
       interactions,
       ...(compare
-        ? await comparedOf({ product, sketch, variant, load, pictureOf, keptStates, part, problem })
+        ? await comparedOf({
+            product,
+            sketch,
+            variant,
+            load,
+            pictureOf,
+            keptStates,
+            part,
+            problem,
+            ...(first !== undefined && first < states.length
+              ? { states: states.slice(0, first), pending: states.slice(first) }
+              : {}),
+          })
         : await keptOf({ product, sketch, variant, part, pictured: !!pictureOf, problem })),
       ...(problem || !current || current.problem
         ? {}
@@ -463,6 +488,7 @@ const targetsOf = async (options: {
   keptStates?: KeptStates;
   signal?: AbortSignal;
   compare: boolean;
+  first?: number;
 }) => {
   const parts = await inTurns({ items: options.sketch.targets, signal: options.signal }, (part) =>
     partTargetsOf({ ...options, part }),
@@ -511,6 +537,12 @@ const noChangedStateProblemsOf = ({ sketch, targets }: { sketch: Sketch; targets
   );
 };
 
+const firstStatesOf = (params: URLSearchParams) => {
+  const first = Number(params.get('first'));
+
+  return Number.isInteger(first) && first > 0 ? first : null;
+};
+
 const listingOf = async ({
   asked,
   product,
@@ -525,6 +557,7 @@ const listingOf = async ({
   const { target } = asked;
   const listOnly = light && asked.url.searchParams.get('targets') === 'no';
   const only = asked.url.searchParams.get('sketch');
+  const first = firstStatesOf(asked.url.searchParams);
   const listed = await listSketchesInTurns({ productDir: product.dir, product: product.name });
   const sketches = withHeadSnapshot(() =>
     listed
@@ -551,6 +584,7 @@ const listingOf = async ({
           keptStates: asked.keptStates,
           signal,
           compare: !light,
+          ...(only !== null && first !== null ? { first } : {}),
         }),
   );
   const [checked, sketchTargets] = await Promise.all([
@@ -660,7 +694,8 @@ const startedListing = ({
  * from the product's (`changes`), for a part inherited from the base the base states it does not draw (`inherited`), and the live report
  * of the agent (`report`, `null` when none runs), and with `targets` the size of each shot's picture drawn before (`shotFrames`, by part,
  * variant, `null` for the product, state and preset or width) so a client can size its cells before a shot loads. `&sketch=<layer>/<name>@<sketch>` answers that sketch alone, compared, without
- * `problems`: no rule check, so it answers before a full listing. `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
+ * `problems`: no rule check, so it answers before a full listing. With `&first=<n>` it compares only the first `n`
+ * states of each target and lists the rest as `pending`, without `sameAsRest`, so a view can show them sooner. `?unchanged=no` answers without `problems`, and with the `unchanged` of a target only
  * while a full listing's comparison of the same sources is kept: no rule check, no pictures. `&targets=no` also leaves out `targets`: no part module loads.
  * A listing asked while the same one runs gets that one's answer, unless `detachRunningListings` ran since it started; it stops when every client that asked for it has closed its request.
  * Each listing first runs the held automatic merges whose uncommitted files are gone.
@@ -675,6 +710,7 @@ export const sketchesAnswer = withProduct('GET', ({ asked, config, product }) =>
     light,
     asked.url.searchParams.get('targets') === 'no',
     asked.url.searchParams.get('sketch'),
+    firstStatesOf(asked.url.searchParams),
   ]);
   const listing = runningListings.get(key) ?? startedListing({ key, asked, product, light });
   const leave = () => {

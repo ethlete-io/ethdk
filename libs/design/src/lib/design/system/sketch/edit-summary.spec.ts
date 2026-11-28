@@ -35,6 +35,20 @@ describe('withEditUnchanged', () => {
     ]);
   });
 
+  it('gives new the states old has not compared yet as pending, and none it adds itself', () => {
+    const [created, old] = variantCellTargets();
+    const targets: (NonNullable<typeof created> & { pending?: string[] })[] = [
+      { ...(created as NonNullable<typeof created>), states: [...SHARED, 'added'], pending: ['added'] },
+      { ...(old as NonNullable<typeof old>), unchanged: SHARED.slice(0, 2), pending: SHARED.slice(2) },
+    ];
+
+    expect(withEditUnchanged(editSketch, targets)[0]).toMatchObject({
+      variant: 'new',
+      unchanged: SHARED.slice(0, 2),
+      pending: SHARED.slice(2),
+    });
+  });
+
   it('leaves the targets of any other sketch as they are', () => {
     const targets = variantCellTargets();
     const sketch = { ...editSketch, target: `${PART}@other` } as Sketch;

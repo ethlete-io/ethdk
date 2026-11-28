@@ -1,5 +1,5 @@
 import { BehaviorSubject, firstValueFrom, toArray } from 'rxjs';
-import { sketchRead$ } from './sketch-read';
+import { OPENED_FIRST_STATES, sketchRead$ } from './sketch-read';
 
 const sketch = { target: 'a' };
 
@@ -53,13 +53,34 @@ describe('sketchRead$', () => {
 
     const reads = await firstValueFrom(sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).pipe(toArray()));
 
-    expect(asked).toEqual(['names', 'quick', 'a', 'full']);
+    expect(asked).toEqual(['names', 'quick', 'a', 'a', 'full']);
     expect(reads.map(({ items }) => items)).toEqual([
       [sketch, other],
       [sketch, other],
       [compared, other],
+      [compared, other],
       [sketch, other],
     ]);
+  });
+
+  it('answers the leading states of the picked sketch while the compare of all its states still runs', async () => {
+    const leading = { ...sketch, pending: ['late'] };
+
+    vi.stubGlobal('fetch', (url: string) => {
+      const query = new URL(url).searchParams;
+
+      if (query.get('sketch') === 'a' && !query.has('first')) return new Promise(() => undefined);
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ sketches: query.has('first') ? [leading] : [sketch], unreadable: [] })),
+      );
+    });
+
+    const reads: unknown[] = [];
+    const read = sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).subscribe(({ items }) => reads.push(items));
+
+    await vi.waitFor(() => expect(reads).toContainEqual([leading]));
+    read.unsubscribe();
   });
 
   it('asks for the names, the quick listing and the compare of the picked sketch without waiting on each other', async () => {
@@ -73,7 +94,11 @@ describe('sketchRead$', () => {
 
     const read = sketchRead$({ port: 1, product: 'p', picked: 'sketch:a' }).subscribe();
 
-    expect(asked).toEqual(['?product=p&unchanged=no&targets=no', '?product=p&unchanged=no', '?product=p&sketch=a']);
+    expect(asked).toEqual([
+      '?product=p&unchanged=no&targets=no',
+      '?product=p&unchanged=no',
+      `?product=p&sketch=a&first=${OPENED_FIRST_STATES}`,
+    ]);
     read.unsubscribe();
   });
 
@@ -102,8 +127,8 @@ describe('sketchRead$', () => {
       sketchRead$({ port: 1, product: 'p', picked: 'sketch:a', picks }).pipe(toArray()),
     );
 
-    expect(asked).toEqual(['names', 'quick', 'a', 'full', 'b']);
-    expect(reads.map(({ items }) => items).slice(3)).toEqual([
+    expect(asked).toEqual(['names', 'quick', 'a', 'a', 'full', 'b']);
+    expect(reads.map(({ items }) => items).slice(4)).toEqual([
       [sketch, compared],
       [sketch, other],
     ]);

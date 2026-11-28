@@ -20,7 +20,12 @@ type Listed = {
     staleBase: string[] | null;
     addedSkips: { variant: string; part: string; classes: string }[];
     readyRefusal: { lines: string[] } | null;
-    targets?: { variant: string; unchanged?: string[]; crops?: Record<string, { box: unknown }> }[];
+    targets?: {
+      variant: string;
+      unchanged?: string[];
+      pending?: string[];
+      crops?: Record<string, { box: unknown }>;
+    }[];
     shotFrames?: { variant: string | null; state: string; frame: { width: number; height: number } }[];
   }[];
 };
@@ -85,6 +90,24 @@ describe('the sketch listing tiers', () => {
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([undefined, undefined]);
     expect(unchangedOf(await listing(target, '', load))).toEqual([['one'], ['one']]);
     expect(unchangedOf(await listing(target, '&unchanged=no', load))).toEqual([['one'], ['one']]);
+  });
+
+  it('compares only the first states of a sketch asked with first= and lists the rest as pending', async () => {
+    const target = acme();
+    const load = async () => ({
+      default: { note: 'n', states: { one: {}, two: {}, three: {} }, render: () => ({ body: 'x' }) },
+    });
+    const comparedOf = (listed: Listed) =>
+      listed.sketches[0]?.targets?.map(({ unchanged, pending }) => ({ unchanged, pending }));
+
+    expect(comparedOf(await listing(target, '&sketch=components/card&first=1', load))).toEqual([
+      { unchanged: ['one'], pending: ['two', 'three'] },
+      { unchanged: ['one'], pending: ['two', 'three'] },
+    ]);
+    expect(comparedOf(await listing(target, '&sketch=components/card', load))).toEqual([
+      { unchanged: ['one', 'two', 'three'], pending: undefined },
+      { unchanged: ['one', 'two', 'three'], pending: undefined },
+    ]);
   });
 
   it('lists where each changed state differs, in the full and in the quick listing', async () => {

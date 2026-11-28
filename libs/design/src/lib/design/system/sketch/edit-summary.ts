@@ -12,6 +12,7 @@ type EditTarget = {
   unchanged?: string[];
   changes?: { added: string[]; dropped: string[] };
   crops?: Record<string, unknown>;
+  pending?: string[];
 };
 
 /**
@@ -36,7 +37,7 @@ export const editStatesOf = (targets: readonly EditTarget[], part: string): Edit
 /**
  * The targets of an edit sketch with each `new` entry given the `unchanged` of its `old` entry, so a state both draw
  * alike counts as unchanged in both, and none while `old` is still compared. `new` also gets the changed areas of `old`,
- * which are measured between the two. Any other sketch's targets come back as
+ * which are measured between the two, and the `pending` states `old` has not compared yet. Any other sketch's targets come back as
  * they are.
  */
 export const withEditUnchanged = <T extends EditTarget>(sketch: Sketch, targets: T[]): T[] => {
@@ -56,6 +57,7 @@ export const withEditUnchanged = <T extends EditTarget>(sketch: Sketch, targets:
       ...entry,
       unchanged: entry.states.filter((state) => old.unchanged?.includes(state)),
       ...(Object.keys(crops).length > 0 ? { crops } : {}),
+      pending: old.pending ? entry.states.filter((state) => old.pending?.includes(state)) : undefined,
     };
   });
 };

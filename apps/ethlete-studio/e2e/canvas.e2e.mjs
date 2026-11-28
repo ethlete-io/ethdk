@@ -1480,9 +1480,10 @@ const slowestPhasesOf = (stderr) =>
 // Samples the sketch view from the start of the page load until its cells show: when they first show, any cell in view
 // still loading means a half drawn view; a sample with the canvas shown but no cell and no visible "zeichnet" is blank.
 // The watch runs `watchMs` past the cell layout, which can come later than `layoutMs` after a slow check under load.
-const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
+// With `untilCompared` it samples on until no state is compared any more, for `comparedAt`.
+const editLoadTimelineOf = (page, { layoutMs, watchMs, untilCompared = false }) =>
   page.evaluate(
-    async ({ layoutMs, watchMs }) => {
+    async ({ layoutMs, watchMs, untilCompared }) => {
       const seen = (element) => element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
       const inView = (element) => {
         const rect = element.getBoundingClientRect();
@@ -1506,6 +1507,7 @@ const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
       let rowsSeen = false;
       let cellsAt = null;
       let comparedAt = null;
+      let shown = null;
       const holdOf = () => {
         const cellsDrawn = [...drawnAt].sort((a, b) => a[1] - b[1]);
         const late = cellsDrawn
@@ -1552,10 +1554,16 @@ const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
           if (!pictureAt.has(key) && picture?.complete && picture.naturalWidth > 0) pictureAt.set(key, t);
           if (!frameAt.has(key) && cell.querySelector('iframe[data-painted]')) frameAt.set(key, t);
         }
-        if (cells.length > 0 && cells.every(seen)) {
+        if (shown === null && cells.length > 0 && cells.every(seen)) {
           const loading = cells.filter((cell) => inView(cell) && cell.querySelector('[data-loading]')).length;
 
-          return { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank, hold: holdOf() };
+          shown = { shownAt: t, cellsAt, loadingInView: loading, cells: cells.length, blank: [...blank] };
+        }
+        if (shown !== null && (!untilCompared || comparedAt !== null || t > shown.shownAt + watchMs))
+          return { ...shown, comparedAt, hold: holdOf() };
+        if (shown !== null) {
+          await new Promise((done) => setTimeout(done, 50));
+          continue;
         }
         if (rowsSeen && !(rows && seen(rows))) return { shownAt: null, cellsAt, left: t, blank, hold: holdOf() };
         if (rowsSeen && !drawingShown()) blank.push(t);
@@ -1565,7 +1573,7 @@ const editLoadTimelineOf = (page, { layoutMs, watchMs }) =>
         await new Promise((done) => setTimeout(done, 50));
       }
     },
-    { layoutMs, watchMs },
+    { layoutMs, watchMs, untilCompared },
   );
 
 const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART, ...EDIT_LABEL }) => {
@@ -1635,7 +1643,8 @@ const withEditSketch = async (page, designPort, run, edited = { part: EDIT_PART,
       { checkout, part: edited.part },
     );
     await page.reload();
-    if (timeline) return editLoadTimelineOf(page, { layoutMs: EDIT_WAIT_MS, watchMs: HEAVY_EDIT_WATCH_MS });
+    if (timeline)
+      return editLoadTimelineOf(page, { layoutMs: EDIT_WAIT_MS, watchMs: HEAVY_EDIT_WATCH_MS, untilCompared: true });
     try {
       await page.waitForSelector('ethlete-sketches [data-sk-state]', { timeout: EDIT_WAIT_MS });
     } catch (error) {
@@ -1820,7 +1829,9 @@ const CASES = [
           };
 
           page.on('response', countSource);
-          const { shownAt, cellsAt, loadingInView, cells, blank, left, hold } = await edit({ timeline: true });
+          const { shownAt, cellsAt, comparedAt, loadingInView, cells, blank, left, hold } = await edit({
+            timeline: true,
+          });
 
           page.off('response', countSource);
           const cdp = await page.context().newCDPSession(page);
@@ -1838,11 +1849,13 @@ const CASES = [
           return {
             ok:
               shownAt !== null &&
+              comparedAt !== null &&
+              shownAt < comparedAt &&
               shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS &&
               loadingInView === 0 &&
               blank.length === 0 &&
               reopenFinished,
-            detail: `reopen finished at ${reopen.shownAt ?? 'never'} ms (<= ${HEAVY_EDIT_REOPEN_MS} ms, browser cache off), ${reopen.cells ?? 0} cells, loading in view: ${reopen.loadingInView ?? '-'}; first open: ${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, shot queue [${queued.join(', ')}], ${phaseLine()}`,
+            detail: `first open shown at ${shownAt ?? 'never'} ms, before the compare of every state finished at ${comparedAt ?? 'never'} ms; reopen finished at ${reopen.shownAt ?? 'never'} ms (<= ${HEAVY_EDIT_REOPEN_MS} ms, browser cache off), ${reopen.cells ?? 0} cells, loading in view: ${reopen.loadingInView ?? '-'}; first open: ${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, shot queue [${queued.join(', ')}], ${phaseLine()}`,
           };
         },
         HEAVY_EDIT,

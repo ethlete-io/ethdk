@@ -1498,6 +1498,34 @@ describe('SketchesComponent', () => {
     expect(view()).toEqual({ held: false, invisible: false, drawing: '', status: 'waiting' });
   });
 
+  it('shows the changed states of an @edit sketch compared so far while the rest is still compared', async () => {
+    const side = (key: string): SketchRow => ({
+      key,
+      note: '',
+      width: 280,
+      sized: true,
+      shots: [
+        { state: 'mark-layer', changed: true, height: 46 },
+        { state: 'selected-layer', changed: null, height: 46 },
+      ],
+    });
+    const root: HTMLElement = (
+      await render({
+        camera: '100',
+        rows: [side('new'), side('old')],
+        part: 'components/tree-row@edit',
+        status: 'waiting',
+        nearLoadingShots: new Set(),
+      })
+    ).nativeElement;
+
+    expect(root.querySelector('[data-sk-rows] > .opacity-0')).toBeNull();
+    expect(root.querySelector('[data-sk-rows] > .invisible')).toBeNull();
+    expect(root.querySelector('[data-sk-edit-drawing]')).toBeNull();
+    expect(root.querySelectorAll('[data-sk-variant][data-sk-state="mark-layer"]').length).toBe(2);
+    expect(root.querySelector('[data-sk-state="selected-layer"]')).toBeNull();
+  });
+
   it('shows an @edit sketch once the cells in view are drawn, while pictures of cells out of view or not rendered still load', async () => {
     const states = Array.from({ length: 38 }, (_, index) => `state-${index}`);
     const rowOf = (key: string): SketchRow => ({
