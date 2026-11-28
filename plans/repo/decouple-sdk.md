@@ -53,18 +53,33 @@ workspace, and fifagg's `.mcp.json` still opens the design MCP.
 
 Each fix needs a bite that is red on HEAD; without one the finding stays a Suspect.
 
-1 and 2: fixed in 9f311d026d (spec bites), partly verified. Open: after the push, a cli-core-only change must reach
-the live `et:design` (pinned Studio cli) and the e2e check; this check goes into the batch with 3-7.
+1. `tools/scripts/e2e-check.mjs`: fixed in 9f311d026d, verified live in a scratch checkout. With the guard
+   at `libs/cli/src/lib/source-hash.ts` and a stale dist, the pre-fix `cliBuildProblem` returned `undefined`,
+   the fixed one "source hash differs".
+2. `tools/scripts/studio-code.mjs`: fixed in 9f311d026d, verified live. After a cli-core-only commit, the
+   pre-fix `cli-copy` served the older build; the fixed one built the new commit, and its copy holds the change.
+3. `libs/cli/package.json` was missing from both hashes (TS and Rust), though the build copies it into the
+   dist and `stamp.ts` / `fingerprint.ts` read its version. Fixed: both hash it; specs red on HEAD, green
+   after; the fixture holds a `cli/package.json` (in `.nxignore`). Live: a package.json-only commit makes
+   `cliBuildProblem` report "source hash differs". Every dist built before reads stale once.
+4. Not real: the live scan with `libs/cli-core/src` added stays green on HEAD; cli-core imports no design.
+5. Not real: HEAD hashes `cli-core/src` in both languages; a probe fixture with a cli-core file gave equal
+   TS and Rust hashes. Only a test gap.
+6. Not real: an edit in `libs/design/design` is refused on HEAD (probe green); only a test gap.
+7. Not real: `layOutPackage` emits the cli-core targets on HEAD (probe asserts green); only a test gap.
 
-1. `tools/scripts/e2e-check.mjs:28`: the sentinel skips the hash check for revisions with the guard still at
-   `libs/cli/src/lib/source-hash.ts`, so a stale dist passes.
-2. `tools/scripts/studio-code.mjs:214`: the pinned cli cache keys only on `libs/cli`, so a commit that touches only
-   `libs/cli-core` or `libs/design` can serve an older build.
-3. `libs/cli-core/src/lib/source-hash.ts:8` and `design_server.rs:46`: both hashes omit `libs/cli/package.json`,
-   which the build copies into the dist.
-4. `libs/cli/src/design-boundary.spec.ts:211`: the live scan omits `libs/cli-core`.
-5. `libs/cli-core/src/lib/source-hash.spec.ts:109` and `design_server.rs:1228`: the fixture has no `cli-core/src`
-   file, so a dropped hash root stays green.
-6. `libs/cli-core/src/lib/source-hash.spec.ts:54`: the design-edit test writes to `libs/cli/design`, not
-   `libs/design/design`.
-7. `libs/cli/scripts/compile.spec.mts:79`: the layout test never checks that the `cli-core` targets are emitted.
+## Step 4 decided (doc session, 28.11.)
+
+Research: `.claude/handoffs/agent-results/b913-step4-research.md`.
+
+- A stdio adapter `timetrack-mcp`, shipped by Timetrack, reads the app's `agent.json`, does the HMAC proof and posts to
+  `/agent` v3. No HTTP MCP inside Tauri. `/agent` v3 is the versioned contract.
+- One snake_case tool per existing op. Every write tool goes through the approval queue and returns
+  `{status:"queued", approvalId}`; a contract spec pins that no write tool applies a change.
+- The contract spec runs in CI for both sides (adapter and app).
+- TypeScript in `libs/timetrack`, run with the user's node. The app shows the `claude mcp add` / `codex mcp add` line
+  as one plain row with a copy button in its existing agent or settings area; a live shot before done.
+- Slices: (a) client in `libs/timetrack` + stdio adapter with `status` and `jira_*` tools + contract spec; (b) the other
+  tools; (c) skill text into the server instructions, snapshot/compare to a Timetrack script over `day.rows`, delete
+  `ethlete-agents timetrack`. (c) updates the AGENTS.md snapshot paragraph and the commit-msg hook text in the same
+  commit.
