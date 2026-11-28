@@ -5,7 +5,8 @@
  *
  * Fails on a build error, a page error, a console error, a request storm (more than `--storm` identical
  * requests within `--window` ms, the endless-loop class), a main thread that stops answering, or a built CLI
- * (`dist/libs/cli`, Studio's `cli-runtime`) with a relative require that does not resolve.
+ * (`dist/libs/cli`, Studio's `cli-runtime`) with a relative require that does not resolve, or the WebKit zoom
+ * case failing its 20 ms median budget on tank (B910).
  * The app's installed `node_modules/@ethlete/*` are moved aside and restored afterwards, also on failure
  * and Ctrl-C; a backup left by a killed run is restored on the next start.
  *
@@ -33,6 +34,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
+import { runWebkitZoomStep } from './webkit-zoom-step.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const sdkRoot = resolve(here, '../..');
@@ -366,6 +368,8 @@ for (const dir of [join(sdkRoot, 'dist/libs/cli'), ...(existsSync(studioCli) ? [
 
 const results = [];
 for (const name of apps) results.push(await smokeApp(name));
+const webkitFailure = await runWebkitZoomStep();
+if (webkitFailure) results.push({ name: 'webkit zoom gate', failures: [webkitFailure], notes: [] });
 
 console.log('\nRelease smoke summary');
 for (const { name, failures, notes } of results) {
