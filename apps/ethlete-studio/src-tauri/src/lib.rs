@@ -36,7 +36,7 @@ mod window_chrome;
 mod window_chrome_wayland;
 
 use std::ffi::{OsStr, OsString};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
 
@@ -217,7 +217,9 @@ pub fn run() {
             shutdown::end_on(signals, app.handle());
             #[cfg(debug_assertions)]
             debug_hooks::open_root(app.handle());
-            Ok(console_log::start(app.handle())?)
+            console_log::start(app.handle())?;
+            register_design_runtime(app.handle());
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             call_status::design_status_watch,
@@ -299,9 +301,91 @@ fn cef_runtime() -> tauri_runtime_cef::Cef {
     runtime
 }
 
+fn register_design_runtime(app: &tauri::AppHandle) {
+    let app_data = if cfg!(windows) {
+        std::env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .filter(|dir| dir.is_absolute())
+            .map(|dir| dir.join(&app.config().identifier))
+    } else {
+        app.path().app_data_dir().ok()
+    };
+    let Some(app_data) = app_data else {
+        return;
+    };
+
+    let entry = app
+        .path()
+        .resource_dir()
+        .ok()
+        .map(|dir| dir.join("cli-runtime/src/bin.js"))
+        .filter(|entry| entry.is_file());
+    #[cfg(debug_assertions)]
+    let entry =
+        entry.or_else(|| Some(studio_code::repo_root().join("dist/apps/ethlete-studio/cli-runtime/src/bin.js")));
+
+    if let Some(entry) = entry {
+        if let Err(error) = record_design_runtime(&app_data, &entry) {
+            eprintln!("Could not record the Studio design runtime: {error}");
+        }
+    }
+}
+
+fn record_design_runtime(app_data: &Path, entry: &Path) -> std::io::Result<()> {
+    if !entry.is_file() {
+        return Ok(());
+    }
+
+    #[derive(serde::Serialize)]
+    struct DesignRuntime {
+        entry: PathBuf,
+    }
+
+    let record = serde_json::to_vec(&DesignRuntime {
+        entry: std::path::absolute(entry)?,
+    })?;
+    let path = app_data.join("design-runtime.json");
+    let temp = app_data.join(format!("design-runtime.{}.tmp", std::process::id()));
+
+    std::fs::create_dir_all(app_data)?;
+    let result = std::fs::write(&temp, record).and_then(|()| std::fs::rename(&temp, path));
+    if result.is_err() {
+        let _ = std::fs::remove_file(temp);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn records_the_shipped_design_runtime_only_when_it_exists() {
+        let root = std::env::temp_dir().join(format!("studio-design-runtime-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let app_data = root.join("data/io.ethlete.studio");
+        let record = app_data.join("design-runtime.json");
+        let entry = root.join("portable studio/cli-runtime/src/bin.js");
+
+        record_design_runtime(&app_data, &entry).unwrap();
+        assert!(!record.exists());
+
+        std::fs::create_dir_all(entry.parent().unwrap()).unwrap();
+        std::fs::write(&entry, "").unwrap();
+        record_design_runtime(&app_data, &entry).unwrap();
+
+        let json: serde_json::Value = serde_json::from_slice(&std::fs::read(&record).unwrap()).unwrap();
+        assert_eq!(json, serde_json::json!({ "entry": entry }));
+
+        let moved = root.join("moved studio/cli-runtime/src/bin.js");
+        std::fs::create_dir_all(moved.parent().unwrap()).unwrap();
+        std::fs::rename(&entry, &moved).unwrap();
+        record_design_runtime(&app_data, &moved).unwrap();
+
+        let json: serde_json::Value = serde_json::from_slice(&std::fs::read(&record).unwrap()).unwrap();
+        assert_eq!(json, serde_json::json!({ "entry": moved }));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn a_panic_report_is_appended_after_the_earlier_ones() {

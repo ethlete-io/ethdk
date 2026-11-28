@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { designRouteOf, forwardDesign, studioDesignEntries } from './design-forward';
 
@@ -41,6 +41,56 @@ describe('designRouteOf', () => {
   const installed = '/home/app/node_modules/@ethlete/cli';
   const studio = '/usr/lib/Ethlete Studio/cli-runtime/src/bin.js';
 
+  const recordedRuntime = () => {
+    const home = mkdtempSync(join(tmpdir(), 'design-runtime-'));
+    const data = join(home, 'data');
+    const appData = join(data, 'io.ethlete.studio');
+    const record = join(appData, 'design-runtime.json');
+    const entry = join(home, 'portable studio', 'cli-runtime', 'src', 'bin.js');
+    const options = { buildDir: installed, platform: 'linux' as const, env: { XDG_DATA_HOME: data }, home };
+
+    mkdirSync(appData, { recursive: true });
+    writeFileSync(record, JSON.stringify({ entry }));
+
+    return { options, entry, record };
+  };
+
+  it('prefers a recorded runtime to the standard install folders', () => {
+    const { options, entry } = recordedRuntime();
+
+    mkdirSync(dirname(entry), { recursive: true });
+    writeFileSync(entry, '');
+
+    expect(designRouteOf({ ...options, exists: only(studio) })).toEqual({ kind: 'forward', entry });
+  });
+
+  it('falls back to the standard install folders when the recorded runtime is gone', () => {
+    const { options, entry, record } = recordedRuntime();
+
+    const missing = designRouteOf({ ...options, exists: only() });
+
+    expect(missing.kind === 'missing' && missing.message).toContain(record);
+    expect(missing.kind === 'missing' && missing.message).toContain(entry);
+    expect(designRouteOf({ ...options, exists: only(studio) })).toEqual({ kind: 'forward', entry: studio });
+  });
+
+  it('tries the override and SDK checkout before the record and then the standard install folders', () => {
+    const { options, entry } = recordedRuntime();
+    const sdk = { ...options, buildDir: '/sdk/dist/libs/cli' };
+    const override = '/opt/studio/bin.js';
+    const exists = only('/sdk/libs/cli/src/index.ts', override, studio);
+
+    mkdirSync(dirname(entry), { recursive: true });
+    writeFileSync(entry, '');
+
+    expect(designRouteOf({ ...sdk, exists })).toEqual({ kind: 'in-process' });
+    expect(designRouteOf({ ...sdk, env: { ...sdk.env, ETHLETE_STUDIO_DESIGN: override }, exists })).toEqual({
+      kind: 'forward',
+      entry: override,
+    });
+    expect(designRouteOf({ ...options, exists })).toEqual({ kind: 'forward', entry });
+  });
+
   it('forwards an installed cli to the installed Studio', () => {
     expect(
       designRouteOf({ buildDir: installed, platform: 'linux', env: {}, home: '/h', exists: only(studio) }),
@@ -52,6 +102,9 @@ describe('designRouteOf', () => {
 
     expect(route.kind).toBe('missing');
     expect(route.kind === 'missing' && route.message).toContain(studio);
+    expect(route.kind === 'missing' && route.message).toContain(
+      '/h/.local/share/io.ethlete.studio/design-runtime.json',
+    );
     expect(route.kind === 'missing' && route.message).toContain('ETHLETE_STUDIO_DESIGN');
   });
 

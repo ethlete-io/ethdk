@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, statSync } from 'fs';
 import { posix, resolve, win32 } from 'path';
 
-/** Names the design entry of a Studio that lives where no install path below looks, such as an AppImage. */
+/** Overrides which Studio design entry the CLI runs. */
 export const STUDIO_DESIGN_ENV = 'ETHLETE_STUDIO_DESIGN';
 
 /** The `productName` in apps/ethlete-studio/src-tauri/tauri.conf.json, which names Tauri's install folders. */
@@ -11,11 +11,16 @@ const PRODUCT_NAME = 'Ethlete Studio';
 /** Where the Tauri config bundles the design runtime under the resource folder, and its entry. */
 const RUNTIME_ENTRY = ['cli-runtime', 'src', 'bin.js'];
 
+const STUDIO_IDENTIFIER = 'io.ethlete.studio';
+const RUNTIME_RECORD = 'design-runtime.json';
+
+type StudioLocation = { platform: NodeJS.Platform; env: NodeJS.ProcessEnv; home: string };
+
 /**
  * The design entries an installed Studio can carry on `platform`, in the order they are tried: the
  * resource folders Tauri gives a deb or rpm on Linux, an app bundle on macOS and an NSIS install on Windows.
  */
-export const studioDesignEntries = (options: { platform: NodeJS.Platform; env: NodeJS.ProcessEnv; home: string }) => {
+export const studioDesignEntries = (options: StudioLocation) => {
   const { platform, env, home } = options;
   const named = env[STUDIO_DESIGN_ENV];
 
@@ -36,6 +41,46 @@ export const studioDesignEntries = (options: { platform: NodeJS.Platform; env: N
   return [posix.join('/usr/lib', PRODUCT_NAME, ...RUNTIME_ENTRY)];
 };
 
+const studioRuntimeRecord = ({ platform, env, home }: StudioLocation) => {
+  if (platform === 'win32') {
+    const appData = env['APPDATA'];
+
+    return appData && win32.isAbsolute(appData) ? win32.join(appData, STUDIO_IDENTIFIER, RUNTIME_RECORD) : undefined;
+  }
+
+  const xdgData = env['XDG_DATA_HOME'];
+  const data =
+    platform === 'darwin'
+      ? posix.join(home, 'Library', 'Application Support')
+      : xdgData && posix.isAbsolute(xdgData)
+        ? xdgData
+        : posix.join(home, '.local', 'share');
+
+  return posix.join(data, STUDIO_IDENTIFIER, RUNTIME_RECORD);
+};
+
+const readStudioRuntime = (record: string, platform: NodeJS.Platform) => {
+  try {
+    const data: unknown = JSON.parse(readFileSync(record, 'utf8'));
+
+    if (typeof data !== 'object' || data === null || !('entry' in data) || typeof data.entry !== 'string') return;
+
+    const paths = platform === 'win32' ? win32 : posix;
+
+    return paths.isAbsolute(data.entry) ? data.entry : undefined;
+  } catch {
+    return;
+  }
+};
+
+const isRuntimeFile = (entry: string) => {
+  try {
+    return statSync(entry).isFile();
+  } catch {
+    return false;
+  }
+};
+
 export type DesignRoute =
   { kind: 'in-process' } | { kind: 'forward'; entry: string } | { kind: 'missing'; message: string };
 
@@ -43,18 +88,23 @@ export type DesignRoute =
  * How `et design` runs: in this process when the cli is a build inside the SDK checkout (its own
  * tooling drives that build), else through the design tool of the installed Studio.
  */
-export const designRouteOf = (options: {
-  buildDir: string;
-  platform: NodeJS.Platform;
-  env: NodeJS.ProcessEnv;
-  home: string;
-  exists?: (path: string) => boolean;
-}): DesignRoute => {
-  const { buildDir, env, exists = existsSync } = options;
+export const designRouteOf = (
+  options: StudioLocation & {
+    buildDir: string;
+    exists?: (path: string) => boolean;
+  },
+): DesignRoute => {
+  const { buildDir, platform, env, exists = existsSync } = options;
+  const named = env[STUDIO_DESIGN_ENV];
+
+  if (!named && isSdkBuild(buildDir, exists)) return { kind: 'in-process' };
+
+  const record = named ? undefined : studioRuntimeRecord(options);
+  const recordedEntry = record && readStudioRuntime(record, platform);
+
+  if (recordedEntry && isRuntimeFile(recordedEntry)) return { kind: 'forward', entry: recordedEntry };
+
   const entries = studioDesignEntries(options);
-
-  if (!env[STUDIO_DESIGN_ENV] && isSdkBuild(buildDir, exists)) return { kind: 'in-process' };
-
   const entry = entries.find((path) => exists(path));
 
   if (entry) return { kind: 'forward', entry };
@@ -63,6 +113,8 @@ export const designRouteOf = (options: {
     kind: 'missing',
     message: [
       '`et design` runs the design tool of Ethlete Studio, and no installed Studio was found. Looked for:',
+      ...(record ? [`  ${record} (Studio runtime record)`] : []),
+      ...(recordedEntry ? [`  ${recordedEntry} (recorded runtime)`] : []),
       ...entries.map((path) => `  ${path}`),
       '',
       'Install Studio from https://github.com/ethlete-io/ethdk/releases, or point',
