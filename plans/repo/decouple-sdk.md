@@ -49,6 +49,16 @@ Status: planning, 28.11.2026. Built by the builder as rows B912 (step 1) and B91
 Done when: `@ethlete/cli` and `@ethlete/agent-rules` build and publish with Studio and Timetrack deleted from the
 workspace, and fifagg's `.mcp.json` still opens the design MCP.
 
+## Step 3 coupling 3 (28.11.)
+
+- S1 31a00cfb1e, S2 ccacbbb2d2, S3 794a21b8dc: `entry_of` takes Studio's shipped cli-runtime whenever one
+  exists; `ETHLETE_CLI` still wins, the checkout's cli is used only without a shipped copy.
+- Live (scratch SDK + copy of tomflix, cli 3.0.0-next.26, vite 8.3.5): `design serve` from the cli-runtime
+  (next.53, vite 8.4.0) loaded vite and `@tailwindcss/postcss` from tomflix's `node_modules`, the identity
+  verdict was ok, and `pages-overview@a` drew. Not run: a real Tauri start; the headless e2e harness starts
+  the server itself and never reaches `entry_of`.
+- Next: S4 (cli-runtime from a design entry), then coupling 4.
+
 ## Suspects after step 2 (Codex review, 28.11.)
 
 Each fix needs a bite that is red on HEAD; without one the finding stays a Suspect.
