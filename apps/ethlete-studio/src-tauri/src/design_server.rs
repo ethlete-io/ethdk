@@ -18,7 +18,8 @@ use crate::design::{port_of, read_config};
 use crate::error::{StudioError, StudioResult};
 
 /// Where the design tool lives once a checkout installs it, and where this repository builds it.
-/// The first entry that exists wins, and `ETHLETE_CLI` overrules all of them.
+/// Used only when the app ships no copy; the first entry that exists wins, and `ETHLETE_CLI`
+/// overrules all of them.
 const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/libs/cli/src/index.js"];
 
 /// The product name `tauri.conf.json` gives the app. Tauri builds the resource directory out of it
@@ -1101,46 +1102,6 @@ fn version_of(entry: &Path) -> Option<String> {
     parsed.get("version")?.as_str().map(str::to_owned)
 }
 
-fn compare_versions(a: &str, b: &str) -> Option<std::cmp::Ordering> {
-    fn parts(version: &str) -> Option<(Vec<u64>, Option<Vec<String>>)> {
-        let version = version.split('+').next()?;
-        let (core, pre) = match version.split_once('-') {
-            Some((core, pre)) => (core, Some(pre.split('.').map(str::to_owned).collect())),
-            None => (version, None),
-        };
-        let core = core.split('.').map(|n| n.parse().ok()).collect::<Option<Vec<u64>>>()?;
-
-        (core.len() == 3).then_some((core, pre))
-    }
-
-    fn compare_pre(a: &[String], b: &[String]) -> std::cmp::Ordering {
-        for (x, y) in a.iter().zip(b) {
-            let order = match (x.parse::<u64>(), y.parse::<u64>()) {
-                (Ok(x), Ok(y)) => x.cmp(&y),
-                (Ok(_), Err(_)) => std::cmp::Ordering::Less,
-                (Err(_), Ok(_)) => std::cmp::Ordering::Greater,
-                (Err(_), Err(_)) => x.cmp(y),
-            };
-
-            if order.is_ne() {
-                return order;
-            }
-        }
-
-        a.len().cmp(&b.len())
-    }
-
-    let (a_core, a_pre) = parts(a)?;
-    let (b_core, b_pre) = parts(b)?;
-
-    Some(a_core.cmp(&b_core).then_with(|| match (a_pre, b_pre) {
-        (None, None) => std::cmp::Ordering::Equal,
-        (None, Some(_)) => std::cmp::Ordering::Greater,
-        (Some(_), None) => std::cmp::Ordering::Less,
-        (Some(a), Some(b)) => compare_pre(&a, &b),
-    }))
-}
-
 fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Option<(PathBuf, Option<String>)> {
     if let Some(named) = std::env::var_os("ETHLETE_CLI") {
         let path = PathBuf::from(named);
@@ -1153,36 +1114,22 @@ fn entry_of(checkout: &Path, shipped: impl FnOnce() -> Option<PathBuf>) -> Optio
         .map(|entry| checkout.join(entry))
         .find(|path| path.is_file());
 
-    let Some(own) = own else {
-        return shipped().map(|shipped| (shipped, None));
-    };
     let Some(shipped) = shipped() else {
-        return Some((own, None));
+        return own.map(|own| (own, None));
     };
-    let Some(app) = version_of(&shipped) else {
-        return Some((own, None));
-    };
-    let mine = version_of(&own);
+    let reason = own.map(|own| {
+        format!(
+            "design tool: the app's copy {}, not the checkout's {}",
+            version_of(&shipped).unwrap_or_else(|| "of no readable version".to_owned()),
+            own.display(),
+        )
+    });
 
-    if mine
-        .as_deref()
-        .and_then(|mine| compare_versions(mine, &app))
-        .is_some_and(|order| order.is_ge())
-    {
-        return Some((own, None));
-    }
-
-    let reason = format!(
-        "design tool: the app's copy {app}, since the checkout's {} is {}",
-        own.display(),
-        mine.map_or("of no readable version".to_owned(), |mine| format!("older ({mine})")),
-    );
-
-    Some((shipped, Some(reason)))
+    Some((shipped, reason))
 }
 
 /// The `et` entry point that draws and checks a checkout: an explicit override, else the copy the
-/// checkout installed or this repository builds, unless the copy the app ships is newer.
+/// app ships, else the copy the checkout installed or this repository builds.
 pub fn cli_entry(checkout: &Path) -> Option<PathBuf> {
     entry_of(checkout, shipped_cli).map(|(entry, _)| entry)
 }
@@ -1945,17 +1892,14 @@ mod tests {
     }
 
     #[test]
-    fn the_checkouts_own_cli_wins_over_the_copy_the_app_ships() {
+    fn without_a_shipped_copy_the_checkouts_own_cli_is_used() {
         let checkout = ground("own");
         let path = checkout.join(CLI_ENTRIES[1]);
 
         std::fs::create_dir_all(path.parent().expect("a parent")).expect("a directory");
         std::fs::write(&path, "").expect("an entry point");
 
-        assert_eq!(
-            entry_of(&checkout, || Some(PathBuf::from("/nowhere/index.js"))).map(|(entry, _)| entry),
-            Some(path)
-        );
+        assert_eq!(entry_of(&checkout, || None).map(|(entry, _)| entry), Some(path));
     }
 
     fn package(root: &Path, version: &str) -> PathBuf {
@@ -1969,7 +1913,7 @@ mod tests {
     }
 
     #[test]
-    fn an_older_installed_cli_yields_to_the_copy_the_app_ships() {
+    fn an_older_installed_cli_yields_to_the_shipped_copy() {
         let checkout = ground("older");
         package(&checkout.join("node_modules/@ethlete/cli"), "3.0.0-next.26");
         let shipped = package(&ground("older-shipped"), "3.0.0-next.44");
@@ -1977,19 +1921,19 @@ mod tests {
         let (entry, reason) = entry_of(&checkout, || Some(shipped.clone())).expect("an entry");
 
         assert_eq!(entry, shipped);
-        assert!(reason.is_some_and(|reason| reason.contains("older (3.0.0-next.26)")));
+        assert!(reason.is_some_and(|reason| reason.contains("3.0.0-next.44")));
     }
 
     #[test]
-    fn an_installed_cli_not_older_than_the_shipped_one_is_kept() {
-        let checkout = ground("same");
-        let own = package(&checkout.join("node_modules/@ethlete/cli"), "3.0.0-next.44");
-        let shipped = package(&ground("same-shipped"), "3.0.0-next.44");
+    fn the_shipped_copy_wins_over_a_newer_installed_cli() {
+        let checkout = ground("newer");
+        package(&checkout.join("node_modules/@ethlete/cli"), "3.0.0-next.50");
+        let shipped = package(&ground("newer-shipped"), "3.0.0-next.44");
 
-        assert_eq!(
-            entry_of(&checkout, || Some(shipped.clone())).map(|(entry, _)| entry),
-            Some(own)
-        );
+        let (entry, reason) = entry_of(&checkout, || Some(shipped.clone())).expect("an entry");
+
+        assert_eq!(entry, shipped);
+        assert!(reason.is_some_and(|reason| reason.contains("3.0.0-next.44")));
     }
 
     #[test]
@@ -2004,18 +1948,6 @@ mod tests {
             entry_of(&checkout, || Some(shipped.clone())).map(|(entry, _)| entry),
             Some(shipped)
         );
-    }
-
-    #[test]
-    fn versions_order_by_semver_with_numeric_prerelease_parts() {
-        use std::cmp::Ordering::*;
-
-        assert_eq!(compare_versions("3.0.0-next.26", "3.0.0-next.44"), Some(Less));
-        assert_eq!(compare_versions("3.0.0-next.100", "3.0.0-next.44"), Some(Greater));
-        assert_eq!(compare_versions("3.0.0", "3.0.0-next.44"), Some(Greater));
-        assert_eq!(compare_versions("2.9.9", "3.0.0-next.1"), Some(Less));
-        assert_eq!(compare_versions("3.0.0", "3.0.0"), Some(Equal));
-        assert_eq!(compare_versions("latest", "3.0.0"), None);
     }
 
     #[test]
