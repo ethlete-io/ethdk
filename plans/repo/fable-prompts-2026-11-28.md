@@ -25,9 +25,10 @@ E. Security holes. Agent/MCP endpoints, local servers (bind address, auth, HMAC)
 
 Rules: measure or reproduce first, then fix the proven cause; every speed fix comes with a number before and
 after on the same machine and load (print the load); every leak or security fix comes with a test that fails
-without it, else the commit is perf/refactor. Spread heavy runs over tank, rack and the Mac. Up to 4 subagents
-at once, sonnet by default, opus for an unknown cause; tell each: no git stash, no worktrees, no new lint
-warnings, keep context small. Commit with `git commit -- <paths>` on `next` (never add -A, never amend),
+without it, else the commit is perf/refactor. Spread heavy runs over tank, rack and the Mac. You do the work
+yourself: find, judge, fix and verify in this session; that is why this hunt runs on Fable. Subagents only for
+first research or a long run whose output would flood your context (sonnet, at most 4), never for a fix or a
+verdict; tell each: no git stash, no worktrees, no new lint warnings, keep context small. Commit with `git commit -- <paths>` on `next` (never add -A, never amend),
 changeset per touched package, push in batches after green pre-push. A finding you do not fix becomes a row
 at the end of plans/QUEUE.md. Keep the queue current per slice so a limit cut loses nothing. Report to the doc
 session (ethlete-sdk-8a) by SendMessage: track, row, before/after or bite, commit.
