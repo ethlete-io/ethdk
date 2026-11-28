@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'timers/promises';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { calibrationMs, recordPerf, watchLongestBlock } from '@ethlete/cli/src/lib/perf.fixtures';
+import { calibrationMs, recordPerf, watchLongestBlock } from './perf.fixtures';
 import { readConfig } from './design-config';
 import { serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';

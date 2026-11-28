@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { recordPerf } from '@ethlete/cli/src/lib/perf.fixtures';
+import { recordPerf } from './perf.fixtures';
 import { startMissingDistServer } from './render-missing-dist.fixtures';
 
 const BUDGET_MS = 5000;

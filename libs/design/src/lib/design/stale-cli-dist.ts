@@ -1,7 +1,7 @@
 import { gitStatusOf } from './git-reader';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, join, resolve, sep } from 'path';
-import { cliSourceHash } from '@ethlete/cli/src/lib/source-hash';
+import { cliSourceHash } from '@ethlete/cli-core/source-hash';
 import { BUILD_INFO_FILE } from './stamp';
 
 export const CLI_REBUILD_COMMAND = 'NX_NO_CLOUD=true npx nx build cli';
@@ -39,7 +39,9 @@ const builtAtOf = (distDir: string) => {
  */
 export const staleCliDistWarning = (options: { distDir: string; repoRoot: string }): string | null => {
   const sourceDir = join(options.repoRoot, 'libs/cli/src');
-  const designSourceDir = join(options.repoRoot, 'libs/design/src');
+  const bundledSourceDirs = ['libs/design/src', 'libs/cli-core/src']
+    .map((dir) => join(options.repoRoot, dir))
+    .filter((dir) => existsSync(dir));
 
   if (!existsSync(sourceDir)) return null;
 
@@ -47,7 +49,7 @@ export const staleCliDistWarning = (options: { distDir: string; repoRoot: string
 
   if (builtAt === null) return null;
 
-  const newest = Math.max(newestMtimeOf(sourceDir), existsSync(designSourceDir) ? newestMtimeOf(designSourceDir) : 0);
+  const newest = Math.max(newestMtimeOf(sourceDir), ...bundledSourceDirs.map(newestMtimeOf));
 
   if (newest <= builtAt) return null;
 
@@ -62,7 +64,9 @@ const BUILT_PATHS = [
   ':(top)libs/cli/playwright',
   ':(top)libs/design/src',
   ':(top)libs/design/design',
+  ':(top)libs/cli-core/src',
   ':(top,exclude,glob)libs/cli/**/*.spec.ts',
+  ':(top,exclude,glob)libs/cli-core/**/*.spec.ts',
   ':(top,exclude,glob)libs/cli/**/*.md',
   ':(top,exclude,glob)libs/design/**/*.spec.ts',
 ];

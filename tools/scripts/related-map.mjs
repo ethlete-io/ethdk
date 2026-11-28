@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(fileURLToPath(import.meta.url), '../../..');
-const PROJECT_ROOTS = ['libs/cli', 'libs/design'];
+const PROJECT_ROOTS = ['libs/cli', 'libs/cli-core', 'libs/design'];
 const mapPathOf = (projectRoot) => `${projectRoot}/related-map.json`;
 const READS = /\b(readFileSync|spawnSync|execFileSync)\b|node:vm|from ['"]vm['"]|\bvm\./;
 const LOCATES = /__dirname|import\.meta/;

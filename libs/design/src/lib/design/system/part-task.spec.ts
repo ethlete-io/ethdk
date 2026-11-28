@@ -29,7 +29,7 @@ import { ComparePart } from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import { ImplementedRefusals } from './implemented-proof';
 import { recordMerged } from './sketch/merged-parts';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const CHIP_STATES = { default: { label: 'Tag' }, removable: { label: 'Tag', removable: true } };
 

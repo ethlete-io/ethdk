@@ -1,7 +1,7 @@
 import { rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { git as gitIn, gitEnv, tempGitRepo } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { git as gitIn, gitEnv, tempGitRepo } from '@ethlete/cli-core/git-test-env.fixtures';
 import { catFileBatchOf, catFilesOf, git, gitLater, gitStatusOf, logNamesOf, showFilesOf } from './git-reader';
 
 const repos: string[] = [];

@@ -13,7 +13,7 @@ import { doneParts, markImplemented, readImplemented } from './part-task';
 import { partKeyOf, resolveProduct } from './resolve-product';
 import { partHashesHold, partHashHolds, partHashOf } from './sketch/baseline';
 import { staleLineOf, stalePartsOf, UNLISTED_FILES, upgradeLegacyMarksOf } from './stale-parts';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 

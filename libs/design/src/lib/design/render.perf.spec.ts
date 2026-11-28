@@ -2,7 +2,7 @@ import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { recordPerf } from '@ethlete/cli/src/lib/perf.fixtures';
+import { recordPerf } from './perf.fixtures';
 import { entryOf, mapPackage } from './render-packages';
 
 vi.mock('./system/build-running', () => ({ isBuildRunning: vi.fn(() => false) }));

@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync } from 'fs';
-import { writeJsonFile } from '../json-file';
+import { writeJsonFile } from '@ethlete/cli-core/json-file';
 import { dirname, join } from 'path';
 
 export const MIGRATION_RECORD_FILE = join('.ethlete', 'migrations.json');

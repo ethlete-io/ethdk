@@ -4,9 +4,9 @@ import { hostname, tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
-import { apiStateDirectory, readApiState, writeApiState } from './api-state';
+import { apiStateDirectory, readApiState, writeApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
-import { ApiLock, lockPath, readApiLock } from './lock';
+import { ApiLock, lockPath, readApiLock } from '@ethlete/cli-core/api/lock';
 import { runApiCommand } from './run';
 
 const HUB: ApiDefinition = { composeDir: 'development', services: ['app'], execService: 'app', port: 8040 };

@@ -1,7 +1,7 @@
 import { writeDesignFile } from './system/design-file';
 import { mkdirSync, readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
-import { execPlain } from '@ethlete/cli/src/lib/plain-output';
+import { execPlain } from '@ethlete/cli-core/plain-output';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { callsRootOf, DEFAULT_PORT, DesignConfig, portOf, readConfig } from './design-config';

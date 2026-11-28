@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './design-config';
 import { designSketch } from './sketch-command';
 import { renderIssuesOf } from './system/render-check';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => {
   const identicalRenderLines = vi.fn<(options: object) => Promise<string[]>>(async () => []);

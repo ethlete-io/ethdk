@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { writeJsonFile } from '../json-file';
+import { writeJsonFile } from '@ethlete/cli-core/json-file';
 import { join } from 'path';
 import { instructionsPath } from './migration-manifest';
 import { PackageManager } from './package-manager';

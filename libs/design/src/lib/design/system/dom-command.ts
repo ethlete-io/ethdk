@@ -8,7 +8,7 @@ import { compareFrameOf, DRIVEN_INTERACTIONS, harnessDomOf, harnessDriveOf, harn
 import { harnessStaleOf } from './harness-map';
 import { StartHarnessServer, withHarnessUrl } from './harness-server';
 import { drawnSurfacesOf, forcedElementsOf, harnessUrlOf, PointerOpen, pointerOpensOf } from './part-compare';
-import { formattedTextOf } from '@ethlete/cli/src/lib/prettier';
+import { formattedTextOf } from '@ethlete/cli-core/prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { argsOf, configOf, oneProductOf } from './sketch/cli-args';
 import { parseTarget } from './sketch/sketch';

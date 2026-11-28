@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
-import { writeJsonFile } from '../json-file';
+import { writeJsonFile } from '@ethlete/cli-core/json-file';
 import { join } from 'path';
 import { CommitState, DirtySnapshot } from './commits';
 import { UPDATE_DIR } from './tasks';

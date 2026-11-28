@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 export type GitResult = { status: number; stdout: string; stderr: string };
 

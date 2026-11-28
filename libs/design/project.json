@@ -6,13 +6,7 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "nx:noop",
-      "dependsOn": [
-        {
-          "projects": ["cli"],
-          "target": "build"
-        }
-      ]
+      "executor": "nx:noop"
     },
     "test": {
       "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/design"],

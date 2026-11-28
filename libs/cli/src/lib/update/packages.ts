@@ -1,7 +1,7 @@
 import { Dirent, existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { compareVersions, rangePrefix, versionOfRange } from './semver';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 export const ETHLETE_SCOPE = '@ethlete/';
 

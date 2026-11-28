@@ -1,7 +1,7 @@
 import { writeFileSync } from 'fs';
 import { extname, resolve, sep } from 'path';
-import { writeChangedFile, writeJsonFile } from '@ethlete/cli/src/lib/json-file';
-import { formattedTextOf } from '@ethlete/cli/src/lib/prettier';
+import { writeChangedFile, writeJsonFile } from '@ethlete/cli-core/json-file';
+import { formattedTextOf } from '@ethlete/cli-core/prettier';
 import { gitStatusOf } from '../git-reader';
 import { noteWrite } from './write-journal';
 

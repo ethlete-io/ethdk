@@ -1,9 +1,9 @@
 import { stateDirectoryOf } from './api-context';
-import { readApiState } from './api-state';
+import { readApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
 import { fingerprintApi } from './fingerprint';
 import { existsSync } from 'fs';
-import { describeApiLock, lockPath, readApiLock } from './lock';
+import { describeApiLock, lockPath, readApiLock } from '@ethlete/cli-core/api/lock';
 import { checkoutProblem } from './resolve-checkout';
 import { listSnapshots } from './snapshot';
 

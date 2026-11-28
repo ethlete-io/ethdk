@@ -1,7 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { plainEnv, stripAnsi } from '../plain-output';
+import { plainEnv, stripAnsi } from '@ethlete/cli-core/plain-output';
 import { Migration } from './migration-manifest';
 import { PackageManager, nxCommand, spawnPackageManager } from './package-manager';
 import { generatorArgs, hasNx } from './run-migrations';

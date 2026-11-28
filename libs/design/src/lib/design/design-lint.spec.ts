@@ -20,7 +20,7 @@ import { originOf } from './system/write-origin';
 import { resolveProduct } from './system/resolve-product';
 import { mergeSketch } from './system/sketch/merge';
 import { createSketch, decideSketch, markSketchReady, Sketch, variantDirOf } from './system/sketch/sketch';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 vi.mock('./design-lint', async (original) => {
   const actual = await original<typeof import('./design-lint')>();

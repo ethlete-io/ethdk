@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { extractSketchAt } from './sketch-at';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 describe('extractSketchAt', () => {
   let repo = '';

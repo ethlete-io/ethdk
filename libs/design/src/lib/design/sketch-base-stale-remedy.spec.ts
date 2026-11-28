@@ -9,7 +9,7 @@ import { resolveProduct } from './system/resolve-product';
 import { mergeSketch } from './system/sketch/merge';
 import { decideSketch, listSketches, markSketchReady, Sketch } from './system/sketch/sketch';
 import { originOf } from './system/write-origin';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => ({
   aktuellPlaceholderWarnings: vi.fn(async (): Promise<string[]> => []),

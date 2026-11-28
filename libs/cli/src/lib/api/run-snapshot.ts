@@ -1,10 +1,10 @@
 import { relative } from 'path';
 import { definedEntries, stateDirectoryOf } from './api-context';
 import { ApiDefinition, ApiProfile } from './definition';
-import { markApiStateDirty } from './api-state';
+import { markApiStateDirty } from '@ethlete/cli-core/api/api-state';
 import { fingerprintApi } from './fingerprint';
 import { ignoredByGit } from './git';
-import { acquireApiLock, describeApiLock, heldLockFromEnv, releaseApiLock } from './lock';
+import { acquireApiLock, describeApiLock, heldLockFromEnv, releaseApiLock } from '@ethlete/cli-core/api/lock';
 import { LOCK_TIMEOUT_EXIT_CODE } from './run-locked';
 import { checkoutProblem } from './resolve-checkout';
 import { composeToolNames, engineEnv, resolveComposeTool } from './compose';

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { buildReadyInputsOf, checkRules, checkSystem } from './check-system';
 import { resolveProduct } from './resolve-product';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const CONFIG = { products: { 'app-a': { presets: { desktop: { width: 1280, height: 800 } } } } };
 

@@ -25,7 +25,7 @@ export const cliBuildProblem = (dir) => {
   if (!(realpathSync(dist) + sep).startsWith(realpathSync(dir) + sep))
     return `dist/libs/cli of the tree resolves outside it (${realpathSync(dist)})`;
 
-  if (!existsSync(join(dir, 'libs/cli/src/lib/source-hash.ts'))) return undefined;
+  if (!existsSync(join(dir, 'libs/cli-core/src/lib/source-hash.ts'))) return undefined;
 
   let recorded;
   try {

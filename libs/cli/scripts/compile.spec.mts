@@ -46,13 +46,13 @@ describe('layOutPackage', () => {
     tree(emitted, {
       'cli/src/index.js': 'const design_1 = require("@ethlete/design");\nconst x = require("./lib/plain-output");\n',
       'cli/src/index.js.map': JSON.stringify({ version: 3, sources: ['../../../../libs/cli/src/index.ts'] }),
-      'cli/src/lib/plain-output.js': '',
+      'cli-core/src/lib/plain-output.js': '',
+      'cli-core/src/lib/api/lock.d.ts': '',
       'cli/src/lib/person-name-hashes.json': '{}',
       'design/src/index.js': 'exports.designCommand = require("./lib/design").designCommand;\n',
-      'design/src/lib/design/index.js':
-        'const p = require("@ethlete/cli/src/lib/plain-output");\nrequire("./serve");\n',
+      'design/src/lib/design/index.js': 'const p = require("@ethlete/cli-core/plain-output");\nrequire("./serve");\n',
       'design/src/lib/design/serve.js': '',
-      'design/src/lib/design/system/lock.d.ts': "import { LockSystem } from '@ethlete/cli/src/lib/api/lock';\n",
+      'design/src/lib/design/system/lock.d.ts': "import { LockSystem } from '@ethlete/cli-core/api/lock';\n",
       'design/src/lib/design/serve.js.map': JSON.stringify({
         version: 3,
         sources: ['../../../../../../libs/design/src/lib/design/serve.ts'],

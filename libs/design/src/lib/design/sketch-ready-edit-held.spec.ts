@@ -10,7 +10,7 @@ import { renderIssuesOf } from './system/render-check';
 import { resolveProduct } from './system/resolve-product';
 import { openEditSketch } from './system/sketch/edit-sketch';
 import { readMerged, recordMerged } from './system/sketch/merged-parts';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 vi.mock('./ready-shots', () => {
   const identicalRenders = vi.fn<

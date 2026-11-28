@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { commitStep, dirtySnapshot, parsePorcelain, startCommits } from './commits';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const git = (root: string, ...args: string[]) => gitExec(args, { cwd: root, encoding: 'utf8' });
 

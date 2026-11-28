@@ -11,7 +11,7 @@ import {
   readManifest,
   writeRanges,
 } from './packages';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const makeRoot = () => mkdtempSync(join(tmpdir(), 'cli-packages-'));
 

@@ -4299,6 +4299,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/cli-core@workspace:libs/cli-core":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/cli-core@workspace:libs/cli-core"
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/cli@workspace:libs/cli":
   version: 0.0.0-use.local
   resolution: "@ethlete/cli@workspace:libs/cli"

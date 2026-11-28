@@ -4,7 +4,7 @@ import { noteWrite } from './write-journal';
 import { dirname, relative, resolve, sep } from 'path';
 import { DesignHarness } from '../design-config';
 import { harnessProblemOf } from './harness-config';
-import { formattedTextOf } from '@ethlete/cli/src/lib/prettier';
+import { formattedTextOf } from '@ethlete/cli-core/prettier';
 import { partKeyOf, ResolvedProduct } from './resolve-product';
 import { partLinkOf } from './sketch/part-definition';
 import { exportedComponentClassesOf } from './ts-source';

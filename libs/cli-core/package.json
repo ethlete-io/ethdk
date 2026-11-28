@@ -1,0 +1,8 @@
+{
+  "name": "@ethlete/cli-core",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "./src/index.ts"
+}

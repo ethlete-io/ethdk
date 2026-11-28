@@ -4,7 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ciCachePath, ciStatusOfRuns, pushStatusLines, pushStatusOf } from './push-status';
 import { designStatus } from './status';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const git = (cwd: string, args: string[], date?: string) =>
   gitSpawn(args, {

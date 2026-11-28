@@ -19,7 +19,7 @@ import { partHashOf } from './sketch/baseline';
 import { editDiscardRefusalOf } from './sketch/edit-sketch';
 import { Sketch, readSketch } from './sketch/sketch';
 import { changedOutsideSketchOf, directEditsOf, readMerged, recordMerged } from './sketch/merged-parts';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 import { withStampsInCache } from './stamp-files';
 
 const CHIP = 'components/chip';

@@ -10,7 +10,7 @@ import { recordMerged } from './sketch/merged-parts';
 import { createSketch, decideSketch, rebaseSketch, variantDirOf } from './sketch/sketch';
 import { originOf } from './write-origin';
 import { acme, output, withoutOpenPoints, withoutBrowserLines, renderWarningsOf } from './check-system.fixtures';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const probe = vi.hoisted(() => ({ port: null as number | null }));
 

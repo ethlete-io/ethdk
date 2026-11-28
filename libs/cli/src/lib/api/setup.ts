@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 export type SetupRequest = {
   /** The API's own `setupCommand`, for example `make setup`. */

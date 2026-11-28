@@ -7,6 +7,7 @@ const PINNED_COMMIT_FILE = 'pinned-commit';
 
 const SOURCE_DIRS = ['src', 'design', 'playwright'];
 const DESIGN_LIB_SOURCE_DIRS = ['src', 'design'];
+const CLI_CORE_SOURCE_DIRS = ['src'];
 const IGNORED_SUFFIXES = ['.spec.ts', '.md'];
 
 const filesOf = (dir: string): string[] =>
@@ -19,14 +20,16 @@ export const toPosixPath = (path: string, separator: string = sep) => path.split
 
 export const compareBytes = (a: string, b: string) => Buffer.compare(Buffer.from(a), Buffer.from(b));
 
-/** Hash of the CLI sources that end up in a build, including the sibling `libs/design` the build bundles: contents and paths, not mtimes. */
+/** Hash of the CLI sources that end up in a build, including the sibling `libs/design` and `libs/cli-core` the build bundles: contents and paths, not mtimes. */
 export const cliSourceHash = (cliRoot: string) => {
   const hash = createHash('sha256');
 
   const designRoot = join(cliRoot, '..', 'design');
+  const coreRoot = join(cliRoot, '..', 'cli-core');
   const roots = [
     ...SOURCE_DIRS.map((dir) => join(cliRoot, dir)),
     ...DESIGN_LIB_SOURCE_DIRS.map((dir) => join(designRoot, dir)),
+    ...CLI_CORE_SOURCE_DIRS.map((dir) => join(coreRoot, dir)),
   ];
 
   for (const path of roots) {
@@ -74,7 +77,7 @@ export const staleCliBuildMessage = (options: { root: string; buildDir: string }
   if (recorded === cliSourceHash(cliRoot)) return undefined;
 
   return [
-    'This CLI build is stale: libs/cli or libs/design sources differ from what dist/libs/cli was built from,',
+    'This CLI build is stale: libs/cli, libs/cli-core or libs/design sources differ from what dist/libs/cli was built from,',
     'so its results can be wrong (`nx compile cli` does not refresh dist). Rebuild it:',
     '',
     '  NX_NO_CLOUD=true npx nx build cli',

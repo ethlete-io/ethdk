@@ -3,9 +3,9 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
-import { composeProjectName, apiStateDirectory, readApiState } from './api-state';
+import { composeProjectName, apiStateDirectory, readApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
-import { lockPath } from './lock';
+import { lockPath } from '@ethlete/cli-core/api/lock';
 import { runApiCommand } from './run';
 
 let fakeBinary = '';

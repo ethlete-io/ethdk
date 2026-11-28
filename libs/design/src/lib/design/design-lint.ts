@@ -2,7 +2,7 @@ import { writeDesignFile } from './system/design-file';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, relative, resolve, sep } from 'path';
-import { spawnPlain, spawnPlainAsync } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain, spawnPlainAsync } from '@ethlete/cli-core/plain-output';
 import { callsRootOf } from './design-config';
 import { addedBaselineNamesOf } from './system/baseline-history';
 import { sharedDirOf, Sketch, sourceFilesIn, variantDirOf } from './system/sketch/sketch';

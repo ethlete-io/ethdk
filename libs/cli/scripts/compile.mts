@@ -13,7 +13,7 @@ import {
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { assertCompleteBuild } from './move-into-place.mts';
 
-const CLI_CORE_ALIAS = '@ethlete/cli/src/lib/';
+const CLI_CORE_ALIASES = ['@ethlete/cli-core/', '@ethlete/cli/src/lib/'];
 const DESIGN_ALIAS = '@ethlete/design';
 const SPECIFIER = /(require\(|import\(|from )(["'])([^"']+)\2/g;
 const BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -104,22 +104,25 @@ const shiftGeneratedColumns = (mappings: string, shifts: ColumnShift[][]) =>
     .join(';');
 
 /**
- * Lays the `tsc` output of libs/cli and libs/design (`emitted/cli/**`, `emitted/design/**`) out as the one published
- * package: libs/design's `src/lib/design` lands in `src/lib/design`. The path aliases between the two libs become
+ * Lays the `tsc` output of libs/cli, libs/cli-core and libs/design (`emitted/{cli,cli-core,design}/**`) out as the one
+ * published package: libs/cli-core's `src/lib` lands in `src/lib`, libs/design's `src/lib/design` in `src/lib/design`. The path aliases between the two libs become
  * relative requires, and every source map points at its source from where `run` is moved to (`final`).
  */
 export const layOutPackage = (emitted: string, run: string, final = run) => {
   const cliSrc = join(emitted, 'cli', 'src');
+  const coreSrc = join(emitted, 'cli-core', 'src');
   const designLib = join(emitted, 'design', 'src', 'lib', 'design');
   const placeOf = (path: string) => {
     if (isInside(cliSrc, path)) return join(run, 'src', relative(cliSrc, path));
+    if (isInside(coreSrc, path)) return join(run, 'src', relative(coreSrc, path));
     if (isInside(designLib, path)) return join(run, 'src', 'lib', 'design', relative(designLib, path));
 
     return null;
   };
   const emittedTargetOf = (file: string, specifier: string) => {
     if (specifier === DESIGN_ALIAS) return designLib;
-    if (specifier.startsWith(CLI_CORE_ALIAS)) return join(cliSrc, 'lib', specifier.slice(CLI_CORE_ALIAS.length));
+    const coreAlias = CLI_CORE_ALIASES.find((alias) => specifier.startsWith(alias));
+    if (coreAlias) return join(coreSrc, 'lib', specifier.slice(coreAlias.length));
     if (specifier.startsWith('.')) return resolve(dirname(file), specifier);
 
     return null;
@@ -162,7 +165,7 @@ export const layOutPackage = (emitted: string, run: string, final = run) => {
         line.replace(SPECIFIER, (match, prefix: string, quote: string, specifier: string, at: number) => {
           const target = emittedTargetOf(file, specifier);
           const placed = target && placeOf(target);
-          const aliased = specifier === DESIGN_ALIAS || specifier.startsWith(CLI_CORE_ALIAS);
+          const aliased = specifier === DESIGN_ALIAS || CLI_CORE_ALIASES.some((alias) => specifier.startsWith(alias));
 
           if (aliased && !placed)
             throw new Error(`${relative(emitted, file)} imports ${specifier}, which is not in the package`);

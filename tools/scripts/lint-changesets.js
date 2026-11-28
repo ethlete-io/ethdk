@@ -27,6 +27,7 @@ const PACKAGES = [
   '@ethlete/bracket',
   '@ethlete/cdk',
   '@ethlete/cli',
+  '@ethlete/cli-core',
   '@ethlete/components',
   '@ethlete/contentful',
   '@ethlete/core',

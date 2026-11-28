@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 import { resolveProduct } from '../resolve-product';
 import { mergeAndRecord, mergeStepOf } from './merge-step';
 import { createSketch, markSketchReady, Sketch } from './sketch';

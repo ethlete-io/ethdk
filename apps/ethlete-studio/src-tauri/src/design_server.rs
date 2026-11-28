@@ -47,6 +47,8 @@ const CLI_SOURCE_DIRS: [&str; 3] = ["src", "design", "playwright"];
 
 const DESIGN_LIB_SOURCE_DIRS: [&str; 2] = ["src", "design"];
 
+const CLI_CORE_SOURCE_DIRS: [&str; 1] = ["src"];
+
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
 /// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
@@ -548,11 +550,12 @@ fn posix_path(path: &str, separator: char) -> String {
     path.split(separator).collect::<Vec<_>>().join("/")
 }
 
-/// Mirrors `cliSourceHash` in libs/cli/src/lib/source-hash.ts.
+/// Mirrors `cliSourceHash` in libs/cli-core/src/lib/source-hash.ts.
 fn cli_source_hash(cli_root: &Path) -> String {
     let mut hash = Sha256::new();
 
     let design_root = cli_root.join("..").join("design");
+    let core_root = cli_root.join("..").join("cli-core");
     let roots = CLI_SOURCE_DIRS
         .iter()
         .map(|dir| (cli_root.join(dir), cli_root.to_path_buf(), PathBuf::new()))
@@ -561,6 +564,13 @@ fn cli_source_hash(cli_root: &Path) -> String {
                 design_root.join(dir),
                 design_root.clone(),
                 Path::new("..").join("design"),
+            )
+        }))
+        .chain(CLI_CORE_SOURCE_DIRS.iter().map(|dir| {
+            (
+                core_root.join(dir),
+                core_root.clone(),
+                Path::new("..").join("cli-core"),
             )
         }));
 
@@ -1173,7 +1183,7 @@ mod tests {
     use tokio::process::Command;
 
     fn fixture() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/cli/fixtures/source-hash")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../libs/cli-core/fixtures/source-hash")
     }
 
     const CRASH_LOG_FIXTURE: &str = include_str!("fixtures/design-server-crash.log");

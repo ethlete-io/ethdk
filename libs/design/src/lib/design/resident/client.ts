@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, openSync, readFileSync } from 'fs';
 import { request as httpRequest } from 'http';
 import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
-import { acquireApiLock, releaseApiLock } from '@ethlete/cli/src/lib/api/lock';
+import { acquireApiLock, releaseApiLock } from '@ethlete/cli-core/api/lock';
 import { LIB_READER_ENV } from '../system/lib-build-lock';
 import {
   Discovery,

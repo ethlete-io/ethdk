@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join, relative, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { designCommitHunks, withPartHunks } from './commit-hunks';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const git = (cwd: string, ...args: string[]) => gitExec(args, { cwd, encoding: 'utf8' }).trim();
 

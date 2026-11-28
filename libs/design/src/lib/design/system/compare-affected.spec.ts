@@ -8,7 +8,7 @@ import { appFilesOf } from './app-files';
 import { designCompare, ShootStates } from './compare-command';
 import { StartHarnessServer } from './harness-server';
 import { encodePng } from './part-compare';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 import { affectedPartsOf, markImplemented } from './part-task';
 import { resolveProduct } from './resolve-product';
 

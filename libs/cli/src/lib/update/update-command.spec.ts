@@ -7,7 +7,7 @@ import { writeMigrationRun } from './migration-record';
 import { PENDING_FILE, readPendingUpdate, writePendingUpdate } from './pending';
 import { TASKS_DATA_FILE, TASKS_FILE, UPDATE_DIR } from './tasks';
 import { updateCommand } from './update-command';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const spawnSync = vi.hoisted(() =>
   vi.fn<

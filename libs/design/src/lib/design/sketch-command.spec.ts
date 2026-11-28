@@ -29,7 +29,7 @@ import {
   VariantChange,
   viewedShotFileOf,
 } from './system/sketch/viewed-shots';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const PERSON = ['t', 'om'].join('');
 

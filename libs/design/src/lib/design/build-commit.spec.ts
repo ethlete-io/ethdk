@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cliSourceHash } from '@ethlete/cli/src/lib/source-hash';
+import { cliSourceHash } from '@ethlete/cli-core/source-hash';
 import { builtCliChangedWarning, cliBuildLineOf } from './stale-cli-dist';
 
 describe('builtCliChangedWarning', () => {

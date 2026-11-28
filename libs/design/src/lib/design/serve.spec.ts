@@ -43,7 +43,7 @@ import {
 import { tomflixShellAndTabBar } from './open-sub-part.fixtures';
 import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 type ServerOptions = {
   root: string;

@@ -11,12 +11,13 @@ export default [
         'error',
         {
           // `et design check` resolves playwright and typescript out of the checkout it draws, or out of
-          // this package, so neither shows up as an import. `@ethlete/design` is compiled into this package, and the
+          // this package, so neither shows up as an import. `@ethlete/design` and `@ethlete/cli-core` are compiled into this package, and the
           // rest are imports of that bundled lib.
           ignoredDependencies: [
             'playwright',
             'typescript',
             '@ethlete/design',
+            '@ethlete/cli-core',
             '@angular/compiler',
             '@angular/core',
             '@angular/forms',

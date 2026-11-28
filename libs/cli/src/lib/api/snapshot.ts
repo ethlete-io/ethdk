@@ -4,7 +4,7 @@ import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync
 import { basename, dirname, join } from 'path';
 import { pipeline } from 'stream/promises';
 import { createGunzip, createGzip } from 'zlib';
-import { markApiStateDirty, writeApiState } from './api-state';
+import { markApiStateDirty, writeApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiProfile } from './definition';
 import { DEFAULT_CHECKOUT_DIR } from './clone';
 import { shellQuote } from './seeds';

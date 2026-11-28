@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { uncommittedChanges } from '../api/git';
 import { UPDATE_IGNORE_ENTRY, ignoreUpdateDir } from './gitignore';
 import { UPDATE_DIR } from './tasks';
-import { gitSpawn } from '../git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const makeRepo = () => {
   const root = mkdtempSync(join(tmpdir(), 'cli-gitignore-'));

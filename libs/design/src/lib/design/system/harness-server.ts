@@ -10,7 +10,7 @@ import { claimHarnessBuild, harnessBuildKeyOf, harnessCacheDirOf, storeHarnessBu
 import { harnessOf } from './harness-map';
 import { HARNESS_PATH } from './part-compare';
 import { ResolvedProduct } from './resolve-product';
-import { plainEnv } from '@ethlete/cli/src/lib/plain-output';
+import { plainEnv } from '@ethlete/cli-core/plain-output';
 import { timedPhase } from '../phase-timing';
 import { recordCache } from '../timings';
 import { durationOf } from '../wait';

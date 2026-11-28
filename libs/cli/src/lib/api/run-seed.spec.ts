@@ -3,10 +3,10 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
-import { apiStateDirectory, readApiState, writeApiState } from './api-state';
+import { apiStateDirectory, readApiState, writeApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
 import { runApiCommand } from './run';
-import { gitSpawn } from '../git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 type ComposeCallRecord = { args: string[]; input?: Buffer };
 

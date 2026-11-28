@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { git } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { git } from '@ethlete/cli-core/git-test-env.fixtures';
 import { DESIGN_DIR, readConfig } from '../design-config';
 import { checkSystemRendered } from './check-system';
 import { partKeyOf, resolveProduct } from './resolve-product';

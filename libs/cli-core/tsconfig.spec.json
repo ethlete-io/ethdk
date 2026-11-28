@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "types": ["vitest/globals", "vitest/importMeta", "node", "vitest"],
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "lib": ["es2022", "dom"]
+  },
+  "include": ["vitest.config.mts", "src/**/*.spec.ts", "src/**/*.fixtures.ts", "src/**/*.d.ts"]
+}

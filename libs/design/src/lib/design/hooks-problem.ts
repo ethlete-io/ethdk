@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 const gitOf = (cwd: string, args: string[]) => {
   const run = spawnPlain(['git', ...args], { cwd });

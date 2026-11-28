@@ -11,7 +11,7 @@ import { IMPLEMENTED_FILE, markImplemented } from './part-task';
 import { pruneDeletedAppFiles } from './prune-deleted-app-files';
 import { resolveProduct } from './resolve-product';
 import { originOf } from './write-origin';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const CHIP = 'components/chip';
 const BADGE = 'components/badge';

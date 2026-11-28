@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from '../design-config';
 import { checkRules } from './check-system';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const CONFIG = { products: { 'app-a': { presets: { desktop: { width: 1280, height: 800 } } } } };
 

@@ -74,7 +74,7 @@ import { journaled, openJournalOf } from './system/write-journal';
 import { approveSubSketch, openSubSketches, pickOpensSubSketches } from './system/sketch/sub-sketches';
 import { staleBaseOf, staleSketchBasesOf } from './system/sketch/stale-base';
 import { notRebuildsOf, subPartKeyProblemOf, subPartsOf } from './system/sketch/sub-parts';
-import { repoInvocation } from '@ethlete/cli/src/lib/invocation';
+import { repoInvocation } from '@ethlete/cli-core/invocation';
 import { editDiscardRefusalOf, editHoldsOf } from './system/sketch/edit-sketch';
 import { refusingRendersOf } from './system/sketch/identical-renders';
 import { isEditSketch, MERGED_FILE, recordMerged, untilSketchOf } from './system/sketch/merged-parts';
@@ -132,9 +132,9 @@ import {
   writeSketchFile,
   SKETCH_FILE,
 } from './system/sketch/sketch';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 import { TypecheckResult } from './typecheck';
-import { hasPersonName, PERSON_NAME_REFUSAL } from '@ethlete/cli/src/lib/person-names';
+import { hasPersonName, PERSON_NAME_REFUSAL } from './person-names';
 import { lintGateLinesOf, variantLintFilesOf } from './design-lint';
 import { builderPickOf } from './system/sketch/undesigned-sketch';
 

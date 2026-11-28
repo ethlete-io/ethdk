@@ -1,12 +1,18 @@
 import { existsSync } from 'fs';
 import { setTimeout as delay } from 'timers/promises';
 import { definedEntries, stateDirectoryOf } from './api-context';
-import { markApiStateDirty, readApiState, writeApiState } from './api-state';
+import { markApiStateDirty, readApiState, writeApiState } from '@ethlete/cli-core/api/api-state';
 import { composeToolNames, engineEnv, resolveComposeTool } from './compose';
 import { ApiDefinition, ApiProfile } from './definition';
 import { runDoctor } from './doctor';
 import { fingerprintApi } from './fingerprint';
-import { LockSystem, acquireApiLock, describeApiLock, heldLockFromEnv, releaseApiLock } from './lock';
+import {
+  LockSystem,
+  acquireApiLock,
+  describeApiLock,
+  heldLockFromEnv,
+  releaseApiLock,
+} from '@ethlete/cli-core/api/lock';
 import { checkoutProblem } from './resolve-checkout';
 import { LOCK_TIMEOUT_EXIT_CODE } from './run-locked';
 import { warnUnlessSnapshotIgnored } from './run-snapshot';

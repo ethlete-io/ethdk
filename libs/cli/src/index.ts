@@ -10,7 +10,7 @@ import {
   updateCommand,
 } from './lib';
 import { designCommand } from '@ethlete/design';
-import { staleCliBuildMessage } from './lib/source-hash';
+import { staleCliBuildMessage } from '@ethlete/cli-core/source-hash';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },

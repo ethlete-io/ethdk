@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { HEAVY_DESIGN_SPEC_TIMEOUT_MS } from './check-system.fixtures';
-import { gitExec, gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec, gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 vi.setConfig({ testTimeout: HEAVY_DESIGN_SPEC_TIMEOUT_MS });
 

@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { hooksProblemOf } from './hooks-problem';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const dirs: string[] = [];
 

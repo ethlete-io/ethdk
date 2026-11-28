@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 import { ResolvedProduct } from '../resolve-product';
 
 const SCRIPT = 'tools/scripts/generate-studio-themes.mjs';

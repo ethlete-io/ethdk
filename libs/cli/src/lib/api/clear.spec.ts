@@ -6,7 +6,7 @@ import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
 import * as utils from '../utils';
 import { clearApiCheckouts, planApiClear } from './clear';
 import { ApiDefinition } from './definition';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const HUB: ApiDefinition = { composeDir: 'development', services: ['app'], execService: 'app', port: 8040 };
 

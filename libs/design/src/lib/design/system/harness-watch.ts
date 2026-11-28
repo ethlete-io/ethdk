@@ -6,7 +6,7 @@ import { Server } from 'http';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { setTimeout as delay } from 'timers/promises';
-import { plainEnv } from '@ethlete/cli/src/lib/plain-output';
+import { plainEnv } from '@ethlete/cli-core/plain-output';
 import { timedPhase } from '../phase-timing';
 import { durationOf } from '../wait';
 import {

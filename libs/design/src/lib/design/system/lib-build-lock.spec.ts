@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { describe, expect, it } from 'vitest';
-import { LockSystem } from '@ethlete/cli/src/lib/api/lock';
+import { LockSystem } from '@ethlete/cli-core/api/lock';
 import { readFreshLibBuild } from './lib-build-lock';
 
 const systemOf = (pid: number, dead: number[] = []): LockSystem => ({

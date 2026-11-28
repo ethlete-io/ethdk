@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { homedir, networkInterfaces, tmpdir } from 'os';
 import { join } from 'path';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 export type ComposeTool = {
   engine: string;

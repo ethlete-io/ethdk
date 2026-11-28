@@ -23,8 +23,6 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          // cli wires `et design` from design, and design still reads cli's core modules.
-          ignoredCircularDependencies: [['cli', 'design']],
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?js$', '^.*/tools/testing/.*$'],
           depConstraints: [
             {

@@ -109,7 +109,7 @@ import { readyUncommittedLinesOf } from '../uncommitted-state';
 import { staleSketchBasesOf } from './sketch/stale-base';
 import { listSketches, variantDirOf } from './sketch/sketch';
 import { typecheckProduct, typecheckProductAsync, writeEditorTsconfig } from './system-tsconfig';
-import { repoInvocation } from '@ethlete/cli/src/lib/invocation';
+import { repoInvocation } from '@ethlete/cli-core/invocation';
 import { TypecheckResult } from '../typecheck';
 import { leftoverGateFilesWarningOf } from './leftover-gate-files';
 import { uncommittedDecisionsWarningOf } from './uncommitted-decisions';

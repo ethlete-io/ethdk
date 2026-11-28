@@ -12,7 +12,7 @@ import {
 import { createRequire } from 'module';
 import { tmpdir } from 'os';
 import { basename, dirname, join, relative, resolve } from 'path';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 import { DESIGN_DIR } from '../../design-config';
 import { ResolvedProduct } from '../resolve-product';
 import { contentsBelow } from './clean-copy';

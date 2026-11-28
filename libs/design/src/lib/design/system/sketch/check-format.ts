@@ -1,4 +1,4 @@
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 import { existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';

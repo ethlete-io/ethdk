@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
 import { describe, expect, it } from 'vitest';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 import { harnessBuildKeyOf, harnessCacheDirOf } from './harness-build-cache';
 import { BuildCommandOf } from './harness-server';
 import {

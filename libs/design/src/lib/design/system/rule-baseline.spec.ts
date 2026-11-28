@@ -6,7 +6,7 @@ import { DESIGN_DIR } from '../design-config';
 import { Problem } from './problem';
 import { resolveProduct } from './resolve-product';
 import { RULE_BASELINE_FILE, renderProblemOf, ruleBaselineOf, writeRuleBaseline } from './rule-baseline';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const checkout = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-rule-baseline-'));

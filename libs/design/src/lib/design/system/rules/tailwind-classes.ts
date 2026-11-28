@@ -20,7 +20,7 @@ import {
   untrackedRun,
 } from '../tracked-reads';
 import { perSource, sourceFileOf, textsOf } from '../ts-source';
-import { spawnPlainAsync } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlainAsync } from '@ethlete/cli-core/plain-output';
 
 const CLASS_FACTS = `
 const fs = require('fs');

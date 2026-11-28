@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { readFileSync, realpathSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { UPDATE_DIR } from './tasks';
-import { spawnPlain } from '../plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 /** Repo-relative paths git reports as changed or untracked, each with a hash of its content. */
 export type DirtySnapshot = Record<string, string>;

@@ -31,7 +31,7 @@ import {
   sketchReportPath,
   SketchTarget,
 } from './sketch';
-import { gitSpawn } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitSpawn } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-merge-'));

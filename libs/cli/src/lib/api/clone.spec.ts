@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gitUrlHost } from './auth-hint';
 import { cloneApiRepo, isGitIgnored } from './clone';
 import { runApiCommand } from './run';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const git = (cwd: string, ...args: string[]) => gitExec(args, { cwd, stdio: 'pipe' });
 

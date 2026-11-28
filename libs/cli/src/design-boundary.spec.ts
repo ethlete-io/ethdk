@@ -181,7 +181,7 @@ const designWritesBypassingJournal = (layout: Layout, files: string[]) =>
         file !== join(designDirOf(layout), 'lib', 'design', 'system', 'design-file.ts'),
     )
     .flatMap((file) => localLoadsOf(layout, file).map((load) => ({ file, ...load })))
-    .filter(({ target }) => target === join(layout.root, 'cli', 'src', 'lib', 'json-file.ts'))
+    .filter(({ target }) => target === join(layout.root, 'cli-core', 'src', 'lib', 'json-file.ts'))
     .map(({ file, specifier }) => describeRow(layout, file, specifier));
 
 const fixtureLayout = (files: Record<string, string>): Layout => {
@@ -199,7 +199,7 @@ const fixtureLayout = (files: Record<string, string>): Layout => {
       baseUrl: root,
       paths: {
         '@ethlete/cli/sketch-frames': ['design/src/lib/design/frames.ts'],
-        '@ethlete/cli/src/lib/*': ['cli/src/lib/*'],
+        '@ethlete/cli-core/*': ['cli-core/src/lib/*'],
         '@ethlete/design': ['design/src/index.ts'],
       },
     },
@@ -253,12 +253,12 @@ describe('the design boundary checks', () => {
   it('catches a .js specifier that resolves to json-file.ts', () => {
     const { layout, files } = fixture({
       ...designFiles,
-      'cli/src/lib/json-file.ts': 'export {};',
-      'design/src/lib/design/system/writer.ts': "import '@ethlete/cli/src/lib/json-file.js';",
+      'cli-core/src/lib/json-file.ts': 'export {};',
+      'design/src/lib/design/system/writer.ts': "import '@ethlete/cli-core/json-file.js';",
     });
 
     expect(designWritesBypassingJournal(layout, files)).toEqual([
-      'design/src/lib/design/system/writer.ts -> @ethlete/cli/src/lib/json-file.js',
+      'design/src/lib/design/system/writer.ts -> @ethlete/cli-core/json-file.js',
     ]);
   });
 

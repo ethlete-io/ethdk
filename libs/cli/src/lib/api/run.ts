@@ -47,7 +47,7 @@ import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config
 import { clearApiCheckouts } from './clear';
 import { portsInUse, publishedPorts } from './ports';
 import { serviceStateTable, serviceStates } from './state';
-import { markApiStateDirty } from './api-state';
+import { markApiStateDirty } from '@ethlete/cli-core/api/api-state';
 import { runLocked } from './run-locked';
 import { runSnapshotCommand } from './run-snapshot';
 import { runStatusCommand } from './run-status';

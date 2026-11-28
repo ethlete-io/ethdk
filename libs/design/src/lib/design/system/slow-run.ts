@@ -52,7 +52,7 @@ import {
   unjudgedStateWarningsOf,
   writeSlowResults,
 } from './slow-checks';
-import { repoInvocation } from '@ethlete/cli/src/lib/invocation';
+import { repoInvocation } from '@ethlete/cli-core/invocation';
 
 /** What a slow run calls out to; tests swap these for fakes. */
 export type SlowRunners = {

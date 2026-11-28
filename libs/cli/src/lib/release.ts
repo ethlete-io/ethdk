@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
-import { plainEnv, stripAnsi } from './plain-output';
+import { plainEnv, stripAnsi } from '@ethlete/cli-core/plain-output';
 import { PackageManager, detectPackageManager, spawnPackageManager } from './update/package-manager';
 import { readManifest } from './update/packages';
 import { askQuestion } from './utils';

@@ -93,6 +93,7 @@
         "libs/bracket/**/*",
         "libs/cdk/**/*",
         "libs/cli/**/*",
+        "libs/cli-core/**/*",
         "libs/components/**/*",
         "libs/contentful/**/*",
         "libs/core/**/*",

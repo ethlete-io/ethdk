@@ -1,5 +1,5 @@
 import { accessSync, constants } from 'fs';
-import { writeJsonFile } from '../json-file';
+import { writeJsonFile } from '@ethlete/cli-core/json-file';
 import { delimiter, join } from 'path';
 import { LEGACY_LOCAL_CONFIG_FILE_NAME, LOCAL_CONFIG_FILE_NAME, readLocalConfigFile } from '../config/local-config';
 import { askQuestion } from '../utils';

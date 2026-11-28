@@ -4,7 +4,7 @@ import { hostname } from 'os';
 import { mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
-import { acquireApiLock, LockSystem, releaseApiLock } from '@ethlete/cli/src/lib/api/lock';
+import { acquireApiLock, LockSystem, releaseApiLock } from '@ethlete/cli-core/api/lock';
 import { recordConcurrentHeavy, recordPhase } from '../timings';
 
 export const LIB_READER_ENV = 'ETHLETE_DESIGN_LIB_READER';

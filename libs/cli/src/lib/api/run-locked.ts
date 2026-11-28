@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { constants } from 'os';
-import { markApiStateDirty } from './api-state';
-import { API_LOCK_ENV, LockSystem, acquireApiLock, describeApiLock, releaseApiLock } from './lock';
+import { markApiStateDirty } from '@ethlete/cli-core/api/api-state';
+import { API_LOCK_ENV, LockSystem, acquireApiLock, describeApiLock, releaseApiLock } from '@ethlete/cli-core/api/lock';
 
 export const LOCK_TIMEOUT_EXIT_CODE = 75;
 

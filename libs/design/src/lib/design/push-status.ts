@@ -2,7 +2,7 @@ import { writeDesignFile } from './system/design-file';
 import { mkdirSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 
 export type PushStatus = {
   base: string;

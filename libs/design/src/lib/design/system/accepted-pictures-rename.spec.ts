@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, DesignConfig } from '../design-config';
-import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 import { autoAcceptOf, DrawStates, StatePictures } from './accepted-pictures';
 import { partPointsOf, readOpenPoints } from './read-open-points';
 import { resolveProduct } from './resolve-product';

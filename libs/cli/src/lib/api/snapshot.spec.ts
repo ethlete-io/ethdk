@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { gunzipSync, gzipSync } from 'zlib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readApiState } from './api-state';
+import { readApiState } from '@ethlete/cli-core/api/api-state';
 import {
   ComposeInvocation,
   listSnapshots,

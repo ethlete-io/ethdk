@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
 import { describe, expect, it } from 'vitest';
-import { calibrationMs, recordPerf, watchLongestBlock } from '@ethlete/cli/src/lib/perf.fixtures';
+import { calibrationMs, recordPerf, watchLongestBlock } from '../../perf.fixtures';
 import { readConfig } from '../../design-config';
 import { sketchDecisionAnswer } from '../../studio-api';
 import { resolveProduct } from '../resolve-product';

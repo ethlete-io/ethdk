@@ -1,6 +1,6 @@
 import { writeDesignFile } from '../design-file';
 import { gitStatusOf } from '../../git-reader';
-import { spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { spawnPlain } from '@ethlete/cli-core/plain-output';
 import {
   cpSync,
   existsSync,
@@ -25,7 +25,7 @@ import { forgetUnnamedActions } from '../part-ready';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf, partHashHolds } from './baseline';
-import { prettierBinOf } from '@ethlete/cli/src/lib/prettier';
+import { prettierBinOf } from '@ethlete/cli-core/prettier';
 import { withProductLock } from '../product-lock';
 import { journaled, noteWrite } from '../write-journal';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';

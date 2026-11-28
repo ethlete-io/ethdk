@@ -3,9 +3,9 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
-import { apiStateDirectory, composeProjectName, readApiState, writeApiState } from './api-state';
+import { apiStateDirectory, composeProjectName, readApiState, writeApiState } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
-import { API_LOCK_ENV, acquireApiLock, lockPath, readApiLock } from './lock';
+import { API_LOCK_ENV, acquireApiLock, lockPath, readApiLock } from '@ethlete/cli-core/api/lock';
 import { ReadySeedUnit, runReadyCommand, waitForHealth } from './run-ready';
 
 let fakeBinary = '';

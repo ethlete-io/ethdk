@@ -1,4 +1,4 @@
-import { apiStateDirectory, composeProjectName } from './api-state';
+import { apiStateDirectory, composeProjectName } from '@ethlete/cli-core/api/api-state';
 import { ApiDefinition } from './definition';
 import { resolveApiCheckout } from './resolve-checkout';
 

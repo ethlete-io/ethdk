@@ -12,7 +12,7 @@ import {
   missingRequirements,
   runPendingMigrations,
 } from './run-migrations';
-import { gitExec } from '../git-test-env.fixtures';
+import { gitExec } from '@ethlete/cli-core/git-test-env.fixtures';
 
 const yarn: PackageManager = { name: 'yarn', install: ['yarn', 'install'], run: ['yarn'] };
 

@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
-import { execPlain, spawnPlainAsync } from '@ethlete/cli/src/lib/plain-output';
+import { execPlain, spawnPlainAsync } from '@ethlete/cli-core/plain-output';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so

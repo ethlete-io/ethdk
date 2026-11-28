@@ -5,7 +5,7 @@ import { openJournalOf } from '../write-journal';
 import { ResolvedProduct } from '../resolve-product';
 import { writeMergeChangeset } from './merge-changeset';
 import { Sketch, sketchesDirOf } from './sketch';
-import { PlainResult, spawnPlain } from '@ethlete/cli/src/lib/plain-output';
+import { PlainResult, spawnPlain } from '@ethlete/cli-core/plain-output';
 
 type GitCall = { args: string[]; input?: string };
 type GitFlow<T> = Generator<GitCall, T, PlainResult>;
