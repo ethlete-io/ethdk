@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".."
+  },
+  "include": ["src/**/*.ts", "../design/src/lib/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.fixtures.ts",
+    "../design/src/**/*.spec.ts",
+    "../design/src/**/*.test.ts",
+    "../design/src/**/*.fixtures.ts"
+  ]
+}

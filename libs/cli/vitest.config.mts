@@ -1,19 +1,13 @@
-import { configDefaults, defineConfig } from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 import { specWorkers } from '../../tools/vitest/workers.mjs';
 
 export default defineConfig({
+  resolve: { tsconfigPaths: true },
   test: {
     name: 'cli',
     environment: 'node',
     globals: true,
     include: ['src/**/*.spec.ts', 'scripts/**/*.spec.mts'],
-    exclude: [
-      ...configDefaults.exclude,
-      'src/**/*.perf.spec.ts',
-      'src/lib/design/font-proof.spec.ts',
-      'src/**/*.proof.spec.ts',
-      'src/**/*.dist.spec.ts',
-    ],
     globalSetup: ['./vitest.global-setup.ts'],
     setupFiles: ['../../tools/vitest/spec-tmp.setup.mjs', './vitest.setup.ts'],
     maxWorkers: specWorkers,

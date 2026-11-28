@@ -1,0 +1,41 @@
+{
+  "name": "design",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/design/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "nx:noop",
+      "dependsOn": [
+        {
+          "projects": ["cli"],
+          "target": "build"
+        }
+      ]
+    },
+    "test": {
+      "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/design"],
+      "options": {
+        "coverage.reportsDirectory": "../../../coverage/libs/design"
+      }
+    },
+    "lint": {
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/design/tsconfig.spec.json --noEmit && tsc -p libs/design/tsconfig.lib.json --noEmit"
+      }
+    }
+  }
+}

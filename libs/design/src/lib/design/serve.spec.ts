@@ -1,0 +1,1731 @@
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'fs';
+import { rm } from 'fs/promises';
+import { EventEmitter } from 'events';
+import { IncomingMessage, ServerResponse } from 'http';
+import { tmpdir } from 'os';
+import { setTimeout as delay } from 'timers/promises';
+import { basename, dirname, join, resolve } from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DESIGN_DIR, readConfig } from './design-config';
+import { installedAssetRoot } from './package-root';
+import {
+  DELAY_FRAMES_ENV,
+  DESIGN_EVENTS_HEARTBEAT_MS,
+  KEEP_ALIVE_MS,
+  createDesignServer,
+  sendHeldJson,
+  serveDesign,
+  terminalPortLine,
+} from './serve';
+import { resolveProduct } from './system/resolve-product';
+import {
+  createSketch,
+  findSketch,
+  markSketchReady,
+  parseTarget,
+  Sketch,
+  SKETCH_FILE,
+  SketchTarget,
+  variantDirOf,
+  writeSketchFile,
+} from './system/sketch/sketch';
+import { tomflixShellAndTabBar } from './open-sub-part.fixtures';
+import { CheckSketches, openSketchListingAt } from './system/sketch/sketch-checker';
+import { createSystemModules, productModuleIdOf } from './system/system-modules';
+import { gitExec } from '@ethlete/cli/src/lib/git-test-env.fixtures';
+
+type ServerOptions = {
+  root: string;
+  cacheDir: string;
+  server: { port: number; strictPort: boolean; host?: string };
+  resolve: { alias: { find: RegExp; replacement: string }[] };
+  plugins: {
+    load: (id: string) => string | null;
+    resolveId: (id: string, importer?: string) => string | null;
+    transformIndexHtml: { handler: (html: string, ctx: { path: string; originalUrl?: string }) => string };
+    transform: (code: string, id: string) => string | null;
+    configureServer: (vite: unknown) => void;
+  }[];
+};
+
+const created: ServerOptions[] = [];
+const targets: string[] = [];
+let listenFailure: Error | null = null;
+let closes = 0;
+
+vi.mock('vite', () => ({
+  createLogger: () => ({
+    info: () => undefined,
+    warn: () => undefined,
+    warnOnce: () => undefined,
+    error: () => undefined,
+    clearScreen: () => undefined,
+    hasErrorLogged: () => false,
+    hasWarned: false,
+  }),
+  createServer: async (options: ServerOptions) => {
+    created.push(options);
+
+    return {
+      listen: async () => {
+        if (listenFailure) throw listenFailure;
+      },
+      printUrls: () => undefined,
+      close: async () => {
+        closes += 1;
+      },
+      environments: { ssr: { fetchModule: async () => ({}) } },
+    };
+  },
+}));
+
+vi.mock('@tailwindcss/postcss', () => ({ default: () => ({}) }));
+
+const cwd = process.cwd();
+
+beforeEach(() => vi.stubEnv('ETHLETE_DESIGN_SLOW_CHECKS', 'off'));
+
+afterEach(async () => {
+  process.chdir(cwd);
+  created.length = 0;
+  listenFailure = null;
+  closes = 0;
+  vi.restoreAllMocks();
+  await Promise.all(targets.splice(0).map((target) => rm(target, { recursive: true, force: true, maxRetries: 5 })));
+});
+
+const makeTarget = (config?: unknown) => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-serve-'));
+
+  targets.push(target);
+
+  if (config) {
+    mkdirSync(join(target, '.ethlete/design/calls/app/one'), { recursive: true });
+    writeFileSync(join(target, '.ethlete/design/config.json'), JSON.stringify(config), 'utf8');
+    writeFileSync(join(target, '.ethlete/design/calls/app/one/call.ts'), '', 'utf8');
+    writeFileSync(
+      join(target, 'tsconfig.base.json'),
+      JSON.stringify({ compilerOptions: { paths: { '@lib/*': ['libs/x/*'], '@one': ['libs/one.ts'] } } }),
+      'utf8',
+    );
+  }
+
+  return target;
+};
+
+describe('terminalPortLine', () => {
+  it('names the port left to Studio, the port it serves on and how to bind the Studio port', () => {
+    expect(terminalPortLine(4402, 51234)).toBe(
+      'design-explore: 4402 left to Studio, serving on 51234 (DE_PORT=4402 binds 4402)',
+    );
+  });
+});
+
+describe('serveDesign', () => {
+  it('exits 1 without a config', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect(await serveDesign({ target: makeTarget() })).toBe(1);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('no config'));
+    expect(created).toHaveLength(0);
+  });
+
+  it('reports a forbidden port as a permission failure, not a drawing failure', async () => {
+    const target = makeTarget({ port: 4999 });
+    const { createDesignServer } = await import('./serve.js');
+    const server = await createDesignServer({ target, config: readConfig(target) ?? {}, listen: true, port: 0 });
+
+    listenFailure = Object.assign(new Error('listen EPERM: operation not permitted ::1:5173'), { code: 'EPERM' });
+
+    await expect(server.listen()).rejects.toThrow(/cannot open a local port \(EPERM\).*permission failure/);
+
+    listenFailure = Object.assign(new Error('in use'), { code: 'EADDRINUSE' });
+
+    await expect(server.listen()).rejects.toThrow('in use');
+  });
+
+  it('exits when stdin closes, only if asked to', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+    process.stdin.emit('end');
+    await new Promise((done) => setTimeout(done, 0));
+    expect(exit).not.toHaveBeenCalled();
+
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '1');
+    expect(await serveDesign({ target })).toBe(0);
+    process.stdin.emit('end');
+    await new Promise((done) => setTimeout(done, 0));
+    expect(exit).toHaveBeenCalledWith(0);
+    vi.unstubAllEnvs();
+  });
+
+  it('takes a free port, not the configured one, unless the Studio host started it', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.stubEnv('DE_PORT', '');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const port = created[0]?.server.port;
+
+    expect(port).toEqual(expect.any(Number));
+    expect(port).not.toBe(4999);
+    expect(created[0]?.server).toMatchObject({ strictPort: true });
+  });
+
+  it('listens on DE_PORT when it is set, also when the Studio host did not start it', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.stubEnv('DE_PORT', '4498');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+    expect(created[0]?.server).toMatchObject({ port: 4498, strictPort: true });
+    vi.unstubAllEnvs();
+  });
+
+  it('closes the server and fails when the pinned DE_PORT is taken, so no process holds on', async () => {
+    vi.stubEnv('DE_PORT', '4498');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    listenFailure = Object.assign(new Error('Port 4498 is already in use'), { code: 'EADDRINUSE' });
+
+    await expect(serveDesign({ target: makeTarget({ port: 4999, defaultCall: 'app/one' }) })).rejects.toThrow(
+      'already in use',
+    );
+    expect(closes).toBe(1);
+    vi.unstubAllEnvs();
+  });
+
+  it('listens on the host it is given, or DE_HOST, and on Vite default otherwise', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    await serveDesign({ target });
+    await serveDesign({ target, host: '0.0.0.0' });
+    vi.stubEnv('DE_HOST', '192.168.0.5');
+    await serveDesign({ target });
+    await serveDesign({ target, host: '0.0.0.0' });
+    vi.unstubAllEnvs();
+
+    expect(created.map((options) => options.server.host)).toEqual([undefined, '0.0.0.0', '192.168.0.5', '0.0.0.0']);
+  });
+
+  it('never pre-bundles its own authoring modules, so finding one late reloads no frame', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await serveDesign({ target: makeTarget({ port: 4999 }) });
+
+    const { optimizeDeps } = created[0] as unknown as { optimizeDeps: { exclude: string[] } };
+
+    expect(optimizeDeps.exclude).toEqual(
+      expect.arrayContaining(['@design-explore', '@design-system', '@design-system/kit']),
+    );
+  });
+
+  it('gives each checkout its own Vite cache, stable across restarts', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const one = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const two = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    mkdirSync(join(one, 'node_modules'));
+    symlinkSync(join(one, 'node_modules'), join(two, 'node_modules'));
+
+    await serveDesign({ target: one });
+    await serveDesign({ target: two });
+    await serveDesign({ target: one });
+
+    const real = (dir?: string) => join(realpathSync(dirname(dir ?? '')), basename(dir ?? ''));
+
+    expect(real(created[0]?.cacheDir)).not.toBe(real(created[1]?.cacheDir));
+    expect(real(created[0]?.cacheDir)).toBe(real(created[2]?.cacheDir));
+  });
+
+  it("keeps a command's Vite cache apart from the user's server, so a command never deletes its optimized deps", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const config = readConfig(target) ?? {};
+
+    await serveDesign({ target });
+    await createDesignServer({ target, config, listen: false });
+    await createDesignServer({ target, config, listen: true, port: 0 });
+
+    expect(created[1]?.cacheDir).not.toBe(created[0]?.cacheDir);
+    expect(created[2]?.cacheDir).not.toBe(created[0]?.cacheDir);
+  });
+
+  it('gives commands that run at once a Vite cache each, and keeps the shared one for the next command', async () => {
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const config = readConfig(target) ?? {};
+
+    const one = await createDesignServer({ target, config, listen: false });
+    const two = await createDesignServer({ target, config, listen: true, port: 0 });
+    const [shared, apart] = [created[0]?.cacheDir ?? '', created[1]?.cacheDir ?? ''];
+
+    expect(apart).not.toBe(shared);
+
+    mkdirSync(apart, { recursive: true });
+    await two.close();
+    expect(existsSync(apart)).toBe(false);
+
+    await one.close();
+    await createDesignServer({ target, config, listen: false });
+
+    expect(created[2]?.cacheDir).toBe(shared);
+  });
+
+  it('keeps serving the frame assets it started with when the package is rebuilt', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const probe = `rebuild-probe-${process.pid}.txt`;
+    const installed = resolve(installedAssetRoot(), 'web', probe);
+
+    try {
+      mkdirSync(dirname(installed), { recursive: true });
+      writeFileSync(installed, 'started', 'utf8');
+      expect(await serveDesign({ target: makeTarget({ port: 4999 }) })).toBe(0);
+      writeFileSync(installed, 'rebuilt', 'utf8');
+
+      expect(readFileSync(resolve(created[0]?.root ?? '', probe), 'utf8')).toBe('started');
+    } finally {
+      rmSync(installed, { force: true });
+    }
+  });
+
+  it('serves the call registry and workspace aliases on the configured port', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.stubEnv('DE_PORT', '');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '1');
+    vi.spyOn(process.stdin, 'resume').mockImplementation(() => process.stdin);
+
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const [options] = created;
+    const plugin = options?.plugins[0];
+    const registry = plugin?.load(plugin.resolveId('virtual:design-explore') ?? '');
+
+    expect(options?.server).toMatchObject({ port: 4999, strictPort: true });
+    expect(registry).toContain('"app/one": () => import("/@fs/');
+    expect(registry).not.toContain('defaultCall');
+    expect(options?.resolve.alias.map((alias) => alias.replacement)).toEqual(
+      expect.arrayContaining([`${join(target, 'libs/x')}/`, join(target, 'libs/one.ts')]),
+    );
+  });
+
+  it('hands each project its theme names, and none to a project without them', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = makeTarget({ projects: { app: { themes: { surface: ['light', 'dark'] } }, bare: {} } });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const plugin = created[created.length - 1]?.plugins[0];
+    const env = plugin?.load(plugin.resolveId('virtual:design-explore/env') ?? '') ?? '';
+    const themesOf = new Function(`${env.replace(/export const/g, 'const')}; return themesOf;`)() as (
+      project: string,
+    ) => unknown;
+
+    expect(themesOf('app')).toEqual({ surface: ['light', 'dark'], color: [] });
+    expect(themesOf('bare')).toEqual({ surface: [], color: [] });
+    expect(themesOf('other')).toEqual({ surface: [], color: [] });
+  });
+
+  it('serves variant thumbnails and closes their browser with the server', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = makeTarget({ port: 4999 });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const mounted: string[] = [];
+    const closing: (() => void)[] = [];
+    const vite = {
+      moduleGraph: { getModuleById: () => null, invalidateModule: () => undefined },
+      ws: { send: () => undefined },
+      middlewares: { use: (path: string) => mounted.push(path) },
+      httpServer: { on: (event: string, listener: () => void) => event === 'close' && closing.push(listener) },
+      watcher: { add: () => undefined, on: () => undefined },
+    };
+
+    created[created.length - 1]?.plugins[0]?.configureServer(vite);
+
+    expect(mounted).toContain('/__design/thumb');
+    expect(closing).toHaveLength(1);
+  });
+});
+
+type Handler = (request: IncomingMessage, response: ServerResponse) => void;
+
+const acme = () => {
+  const target = mkdtempSync(join(tmpdir(), 'cli-serve-system-'));
+
+  targets.push(target);
+
+  cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+  mkdirSync(join(target, '.ethlete/design/calls/acme/hero'), { recursive: true });
+  writeFileSync(
+    join(target, '.ethlete/design/calls/acme/hero/call.ts'),
+    "export default defineCall({\n  legacy: true,\n  eyebrow: '',\n});\n",
+  );
+
+  return target;
+};
+
+const checkSketchesHere: CheckSketches = async (request) => {
+  const listing = openSketchListingAt(request);
+
+  if (typeof listing === 'string') throw new Error(listing);
+
+  return listing;
+};
+
+const serveAcme = async (
+  target: string,
+  moduleOf?: (id: string) => unknown,
+  checkSketches: CheckSketches = checkSketchesHere,
+) => {
+  vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+  expect(await serveDesign({ target, checkSketches })).toBe(0);
+
+  const plugin = created[created.length - 1]?.plugins[0];
+  const handlers = new Map<string, Handler>();
+  const watchers = new Map<string, (file: string) => void>();
+  const sent: unknown[] = [];
+  const invalidated: string[] = [];
+  const loaded: string[] = [];
+  const modulesByFile = new Map<string, { id: string; importers: Set<never> }[]>();
+  const vite = {
+    moduleGraph: {
+      getModuleById: (id: string) => ({ id }),
+      idToModuleMap: new Map(
+        ['/w/acme-base/components/card/card.ts?design-product=acme', '/w/acme-base/foundations/tokens/tokens.css'].map(
+          (id) => [id, { id }],
+        ),
+      ),
+      invalidateModule: (module: { id: string }) => invalidated.push(module.id),
+      getModulesByFile: (file: string) => modulesByFile.get(file),
+    },
+    ws: { send: (message: unknown) => sent.push(message) },
+    environments: { client: { hot: { send: (message: unknown) => sent.push(message) } } },
+    middlewares: { use: (path: string, handler: Handler) => handlers.set(path, handler) },
+    httpServer: { on: () => undefined },
+    watcher: {
+      add: () => undefined,
+      on: (event: string, listener: (file: string) => void) => watchers.set(event, listener),
+    },
+    ssrLoadModule: async (id: string) => {
+      loaded.push(id);
+
+      return (
+        moduleOf?.(id) ??
+        (id.includes('/calls/')
+          ? { default: { eyebrow: '', headline: 'Hero', legacy: true, frameWidth: 640, variants: [] } }
+          : { default: { note: 'n', states: { one: {} } } })
+      );
+    },
+  };
+
+  plugin?.configureServer(vite);
+
+  const opened: EventEmitter[] = [];
+  const ask = (path: string, query = '', method = 'GET', body?: unknown) =>
+    new Promise<{ status: number; body: unknown; headers: Record<string, string> }>((done) => {
+      const headers: Record<string, string> = {};
+      const response = Object.assign(new EventEmitter(), {
+        statusCode: 200,
+        writableFinished: false,
+        setHeader: (name: string, value: string) => (headers[name] = value),
+        end: (body: string) => {
+          response.writableFinished = true;
+          done({ status: response.statusCode, body: JSON.parse(body) as unknown, headers });
+        },
+      });
+
+      opened.push(response);
+
+      const request = {
+        url: query,
+        method,
+        async *[Symbol.asyncIterator]() {
+          if (body !== undefined) yield Buffer.from(JSON.stringify(body));
+        },
+      };
+
+      handlers.get(path)?.(request as unknown as IncomingMessage, response as unknown as ServerResponse);
+    });
+
+  return {
+    plugin,
+    ask,
+    closeAsked: (index: number) => opened[index]?.emit('close'),
+    handlers,
+    watchers,
+    sent,
+    invalidated,
+    loaded,
+    modulesByFile,
+    hot: vite.environments.client.hot,
+  };
+};
+
+describe('the design server for a design system', () => {
+  it('replaces Studio frames after Vite re-optimizes dependencies with HMR disabled', async () => {
+    const { handlers, hot, sent } = await serveAcme(acme());
+    const written: string[] = [];
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
+    );
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    hot.send({ type: 'full-reload', path: '*', triggeredBy: '/repo/libs/a.ts' });
+    const lines = logged.mock.calls.map(([line]) => line);
+
+    logged.mockRestore();
+
+    expect(lines).toContain('[design] vite full-reload: /repo/libs/a.ts');
+    expect(written).toHaveLength(2);
+    expect(written[1]).toContain('event: parts\n');
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({ revision: 1, all: true });
+    expect(sent).toEqual([{ type: 'full-reload', path: '*', triggeredBy: '/repo/libs/a.ts' }]);
+    hot.send({ type: 'connected' });
+    expect(written).toHaveLength(2);
+  });
+
+  it('answers the parts list of every product, or of one, and 404 for an unknown one', async () => {
+    const { ask, loaded } = await serveAcme(acme());
+    const all = await ask('/__design/system');
+    const one = (await ask('/__design/system', '?product=acme')).body as { name: string; parts: unknown[] }[];
+
+    expect(all.status).toBe(200);
+    expect(all.headers['access-control-allow-origin']).toBe('*');
+    expect((all.body as { name: string }[]).map((product) => product.name)).toEqual(['acme-base', 'acme']);
+    expect(one.map((product) => product.name)).toEqual(['acme']);
+    expect(one[0]?.parts[0]).toEqual({
+      layer: 'foundations',
+      name: 'palette',
+      origin: 'product',
+      file: '.ethlete/design/acme/foundations/palette/palette.ts',
+      note: 'n',
+      madeBy: [],
+      states: ['one'],
+      interactions: [],
+      kitUses: 0,
+      usedIn: [],
+      usedBy: [],
+      changedOutsideSketch: false,
+      problems: [],
+    });
+    expect(loaded).toContainEqual(expect.stringMatching(/acme-base\/components\/card\/card\.ts\?design-product=acme$/));
+    expect((await ask('/__design/system', '?product=nope')).status).toBe(404);
+  });
+
+  it('lists the calls and marks one transferred on POST only', async () => {
+    const target = acme();
+    const { ask } = await serveAcme(target);
+    const callFile = join(target, '.ethlete/design/calls/acme/hero/call.ts');
+
+    expect((await ask('/__design/calls')).body).toEqual([expect.objectContaining({ slug: 'acme/hero', legacy: true })]);
+    expect((await ask('/__design/transfer', '?call=acme/hero')).status).toBe(405);
+    expect(await ask('/__design/transfer', '?call=acme/hero', 'POST')).toMatchObject({
+      status: 200,
+      body: { result: 'marked' },
+    });
+    expect(readFileSync(callFile, 'utf8')).toContain('  legacy: true,\n  transferred: true,\n');
+    expect((await ask('/__design/transfer', '?call=acme/none', 'POST')).status).toBe(404);
+  });
+
+  it("serves each product's parts as that product resolves them, and its stylesheet and head", async () => {
+    const target = acme();
+    const config = JSON.parse(readFileSync(join(target, '.ethlete/design/config.json'), 'utf8')) as {
+      products: Record<string, Record<string, unknown>>;
+    };
+
+    config.products['acme'] = {
+      ...config.products['acme'],
+      styles: ['acme.css', 'acme-tokens.css'],
+      head: 'head.html',
+    };
+    writeFileSync(join(target, '.ethlete/design/config.json'), JSON.stringify(config));
+    writeFileSync(join(target, 'head.html'), '<link rel="icon" href="acme.svg">');
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+    const env = plugin?.load(plugin.resolveId('virtual:design-explore/env') ?? '') ?? '';
+    const html = (url: string) =>
+      plugin?.transformIndexHtml.handler('<!--head-->', { path: '/frame.html', originalUrl: url });
+
+    expect(system).toMatch(
+      /"acme": \{[^}]*"components\/card": \(\) => import\("\/@fs\/[^"]*acme-base\/components\/card\/card\.ts\?design-product=acme"\)/,
+    );
+    expect(env).toMatch(
+      /productEnvs = \{\n {2}"acme-base": \(\) => Promise.resolve\(\),\n {2}"acme": \(\) => Promise.resolve\(\)\.then\(\(\) => import\("[^"]*acme\.css\?design-product=acme"\)\)\.then\(\(\) => import\("[^"]*acme-tokens\.css\?design-product=acme"\)\),/,
+    );
+    expect(html('/frame.html?product=acme&part=components/card&state=default')).toBe(
+      '<link rel="icon" href="acme.svg">',
+    );
+    expect(html('/frame.html?product=acme-base&part=components/card&state=default')).toBe('<!--head-->');
+    expect(plugin?.resolveId('@system/components/button', `${join(target, 'x.ts')}?design-product=acme`)).toMatch(
+      /acme\/components\/button\/button\.ts\?design-product=acme$/,
+    );
+  });
+
+  it('holds each frame document for the delay in the environment, and no other path, only when it is set', async () => {
+    const unset = await serveAcme(acme());
+
+    vi.stubEnv(DELAY_FRAMES_ENV, '60');
+
+    const set = await serveAcme(acme());
+
+    vi.unstubAllEnvs();
+
+    expect(unset.handlers.has('/frame.html')).toBe(false);
+    expect([...set.handlers.keys()].filter((path) => !unset.handlers.has(path))).toEqual(['/frame.html']);
+
+    const next = vi.fn();
+    const hold = set.handlers.get('/frame.html') as unknown as (
+      request: unknown,
+      response: unknown,
+      next: () => void,
+    ) => void;
+
+    hold({}, {}, next);
+    await delay(30);
+    expect(next).not.toHaveBeenCalled();
+    await delay(60);
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebuilds the parts registry and every import a product resolved when a part file comes or goes, and leaves the frames to Studio', async () => {
+    const target = acme();
+    const { watchers, sent, invalidated } = await serveAcme(target);
+
+    watchers.get('add')?.(join(target, '.ethlete/design/acme/components/badge/badge.ts'));
+
+    watchers.get('add')?.(join(target, 'elsewhere.ts'));
+
+    expect(invalidated).toEqual([
+      '/w/acme-base/components/card/card.ts?design-product=acme',
+      '\0virtual:design-explore/env',
+      '\0virtual:design-explore/system',
+    ]);
+    expect(sent).toEqual([]);
+  });
+
+  it('keeps serving when a product file that came is not readable yet, and redraws it on the next event', async () => {
+    const target = acme();
+    const { ask, watchers, invalidated } = await serveAcme(target);
+    const file = join(target, DESIGN_DIR, 'acme/pages/flows/flows.ts');
+
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, 'export default {};', { mode: 0o200 });
+    chmodSync(file, 0o200);
+
+    expect(() => watchers.get('add')?.(file)).not.toThrow();
+
+    chmodSync(file, 0o644);
+    invalidated.length = 0;
+    watchers.get('change')?.(file);
+    watchers.get('add')?.(file);
+
+    expect(invalidated).toContain('\0virtual:design-explore/system');
+    expect((await ask('/__design/system', '?product=acme')).status).toBe(200);
+  });
+
+  it('serves a product added to config.json while it runs, and keeps the last good config when it breaks', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as { products: Record<string, unknown> };
+    const { ask, watchers, sent } = await serveAcme(target);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(404);
+
+    writeFileSync(configPath, JSON.stringify({ products: { ...config.products, extra: {} } }));
+    watchers.get('change')?.(configPath);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(200);
+    expect(sent).toEqual([]);
+
+    writeFileSync(configPath, '{ broken');
+    watchers.get('change')?.(configPath);
+
+    expect(error).toHaveBeenCalledTimes(1);
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(200);
+
+    writeFileSync(configPath, JSON.stringify({ products: { acme: config.products['acme'] } }));
+    watchers.get('change')?.(configPath);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(404);
+  });
+
+  it('ignores a comment or a sketch decision when it keeps the parts registry', async () => {
+    const target = acme();
+    const { watchers, sent } = await serveAcme(target);
+
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/notes/20260101T000000Z-ab12.json'));
+
+    expect(sent).toEqual([]);
+  });
+
+  it('signals a change to a comment, note or flow file on its own event stream', async () => {
+    const target = acme();
+    const { handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const closed: (() => void)[] = [];
+    const response = {
+      writeHead: () => response,
+      write: (chunk: string) => written.push(chunk),
+    };
+    const request = { on: (_event: string, listener: () => void) => closed.push(listener) };
+
+    handlers.get('/__design/comment-events')?.(
+      request as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/components/card/card.ts'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/notes/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/flows/sign-in.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/flows/checkout.json'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/flows/checkout.json'));
+    closed.forEach((close) => close());
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+
+    expect(written).toEqual([
+      ': open\n\n',
+      'event: comments\ndata: {}\n\n',
+      'event: parts\ndata: {"revision":0,"all":false,"parts":[]}\n\n',
+      'event: notes\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+    ]);
+  });
+
+  it('sends no event for a drawn file outside the design folder, and an empty parts event for a system file that redraws nothing', async () => {
+    const target = acme();
+    const { handlers, watchers, modulesByFile } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const drawn = join(target, 'src/styles.css');
+    const inside = join(target, DESIGN_DIR, 'acme/components/card/card.ts');
+
+    modulesByFile.set(drawn, [{ id: drawn, importers: new Set() }]);
+    modulesByFile.set(inside, [{ id: inside, importers: new Set() }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('change')?.(join(target, 'src/unused.ts'));
+    watchers.get('change')?.(drawn);
+
+    expect(written).toEqual([': open\n\n']);
+
+    watchers.get('change')?.(inside);
+
+    expect(written).toEqual([': open\n\n', 'event: parts\ndata: {"revision":0,"all":false,"parts":[]}\n\n']);
+  });
+
+  it('redraws the parts a rebuilt package file reaches once the rebuild settles, and drops its stale modules', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+
+    writeFileSync(configPath, JSON.stringify({ ...config, render: { packages: { '@kit/*': 'dist/libs/*' } } }));
+
+    const { handlers, watchers, modulesByFile, invalidated } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const built = join(target, 'dist/libs/kit/design/button.ts');
+    const part = productModuleIdOf({
+      file: join(target, DESIGN_DIR, 'acme/components/button/button.ts'),
+      product: 'acme',
+    });
+    const importer = { id: part, importers: new Set<never>() };
+
+    modulesByFile.set(built, [{ id: built, importers: new Set([importer]) as Set<never> }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('unlink')?.(built);
+    watchers.get('add')?.(join(target, 'dist/libs/kit/design/unused.ts'));
+    watchers.get('add')?.(built);
+    watchers.get('change')?.(built);
+
+    expect(invalidated).toEqual([]);
+    expect(written).toEqual([': open\n\n']);
+
+    await vi.waitFor(() => expect(invalidated).toEqual([built]));
+    expect(written).toHaveLength(2);
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({
+      revision: 1,
+      all: false,
+      parts: [{ product: 'acme', part: 'components/button' }],
+    });
+  });
+
+  it('keeps the shots of a package file a rebuild writes again unchanged, and redraws them once it changes', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+
+    writeFileSync(configPath, JSON.stringify({ ...config, render: { packages: { '@kit/*': 'dist/libs/*' } } }));
+
+    const { plugin, handlers, watchers, modulesByFile, invalidated } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const built = join(target, 'dist/libs/kit/design/button.mjs');
+    const source = 'export const button = 1;\n';
+    const part = productModuleIdOf({
+      file: join(target, DESIGN_DIR, 'acme/components/button/button.ts'),
+      product: 'acme',
+    });
+
+    mkdirSync(dirname(built), { recursive: true });
+    writeFileSync(built, source);
+    plugin?.transform(source, built);
+    modulesByFile.set(built, [{ id: built, importers: new Set([{ id: part, importers: new Set() }]) as Set<never> }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+
+    watchers.get('unlink')?.(built);
+    writeFileSync(built, source);
+    watchers.get('add')?.(built);
+    watchers.get('change')?.(built);
+    watchers.get('change')?.(join(target, 'apps/studio/src/app/chat/chat-panel.component.ts'));
+    await new Promise((settled) => setTimeout(settled, 600));
+
+    expect(invalidated).toEqual([]);
+    expect(written).toEqual([': open\n\n']);
+
+    writeFileSync(built, 'export const button = 2;\n');
+    watchers.get('change')?.(built);
+
+    await vi.waitFor(() => expect(invalidated).toEqual([built]));
+    expect(JSON.parse(written[1]?.split('data: ')[1] ?? '')).toMatchObject({
+      all: false,
+      parts: [{ product: 'acme', part: 'components/button' }],
+    });
+  });
+
+  it('signals a call file change as calls and a sketch file change as sketches, and nothing else for either', async () => {
+    const target = acme();
+    const { handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'calls/app/one/call.ts'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'calls/app/two/call.ts'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'calls/app/two/call.ts'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+
+    expect(written).toEqual([
+      ': open\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: calls\ndata: {}\n\n',
+      'event: sketches\ndata: {}\n\n',
+      'event: sketches\ndata: {}\n\n',
+    ]);
+  });
+
+  it('keeps a quiet event stream alive with a heartbeat until the last listener leaves', async () => {
+    const { handlers } = await serveAcme(acme());
+    const written: string[] = [];
+    const closes: (() => void)[] = [];
+
+    vi.useFakeTimers();
+
+    try {
+      handlers.get('/__design/comment-events')?.(
+        { on: (_event: string, close: () => void) => closes.push(close) } as unknown as IncomingMessage,
+        { writeHead: () => undefined, write: (chunk: string) => written.push(chunk) } as unknown as ServerResponse,
+      );
+      vi.advanceTimersByTime(DESIGN_EVENTS_HEARTBEAT_MS);
+
+      expect(DESIGN_EVENTS_HEARTBEAT_MS).toBeLessThan(60_000);
+      expect(written).toEqual([': open\n\n', ': heartbeat\n\n']);
+
+      closes.forEach((close) => close());
+      vi.advanceTimersByTime(DESIGN_EVENTS_HEARTBEAT_MS * 3);
+
+      expect(written).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+const readySketch = (target: string) => {
+  const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+  const parsed = parseTarget('components/card');
+  const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+
+  if (typeof created === 'string') throw new Error(created);
+
+  return markSketchReady({ checkout: target, sketch: created }) as Sketch;
+};
+
+describe('the design server for flows', () => {
+  it('lists the flows of a product with the problems the flow rule finds in each', async () => {
+    const target = acme();
+    const dir = join(target, DESIGN_DIR, 'acme/flows');
+    const line = { from: { part: 'pages/home', state: 'empty' }, to: { part: 'pages/home', state: 'default' } };
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'browse.json'),
+      JSON.stringify({
+        frames: [
+          { part: 'pages/home', state: 'empty' },
+          { part: 'pages/home', state: 'default' },
+        ],
+        lines: [{ ...line, label: 'a film' }],
+      }),
+    );
+    writeFileSync(join(dir, 'gone.json'), JSON.stringify({ frames: [{ part: 'pages/home', state: 'loading' }] }));
+    writeFileSync(join(dir, 'torn.json'), '{');
+
+    const { ask } = await serveAcme(target);
+
+    expect(await ask('/__design/flows', '?product=acme')).toMatchObject({
+      status: 200,
+      body: {
+        flows: [
+          {
+            name: 'browse',
+            file: '.ethlete/design/acme/flows/browse.json',
+            frames: [
+              { part: 'pages/home', state: 'empty' },
+              { part: 'pages/home', state: 'default' },
+            ],
+            lines: [{ ...line, label: 'a film' }],
+            problems: [],
+          },
+          {
+            name: 'gone',
+            file: '.ethlete/design/acme/flows/gone.json',
+            frames: [{ part: 'pages/home', state: 'loading' }],
+            lines: [],
+            problems: [
+              {
+                rule: 'FLOW',
+                file: '.ethlete/design/acme/flows/gone.json',
+                message: 'pages/home has no state "loading" - fix or drop the frame',
+              },
+            ],
+          },
+        ],
+        unreadable: [{ file: '.ethlete/design/acme/flows/torn.json', problem: expect.stringMatching(/^is no JSON/) }],
+      },
+    });
+    expect((await ask('/__design/flows', '?product=nope')).status).toBe(404);
+    expect((await ask('/__design/flows', '?product=acme', 'POST')).status).toBe(405);
+  });
+});
+
+describe('the design server for sketches and comments', () => {
+  const sketchQuery = '?product=acme&sketch=components/card';
+
+  it('lists the open sketches with their variants and problems, and 404 for an unknown product', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask, loaded } = await serveAcme(target);
+    const listed = await ask('/__design/sketches', '?product=acme');
+
+    expect(listed.status).toBe(200);
+    expect(listed.body).toMatchObject({
+      sketches: [
+        {
+          target: 'components/card',
+          status: 'ready',
+          variants: ['a', 'b'],
+          rounds: [{ key: 'r1', title: '', note: '' }],
+          variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
+          dir: expect.stringContaining('components-card'),
+          problems: [{ variant: 'a' }, { variant: 'b' }],
+          targets: [
+            { variant: 'a', states: ['one'] },
+            { variant: 'b', states: ['one'] },
+          ],
+          report: null,
+        },
+      ],
+      unreadable: [],
+    });
+    expect(loaded).toContainEqual(expect.stringMatching(/components\/card\/card\.ts\?.*design-variant=a/u));
+    expect((await ask('/__design/sketches', '?product=nope')).status).toBe(404);
+    expect((await ask('/__design/sketches', '')).status).toBe(400);
+    expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
+  });
+
+  it('keeps answering other requests while it checks two hundred sketches', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const targets = Array.from({ length: 200 }, (_, index) => `components/card@s${String(index).padStart(3, '0')}`);
+    const problem = { rule: 'SKETCH', file: join(target, 'card.ts'), message: 'checked off the event loop' };
+
+    for (const name of targets) {
+      const parsed = parseTarget(name);
+      const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+      if (typeof created === 'string') throw new Error(created);
+    }
+
+    const checked = {
+      unreadable: [],
+      variants: targets.map((name) => ({ target: name, variant: 'a', problems: [problem] })),
+    };
+    let checks = 0;
+    const { ask } = await serveAcme(
+      target,
+      (id) =>
+        id.includes('/calls/')
+          ? undefined
+          : { default: { note: 'n', states: { one: {} }, render: () => ({ body: '<p></p>', styles: '' }) } },
+      async () => {
+        checks++;
+        await delay(100);
+
+        return checked;
+      },
+    );
+    let listedAt = Infinity;
+    let callsAt = Infinity;
+    const listings = Promise.all([
+      ask('/__design/sketches', '?product=acme'),
+      ask('/__design/sketches', '?product=acme'),
+    ]).finally(() => (listedAt = performance.now()));
+    const calls = delay(10)
+      .then(() => ask('/__design/calls'))
+      .finally(() => (callsAt = performance.now()));
+    const [[first, second], called] = await Promise.all([listings, calls]);
+
+    expect(called.status).toBe(200);
+    expect(first.status).toBe(200);
+    expect(second.body).toEqual(first.body);
+    expect(
+      (first.body as { sketches: { problems: unknown[] }[] }).sketches.map(({ problems }) => problems.length),
+    ).toEqual(Array.from({ length: 200 }, () => 1));
+    expect(checks).toBe(1);
+    expect(callsAt).toBeLessThan(listedAt);
+  }, 60_000);
+
+  it('compares the sketch `&sketch=` names alone and answers it while the rule check of the product still runs', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    for (const name of ['components/card@one', 'components/card@two']) {
+      const parsed = parseTarget(name);
+      const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+      if (typeof created === 'string') throw new Error(created);
+    }
+
+    let checks = 0;
+    let release = () => undefined as void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const { ask } = await serveAcme(target, undefined, async (request) => {
+      checks++;
+      await held;
+
+      return checkSketchesHere(request);
+    });
+    let fullAt = Infinity;
+    const full = ask('/__design/sketches', '?product=acme').finally(() => (fullAt = performance.now()));
+    const opened = await ask('/__design/sketches', '?product=acme&sketch=components/card@two');
+    const openedAt = performance.now();
+
+    expect(opened.status).toBe(200);
+    expect((opened.body as { sketches: Record<string, unknown>[] }).sketches).toEqual([
+      expect.objectContaining({ target: 'components/card@two', targets: [expect.objectContaining({ variant: 'a' })] }),
+    ]);
+    expect((opened.body as { sketches: Record<string, unknown>[] }).sketches[0]).not.toHaveProperty('problems');
+    expect(checks).toBe(1);
+
+    release();
+
+    expect((await full).body).toMatchObject({
+      sketches: [{ problems: [{ variant: 'a' }] }, { problems: [{ variant: 'a' }] }],
+    });
+    expect(openedAt).toBeLessThan(fullAt);
+  });
+
+  it('lists the states of every target part of a sketch, the first target first', async () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const [card, hero] = [parseTarget('components/card'), parseTarget('elements/hero')];
+
+    if (typeof card === 'string' || typeof hero === 'string') throw new Error('unparsed');
+
+    const created = createSketch({ product, sketch: card, others: [hero], variants: ['a'] });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const { ask } = await serveAcme(target);
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targetParts: string[]; targets: { part: string; variant: string }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targetParts).toEqual(['components/card', 'elements/hero']);
+    expect(listed.sketches[0]?.targets.map(({ part, variant }) => `${part}:${variant}`)).toEqual([
+      'components/card:a',
+      'elements/hero:a',
+    ]);
+  });
+
+  it('lists the one target part of a one-target sketch', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targetParts: string[]; targets: { part: string }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targetParts).toEqual(['components/card']);
+    expect(listed.sketches[0]?.targets.map(({ part }) => part)).toEqual(['components/card', 'components/card']);
+  });
+
+  it('lists the states a variant adds and drops and its changed part note against the product', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target, (id) =>
+      id.includes('design-variant=a') ? { default: { note: 'n, open only on focus', states: { two: {} } } } : undefined,
+    );
+    const listed = (await ask('/__design/sketches', '?product=acme')).body as {
+      sketches: { targets: { variant: string; changes?: unknown }[] }[];
+    };
+
+    expect(listed.sketches[0]?.targets).toMatchObject([
+      {
+        variant: 'a',
+        changes: { added: ['two'], dropped: ['one'], note: { before: 'n', after: 'n, open only on focus' } },
+      },
+      { variant: 'b', changes: { added: [], dropped: [], note: null } },
+    ]);
+  });
+
+  it('answers the quick sketch list with the targets but without problems or pictures, and the full one with both', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const loaded: string[] = [];
+    const { ask } = await serveAcme(target, (id) => {
+      loaded.push(id);
+
+      return { default: { states: { one: {} } } };
+    });
+    type Listed = {
+      sketches: {
+        target: string;
+        variants: string[];
+        problems?: unknown[];
+        targets?: { variant: string; states: string[]; unchanged?: string[] }[];
+      }[];
+    };
+    const quick = (await ask('/__design/sketches', '?product=acme&unchanged=no')).body as Listed;
+
+    expect(quick.sketches.map(({ target, variants }) => ({ target, variants }))).toEqual([
+      { target: 'components/card', variants: ['a', 'b'] },
+    ]);
+    expect(
+      quick.sketches[0]?.targets?.map(({ variant, states, unchanged }) => ({ variant, states, unchanged })),
+    ).toEqual([
+      { variant: 'a', states: ['one'], unchanged: undefined },
+      { variant: 'b', states: ['one'], unchanged: undefined },
+    ]);
+    expect(quick.sketches[0]?.problems).toBeUndefined();
+    expect(loaded).toHaveLength(3);
+
+    const full = (await ask('/__design/sketches', '?product=acme')).body as Listed;
+
+    expect(full.sketches[0]?.targets?.map(({ unchanged }) => unchanged)).toEqual([
+      expect.any(Array),
+      expect.any(Array),
+    ]);
+    expect(full.sketches[0]?.problems).toEqual(expect.any(Array));
+  });
+
+  const gatedSketchModules = () => {
+    let release = () => undefined as void;
+    const gate = new Promise<void>((done) => (release = done));
+    const moduleOf = (id: string) =>
+      id.includes('design-sketch') ? gate.then(() => ({ default: { note: 'n', states: { one: {} } } })) : undefined;
+
+    return { moduleOf, release };
+  };
+
+  it('finishes a shared full listing while one client that asked for it still waits', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { moduleOf, release } = gatedSketchModules();
+    const { ask, closeAsked, loaded } = await serveAcme(target, moduleOf);
+    const first = ask('/__design/sketches', '?product=acme');
+    const second = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+    closeAsked(0);
+    release();
+
+    const answered = await second;
+
+    expect(answered.status).toBe(200);
+    expect((answered.body as { sketches: { targets?: unknown[] }[] }).sketches[0]?.targets).toHaveLength(2);
+    expect((await first).status).toBe(200);
+  });
+
+  it('stops a full listing once every client that asked for it closed its request', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { moduleOf, release } = gatedSketchModules();
+    const { ask, closeAsked, loaded } = await serveAcme(target, moduleOf);
+    const first = ask('/__design/sketches', '?product=acme');
+    const second = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+
+    const started = loaded.length;
+
+    closeAsked(0);
+    closeAsked(1);
+    release();
+
+    expect((await first).status).toBe(500);
+    expect((await second).status).toBe(500);
+    expect(loaded).toHaveLength(started);
+  });
+
+  type WatcherCase = {
+    name: string;
+    event: 'add' | 'change' | 'unlink';
+    act: (context: { target: string; modulesByFile: Map<string, { id: string; importers: Set<never> }[]> }) => {
+      file: string;
+      states?: string[];
+    };
+    after: string[];
+  };
+
+  const cardDir = (target: string) => join(target, DESIGN_DIR, 'acme/sketches/components-card');
+
+  it.each<WatcherCase>([
+    {
+      name: 'a sketch file added',
+      event: 'add',
+      act: ({ target }) => {
+        const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+        const parsed = parseTarget('elements/hero');
+        const created =
+          typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a'] });
+
+        if (typeof created === 'string') throw new Error(created);
+
+        markSketchReady({ checkout: target, sketch: created });
+
+        return { file: join(target, DESIGN_DIR, 'acme/sketches/elements-hero/sketch.json') };
+      },
+      after: ['components/card  one', 'elements/hero  one'],
+    },
+    {
+      name: 'a sketch file changed',
+      event: 'change',
+      act: ({ target }) => {
+        const file = join(cardDir(target), 'sketch.json');
+        const sketch = JSON.parse(readFileSync(file, 'utf8')) as { rounds?: { title: string }[] };
+
+        writeFileSync(
+          file,
+          JSON.stringify({ ...sketch, rounds: sketch.rounds?.map((round) => ({ ...round, title: 'edited' })) }),
+        );
+
+        return { file };
+      },
+      after: ['components/card edited one'],
+    },
+    {
+      name: 'a sketch file deleted',
+      event: 'unlink',
+      act: ({ target }) => {
+        rmSync(cardDir(target), { recursive: true });
+
+        return { file: join(cardDir(target), 'sketch.json') };
+      },
+      after: [],
+    },
+    {
+      name: 'a part file changed',
+      event: 'change',
+      act: ({ target, modulesByFile }) => {
+        const file = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+
+        modulesByFile.set(file, [{ id: `${file}?design-product=acme`, importers: new Set() }]);
+
+        return { file, states: ['one', 'two'] };
+      },
+      after: ['components/card  one,two'],
+    },
+  ])('starts a new listing after $name instead of joining the running one', async ({ event, act, after }) => {
+    const target = acme();
+
+    readySketch(target);
+
+    let states = ['one'];
+    let release = () => undefined as void;
+    const gate = new Promise<void>((done) => (release = done));
+    const moduleOf = (id: string) => {
+      if (!id.includes('design-sketch')) return undefined;
+
+      const drawn = Object.fromEntries(states.map((state) => [state, {}]));
+
+      return gate.then(() => ({ default: { note: 'n', states: drawn } }));
+    };
+    const { ask, loaded, watchers, modulesByFile } = await serveAcme(target, moduleOf);
+    const listed = (answered: { body: unknown }) =>
+      (
+        answered.body as {
+          sketches: { target: string; rounds: { title: string }[]; targets?: { states: string[] }[] }[];
+        }
+      ).sketches.map(
+        (sketch) => `${sketch.target} ${sketch.rounds[0]?.title ?? ''} ${sketch.targets?.[0]?.states.join(',') ?? ''}`,
+      );
+    const before = ask('/__design/sketches', '?product=acme');
+
+    await vi.waitFor(() => expect(loaded.some((id) => id.includes('design-sketch'))).toBe(true));
+
+    const acted = act({ target, modulesByFile });
+
+    states = acted.states ?? states;
+    watchers.get(event)?.(acted.file);
+
+    const later = ask('/__design/sketches', '?product=acme');
+
+    release();
+
+    expect(listed(await before)).toEqual(['components/card  one']);
+    expect(listed(await later)).toEqual(after);
+  });
+
+  it('registers the parts of each sketch variant, resolved through that variant', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /"b": \{[^}]*"components\/card": \(\) => import\("\/@fs\/[^"]*components-card\/b\/components\/card\/card\.ts\?design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+    expect(system).toMatch(
+      /"b": \{[^}]*"elements\/hero": \(\) => import\("[^"]*acme\/elements\/hero\/hero\.ts\?design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+  });
+
+  // `sketch recommend components/tab-bar --variant a` while the server runs: the tomflix shell sketch redraws with tab bar a.
+  it('draws the part an open sketch lends in the variant it recommends now, and redraws the sketches that borrow it', async () => {
+    const { target, shell, tabBar } = tomflixShellAndTabBar({ recommend: 'b' });
+
+    targets.push(target);
+
+    const { plugin, handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const shellIdOf = (variant: string) =>
+      productModuleIdOf({
+        file: resolve(variantDirOf(shell, variant), 'elements/shell-app/shell-app.ts'),
+        product: 'tomflix',
+        sketch: { target: shell.target, variant },
+      });
+    const lentId = () => plugin?.resolveId('@system/components/tab-bar', shellIdOf('a'));
+    const tabBarIdOf = (variant: string) =>
+      productModuleIdOf({
+        file: resolve(variantDirOf(tabBar, variant), 'components/tab-bar/tab-bar.ts'),
+        product: 'tomflix',
+        sketch: { target: tabBar.target, variant },
+      });
+
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+
+    expect(lentId()).toBe(tabBarIdOf('b'));
+
+    const recommended = findSketch({
+      productDir: join(target, DESIGN_DIR, 'tomflix'),
+      product: 'tomflix',
+      sketch: parseTarget('components/tab-bar') as SketchTarget,
+    }) as Sketch;
+
+    writeSketchFile({ ...recommended, recommended: 'a' }, { base: recommended });
+    watchers.get('change')?.(join(tabBar.dir, SKETCH_FILE));
+
+    expect(lentId()).toBe(tabBarIdOf('a'));
+    expect(written.filter((chunk) => chunk.startsWith('event: parts'))).toEqual([
+      `event: parts\ndata: ${JSON.stringify({
+        revision: 1,
+        all: false,
+        parts: ['a', 'b'].flatMap((variant) =>
+          ['components/tab-bar', 'elements/shell-app'].map((part) => ({
+            product: 'tomflix',
+            part,
+            sketch: { target: shell.target, variant },
+          })),
+        ),
+      })}\n\n`,
+    ]);
+  });
+
+  it("registers each product's tokens stylesheet as it resolves it, and each sketch variant's", async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /export const tokens = \{\n {2}"acme-base": \(\) => import\("[^"]*acme-base\/foundations\/tokens\/tokens\.css\?inline&design-product=acme-base"\),\n {2}"acme": \(\) => import\("[^"]*acme-base\/foundations\/tokens\/tokens\.css\?inline&design-product=acme"\),\n\};/,
+    );
+    expect(system).toMatch(
+      /export const sketchTokens = \{[^;]*"b": \(\) => import\("[^"]*tokens\.css\?inline&design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+  });
+
+  it('registers one loader that joins the stylesheets of every part a product names as tokens, in order', async () => {
+    const target = acme();
+    const configFile = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configFile, 'utf8'));
+
+    config.products.acme.tokens = ['foundations/tokens', 'foundations/missing', 'foundations/palette'];
+    writeFileSync(configFile, JSON.stringify(config));
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /\n {2}"acme": \(\) => Promise\.all\(\[import\("[^"]*tokens\/tokens\.css\?inline&design-product=acme"\), import\("[^"]*palette\/palette\.css\?inline&design-product=acme"\)\]\)\.then\(/,
+    );
+  });
+
+  it('registers no tokens for a product whose system has no tokens part', async () => {
+    const target = acme();
+
+    rmSync(join(target, DESIGN_DIR, 'acme-base/foundations/tokens'), { recursive: true });
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toContain('export const tokens = {\n\n};');
+  });
+
+  it('marks the root of a part module, as the product or a sketch variant draws it', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = createSystemModules({ target, config: readConfig(target) ?? {} });
+    const sketch = { target: 'components/card', variant: 'b' };
+    const idOf = (part: string, drawn: typeof sketch | null) =>
+      productModuleIdOf({
+        file: system.partOf({ product: 'acme', part, sketch: drawn })?.file ?? '',
+        product: 'acme',
+        sketch: drawn,
+      });
+    const code = 'export default definePart({});\n';
+
+    expect(plugin?.transform(code, idOf('elements/hero', null))).toContain('__etMarkPart(__etPart, "elements/hero")');
+    expect(plugin?.transform(code, idOf('components/card', sketch))).toContain(
+      '__etMarkPart(__etPart, "components/card")',
+    );
+    expect(plugin?.transform(code, '/some/other.ts')).toBeNull();
+  });
+
+  // Decision: a pick in Studio is a merge; there is no picked-but-unmerged state.
+  it('merges a pick at once on POST only, and 422 for a variant that does not exist', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const file = join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json');
+
+    expect((await ask('/__design/sketch-decision', sketchQuery)).status).toBe(405);
+    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'z' })).status).toBe(
+      422,
+    );
+    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'nope' })).status).toBe(400);
+    expect(
+      await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b', comment: 'calmer' }),
+    ).toMatchObject({ status: 200, body: { merged: ['components/card'] } });
+    expect(existsSync(file)).toBe(false);
+    expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
+  }, 120_000);
+
+  it('records a designer rejection, refuses its pick and merge with the reason, and reopens it', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const decide = (body: Record<string, unknown>) => ask('/__design/sketch-decision', sketchQuery, 'POST', body);
+
+    expect((await decide({ kind: 'reject' })).status).toBe(400);
+    expect((await decide({ kind: 'reason', variant: 'b' })).status).toBe(400);
+    expect(await decide({ kind: 'reject', variant: 'b' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ by: 'designer', decidedAt: expect.any(String) }] } },
+    });
+    expect(await decide({ kind: 'reason', variant: 'b', reason: 'too flat' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ by: 'designer', reason: 'too flat', reasonBy: 'designer' }] } },
+    });
+    expect(await decide({ kind: 'pick', variant: 'b' })).toMatchObject({
+      status: 422,
+      body: { error: 'components/card variant b is rejected by the designer: too flat - reopen it first' },
+    });
+    expect(await decide({ kind: 'reopen', variant: 'b', reason: 'second look' })).toMatchObject({
+      status: 200,
+      body: { rejections: { b: [{ reopened: { by: 'designer', reason: 'second look' } }] } },
+    });
+    expect(await decide({ kind: 'pick', variant: 'b' })).toMatchObject({
+      status: 200,
+      body: { merged: ['components/card'] },
+    });
+  }, 120_000);
+
+  it('discards a sketch, and refuses a merge without a pick and a pick whose merge is refused', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { padding: 0; }');
+    expect(await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b' })).toMatchObject({
+      status: 422,
+      body: {
+        error: expect.stringContaining('changed in the product'),
+        changed: ['components/card'],
+        rebase: expect.stringMatching(/ sketch rebase components\/card --product acme --by <model id>$/u),
+      },
+    });
+    expect(await ask('/__design/sketch-discard', sketchQuery, 'POST')).toMatchObject({
+      status: 200,
+      body: { discarded: 'components/card' },
+    });
+    expect((await ask('/__design/sketch-discard', sketchQuery, 'POST')).status).toBe(404);
+  }, 120_000);
+
+  it('writes, lists and finishes a canvas comment', async () => {
+    const target = acme();
+    gitExec(['init', '--quiet'], { cwd: target });
+    gitExec(['config', 'user.name', 'human Test'], { cwd: target });
+
+    const { ask } = await serveAcme(target);
+    const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };
+    const added = await ask('/__design/comment', '?product=acme', 'POST', { ...on, point: { x: 12, y: 30 } });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 12, y: 30 }, replies: [], stale: null } });
+    expect((await ask('/__design/comment', '?product=acme', 'POST', { ...on, size: 'gone' })).status).toBe(422);
+    expect((await ask('/__design/comment', '?product=acme')).status).toBe(405);
+    expect((await ask('/__design/comments', '?product=acme&part=pages/home')).body).toMatchObject({
+      comments: [{ id, text: on.text }],
+    });
+    expect((await ask('/__design/comments', '?product=acme&part=pages/other')).body).toMatchObject({ comments: [] });
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ userName: 'human Test' });
+    expect(await ask('/__design/comment-reply', '?product=acme', 'POST', { id, text: 'The title.' })).toMatchObject({
+      status: 200,
+      body: { id, replies: [{ by: 'user', text: 'The title.', createdAt: expect.any(String) }], stale: null },
+    });
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({
+      comments: [{ id, replies: [{ by: 'user', text: 'The title.' }] }],
+    });
+    expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id })).status).toBe(400);
+    expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id: 'nope', text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/comment-reply', '?product=acme')).status).toBe(405);
+    const home = join(target, '.ethlete/design/acme/pages/home/home.ts');
+    const note = readFileSync(home, 'utf8');
+
+    expect((await ask('/__design/comment-done', '?product=acme', 'GET')).status).toBe(405);
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', {})).status).toBe(400);
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', { id, note: 'Fine now.' })).status).toBe(200);
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', { id })).status).toBe(422);
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({
+      comments: [{ id, stale: null, resolved: { by: 'user', note: 'Fine now.' } }],
+    });
+
+    const withdrawn = (await ask('/__design/comment', '?product=acme', 'POST', on)).body as { id: string };
+
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', {})).status).toBe(400);
+    expect(
+      await ask('/__design/comment-reply', '?product=acme', 'POST', { id: withdrawn.id, text: 'Gone.' }),
+    ).toMatchObject({ status: 200 });
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: -1 })).status,
+    ).toBe(400);
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: 1 })).status,
+    ).toBe(422);
+    expect(
+      (await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id, reply: 0 })).status,
+    ).toBe(200);
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({
+      comments: [{ id }, { id: withdrawn.id, replies: [] }],
+    });
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(200);
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(404);
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({ comments: [{ id }] });
+    expect(readFileSync(home, 'utf8')).toBe(note);
+  });
+
+  it('writes, lists, changes and deletes a note on a state', async () => {
+    const target = acme();
+    const { ask } = await serveAcme(target);
+    const on = { part: 'pages/home', state: 'empty', text: 'The first visit.' };
+    const added = await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 }, size: 'phone' });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 4, y: 8 }, size: 'phone', stale: null } });
+    expect((await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 } })).status).toBe(422);
+    expect((await ask('/__design/note', '?product=acme', 'POST', { ...on, state: 'loading' })).status).toBe(422);
+    expect((await ask('/__design/note', '?product=acme')).status).toBe(405);
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({
+      notes: [{ id, ...on, file: `.ethlete/design/acme/notes/${id}.json` }],
+      unreadable: [],
+    });
+    expect(
+      await ask('/__design/note-change', '?product=acme', 'POST', { id, text: 'A first visit.', point: null }),
+    ).toMatchObject({ status: 200, body: { id, text: 'A first visit.' } });
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({
+      notes: [{ id, text: 'A first visit.' }],
+    });
+    expect((await ask('/__design/note-change', '?product=acme', 'POST', { id, text: '' })).status).toBe(422);
+    expect((await ask('/__design/note-change', '?product=acme', 'POST', { id: 'nope', text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/note-delete', '?product=acme', 'POST', { id })).status).toBe(200);
+    expect((await ask('/__design/note-delete', '?product=acme', 'POST', { id })).status).toBe(404);
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({ notes: [] });
+  });
+
+  it('adds, changes and deletes a free note of a flow and keeps the rest of the flow file', async () => {
+    const target = acme();
+    const dir = join(target, DESIGN_DIR, 'acme/flows');
+    const flow = { frames: [{ part: 'pages/home', state: 'empty' }], owner: 'kept' };
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'browse.json'), JSON.stringify(flow));
+
+    const { ask } = await serveAcme(target);
+    const added = await ask('/__design/flow-note', '?product=acme&flow=browse', 'POST', {
+      text: 'Browsing',
+      at: { x: 0, y: -80 },
+    });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { text: 'Browsing', at: { x: 0, y: -80 } } });
+    expect((await ask('/__design/flows', '?product=acme')).body).toMatchObject({
+      flows: [{ name: 'browse', notes: [{ id, text: 'Browsing', at: { x: 0, y: -80 } }], problems: [] }],
+    });
+    expect(
+      await ask('/__design/flow-note-change', '?product=acme&flow=browse', 'POST', { id, text: 'Browse' }),
+    ).toMatchObject({ status: 200, body: { id, text: 'Browse', at: { x: 0, y: -80 } } });
+    expect((await ask('/__design/flow-note', '?product=acme', 'POST', { text: 'x' })).status).toBe(400);
+    expect((await ask('/__design/flow-note', '?product=acme&flow=gone', 'POST', { text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/flow-note', '?product=acme&flow=browse', 'POST', { text: 3 })).status).toBe(422);
+    expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(200);
+    expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(404);
+    expect(JSON.parse(readFileSync(join(dir, 'browse.json'), 'utf8'))).toEqual(flow);
+  });
+});
+
+describe('sendHeldJson', () => {
+  const fakeResponse = () => {
+    const sent: string[] = [];
+    const response = Object.assign(new EventEmitter(), {
+      statusCode: 0,
+      headers: {} as Record<string, unknown>,
+      writeHead: vi.fn((status: number, headers: Record<string, unknown>) => {
+        response.statusCode = status;
+        Object.assign(response.headers, headers);
+      }),
+      setHeader: vi.fn((name: string, value: unknown) => (response.headers[name] = value)),
+      write: vi.fn((chunk: string) => sent.push(chunk)),
+      end: vi.fn((chunk?: string) => sent.push(chunk ?? '')),
+    });
+
+    return { response, sent };
+  };
+
+  afterEach(() => vi.useRealTimers());
+
+  it('sends a space while a slow answer is pending, so WebKit does not fail the fetch after 60 s', async () => {
+    vi.useFakeTimers();
+    const { response, sent } = fakeResponse();
+    let resolveAnswer: (answer: { status: number; body: unknown }) => void = () => undefined;
+    const done = sendHeldJson(
+      response as unknown as ServerResponse,
+      new Promise((resolve) => (resolveAnswer = resolve)),
+    );
+
+    await vi.advanceTimersByTimeAsync(KEEP_ALIVE_MS * 5);
+    resolveAnswer({ status: 404, body: { error: 'gone' } });
+    await done;
+
+    expect(response.statusCode).toBe(200);
+    expect(sent.slice(0, 5)).toEqual([' ', ' ', ' ', ' ', ' ']);
+    expect(JSON.parse(sent.join(''))).toEqual({ error: 'gone' });
+  });
+
+  it('answers a quick answer with its own status and no padding', async () => {
+    const { response, sent } = fakeResponse();
+
+    await sendHeldJson(
+      response as unknown as ServerResponse,
+      Promise.resolve({ status: 404, body: { error: 'gone' } }),
+    );
+
+    expect(response.statusCode).toBe(404);
+    expect(sent).toEqual([JSON.stringify({ error: 'gone' })]);
+  });
+});

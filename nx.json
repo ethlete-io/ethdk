@@ -96,6 +96,7 @@
         "libs/components/**/*",
         "libs/contentful/**/*",
         "libs/core/**/*",
+        "libs/design/**/*",
         "libs/eslint-plugin/**/*",
         "libs/query/**/*",
         "libs/query-devtools/**/*",

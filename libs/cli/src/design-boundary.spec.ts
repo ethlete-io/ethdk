@@ -4,13 +4,13 @@ import { dirname, join, relative, sep } from 'path';
 import ts from 'typescript';
 import { afterAll, describe, expect, it } from 'vitest';
 
-const COMMAND_WIRING_SPECIFIER = './lib/design';
+const COMMAND_WIRING_SPECIFIER = '@ethlete/design';
 const COMMAND_WIRING_NAME = 'designCommand';
 
 const NON_LITERAL_LOADS_ALLOWED = new Set<string>([
-  'lib/design/browser.ts',
-  'lib/design/commit-hunks.ts',
-  'lib/design/render-worker.ts',
+  'design/src/lib/design/browser.ts',
+  'design/src/lib/design/commit-hunks.ts',
+  'design/src/lib/design/render-worker.ts',
 ]);
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}${sep}`);
@@ -32,7 +32,8 @@ interface Layout {
   options: ts.CompilerOptions;
 }
 
-const designDirOf = (layout: Layout) => join(layout.root, 'lib', 'design');
+const designDirOf = (layout: Layout) => join(layout.root, 'design', 'src');
+const cliIndexOf = (layout: Layout) => join(layout.root, 'cli', 'src', 'index.ts');
 
 interface Load {
   specifier: string | null;
@@ -83,17 +84,60 @@ const loadsOf = (file: string): Load[] => {
   return loads;
 };
 
+const resolutionCaches = new WeakMap<Layout, ts.ModuleResolutionCache>();
+
+const resolutionCacheOf = (layout: Layout) => {
+  const cached = resolutionCaches.get(layout);
+
+  if (cached) return cached;
+
+  const made = ts.createModuleResolutionCache(layout.root, (name) => name, layout.options);
+
+  resolutionCaches.set(layout, made);
+
+  return made;
+};
+
 const resolvedTarget = (layout: Layout, file: string, specifier: string) => {
-  const resolved = ts.resolveModuleName(specifier, file, layout.options, ts.sys).resolvedModule;
+  const resolved = ts.resolveModuleName(
+    specifier,
+    file,
+    layout.options,
+    ts.sys,
+    resolutionCacheOf(layout),
+  ).resolvedModule;
 
   if (resolved) return resolved.resolvedFileName.split('/').join(sep);
 
   return specifier.startsWith('.') ? join(dirname(file), specifier) : null;
 };
 
-const localLoadsOf = (layout: Layout, file: string) =>
-  loadsOf(file).flatMap((load) => {
-    if (load.specifier === null) return [{ ...load, target: null as string | null, unresolvable: true }];
+const localLoadsCaches = new WeakMap<Layout, Map<string, LocalLoad[]>>();
+
+interface LocalLoad extends Load {
+  target: string | null;
+  unresolvable: boolean;
+}
+
+const localLoadsOf = (layout: Layout, file: string): LocalLoad[] => {
+  const cache = localLoadsCaches.get(layout) ?? new Map<string, LocalLoad[]>();
+
+  localLoadsCaches.set(layout, cache);
+
+  const cached = cache.get(file);
+
+  if (cached) return cached;
+
+  const loads = uncachedLocalLoadsOf(layout, file);
+
+  cache.set(file, loads);
+
+  return loads;
+};
+
+const uncachedLocalLoadsOf = (layout: Layout, file: string): LocalLoad[] =>
+  loadsOf(file).flatMap((load): LocalLoad[] => {
+    if (load.specifier === null) return [{ ...load, target: null, unresolvable: true }];
 
     const target = resolvedTarget(layout, file, load.specifier);
 
@@ -120,7 +164,7 @@ const outsideImportsOfDesign = (layout: Layout, files: string[]) =>
     .filter(
       ({ file, specifier, names }) =>
         !(
-          file === join(layout.root, 'index.ts') &&
+          file === cliIndexOf(layout) &&
           specifier === COMMAND_WIRING_SPECIFIER &&
           names !== 'all' &&
           names.length === 1 &&
@@ -132,10 +176,12 @@ const outsideImportsOfDesign = (layout: Layout, files: string[]) =>
 const designWritesBypassingJournal = (layout: Layout, files: string[]) =>
   files
     .filter(
-      (file) => isInside(designDirOf(layout), file) && file !== join(designDirOf(layout), 'system', 'design-file.ts'),
+      (file) =>
+        isInside(designDirOf(layout), file) &&
+        file !== join(designDirOf(layout), 'lib', 'design', 'system', 'design-file.ts'),
     )
     .flatMap((file) => localLoadsOf(layout, file).map((load) => ({ file, ...load })))
-    .filter(({ target }) => target === join(layout.root, 'lib', 'json-file.ts'))
+    .filter(({ target }) => target === join(layout.root, 'cli', 'src', 'lib', 'json-file.ts'))
     .map(({ file, specifier }) => describeRow(layout, file, specifier));
 
 const fixtureLayout = (files: Record<string, string>): Layout => {
@@ -151,16 +197,20 @@ const fixtureLayout = (files: Record<string, string>): Layout => {
     options: {
       ...cliCompilerOptions,
       baseUrl: root,
-      paths: { '@ethlete/cli/sketch-frames': ['lib/design/frames.ts'] },
+      paths: {
+        '@ethlete/cli/sketch-frames': ['design/src/lib/design/frames.ts'],
+        '@ethlete/cli/src/lib/*': ['cli/src/lib/*'],
+        '@ethlete/design': ['design/src/index.ts'],
+      },
     },
   };
 };
 
-describe('the design boundary in libs/cli', () => {
-  const layout: Layout = { root: __dirname, options: cliCompilerOptions };
-  const files = sourceFiles(__dirname);
+describe('the boundary between libs/cli and libs/design', () => {
+  const layout: Layout = { root: join(__dirname, '..', '..'), options: cliCompilerOptions };
+  const files = [...sourceFiles(join(layout.root, 'cli', 'src')), ...sourceFiles(designDirOf(layout))];
 
-  it('keeps every file outside lib/design from importing it, except the et design command wiring', () => {
+  it('keeps every cli file from importing design, except the et design command wiring', () => {
     expect(outsideImportsOfDesign(layout, files)).toEqual([]);
   });
 
@@ -186,55 +236,58 @@ describe('the design boundary checks', () => {
   afterAll(() => fixtures.forEach(({ root }) => rmSync(root, { recursive: true, force: true })));
 
   const designFiles = {
-    'lib/design/index.ts': 'export const designCommand = 1;',
-    'lib/design/frames.ts': 'export {};',
+    'design/src/index.ts': "export { designCommand } from './lib/design';",
+    'design/src/lib/design/index.ts': 'export const designCommand = 1;',
+    'design/src/lib/design/frames.ts': 'export {};',
   };
 
   it('catches a path alias that resolves inside design', () => {
     const { layout, files } = fixture({
       ...designFiles,
-      'lib/core.ts': "import { x } from '@ethlete/cli/sketch-frames';",
+      'cli/src/lib/core.ts': "import { x } from '@ethlete/cli/sketch-frames';",
     });
 
-    expect(outsideImportsOfDesign(layout, files)).toEqual(['lib/core.ts -> @ethlete/cli/sketch-frames']);
+    expect(outsideImportsOfDesign(layout, files)).toEqual(['cli/src/lib/core.ts -> @ethlete/cli/sketch-frames']);
   });
 
   it('catches a .js specifier that resolves to json-file.ts', () => {
     const { layout, files } = fixture({
       ...designFiles,
-      'lib/json-file.ts': 'export {};',
-      'lib/design/system/writer.ts': "import '../../json-file.js';",
+      'cli/src/lib/json-file.ts': 'export {};',
+      'design/src/lib/design/system/writer.ts': "import '@ethlete/cli/src/lib/json-file.js';",
     });
 
-    expect(designWritesBypassingJournal(layout, files)).toEqual(['lib/design/system/writer.ts -> ../../json-file.js']);
+    expect(designWritesBypassingJournal(layout, files)).toEqual([
+      'design/src/lib/design/system/writer.ts -> @ethlete/cli/src/lib/json-file.js',
+    ]);
   });
 
   it('lets index.ts import only designCommand from design', () => {
-    const wiring = (text: string) => fixture({ ...designFiles, 'index.ts': text });
+    const wiring = (text: string) => fixture({ ...designFiles, 'cli/src/index.ts': text });
     const rowsOf = (text: string) => {
       const { layout, files } = wiring(text);
 
       return outsideImportsOfDesign(layout, files);
     };
 
-    expect(rowsOf("import { designCommand } from './lib/design';")).toEqual([]);
-    expect(rowsOf("export * from './lib/design';")).toHaveLength(1);
-    expect(rowsOf("import * as design from './lib/design';")).toHaveLength(1);
-    expect(rowsOf("import { designCommand, other } from './lib/design';")).toHaveLength(1);
+    expect(rowsOf("import { designCommand } from '@ethlete/design';")).toEqual([]);
+    expect(rowsOf("export * from '@ethlete/design';")).toHaveLength(1);
+    expect(rowsOf("import * as design from '@ethlete/design';")).toHaveLength(1);
+    expect(rowsOf("import { designCommand, other } from '@ethlete/design';")).toHaveLength(1);
   });
 
   it('catches an import() or require() that design is loaded through, and rejects a computed one', () => {
     const { layout, files } = fixture({
       ...designFiles,
-      'lib/literal.ts': "export const a = () => import('./design');",
-      'lib/required.ts': "export const b = require('./design/frames');",
-      'lib/computed.ts': "export const c = () => import('./' + 'design');",
+      'cli/src/lib/literal.ts': "export const a = () => import('@ethlete/design');",
+      'cli/src/lib/required.ts': "export const b = require('../../../design/src/lib/design/frames');",
+      'cli/src/lib/computed.ts': "export const c = () => import('./' + 'design');",
     });
 
     expect(outsideImportsOfDesign(layout, files).sort()).toEqual([
-      'lib/literal.ts -> ./design',
-      'lib/required.ts -> ./design/frames',
+      'cli/src/lib/literal.ts -> @ethlete/design',
+      'cli/src/lib/required.ts -> ../../../design/src/lib/design/frames',
     ]);
-    expect(nonLiteralOffenders(layout, files)).toEqual(['lib/computed.ts -> <non-literal import()/require()>']);
+    expect(nonLiteralOffenders(layout, files)).toEqual(['cli/src/lib/computed.ts -> <non-literal import()/require()>']);
   });
 });

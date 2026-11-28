@@ -30,6 +30,7 @@ const PACKAGES = [
   '@ethlete/components',
   '@ethlete/contentful',
   '@ethlete/core',
+  '@ethlete/design',
   '@ethlete/eslint-plugin',
   '@ethlete/query',
   '@ethlete/query-devtools',

@@ -1,11 +1,8 @@
 import ethlete from '@ethlete/eslint-plugin';
-import globals from 'globals';
 import baseConfig from '../../eslint.config.mjs';
 
 export default [
   ...baseConfig,
-
-  { ignores: ['src/lib/design/__fixtures__/*/.ethlete/**'] },
 
   {
     files: ['**/*.json'],
@@ -13,9 +10,24 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
-          // `et design check` resolves these two out of the checkout it draws, or out of this
-          // package, so neither shows up as an import.
-          ignoredDependencies: ['playwright', 'typescript'],
+          // `et design check` resolves playwright and typescript out of the checkout it draws, or out of
+          // this package, so neither shows up as an import. The rest are imports of the bundled libs/design.
+          ignoredDependencies: [
+            'playwright',
+            'typescript',
+            '@angular/compiler',
+            '@angular/core',
+            '@angular/forms',
+            '@angular/platform-browser',
+            '@angular/platform-server',
+            '@tailwindcss/node',
+            '@tailwindcss/postcss',
+            'jiti',
+            'postcss',
+            'postcss-selector-parser',
+            'rxjs',
+            'vite',
+          ],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/src/**/*.spec.ts',
@@ -53,56 +65,6 @@ export default [
       'ethlete/no-async-await': 'off',
     },
   },
-  // `design/` is browser code Vite serves from source into the frame page. Browser globals are
-  // available there; the Angular-library rules about injecting the DOM, CSP and viewport do not apply.
-  {
-    files: ['design/**/*.ts'],
-    languageOptions: { globals: { ...globals.browser } },
-    rules: {
-      'no-restricted-globals': 'off',
-      'ethlete/no-csp-unsafe': 'off',
-      'ethlete/no-direct-dom-manipulation': 'off',
-      'ethlete/no-dom-query': 'off',
-      'ethlete/no-window-location': 'off',
-      'ethlete/no-native-observers': 'off',
-      'ethlete/prefer-viewport-size': 'off',
-      'ethlete/prefer-rxjs-timer': 'off',
-    },
-  },
-  // An ambient module may not import by relative path, so the declarations name `@design-explore` as a type import.
-  {
-    files: ['design/web/env.d.ts'],
-    rules: { '@nx/enforce-module-boundaries': 'off', 'ethlete/no-type-only-import': 'off' },
-  },
-  {
-    files: ['src/lib/design/system/rules/**/*.ts'],
-    ignores: ['**/*.spec.ts', '**/*.test.ts'],
-    rules: { 'ethlete/no-silent-catch-error': ['error', { tryCatch: true }] },
-  },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
-  {
-    files: ['src/**/*.spec.ts'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              regex: '(^|/)studio-api$',
-              importNames: ['openPointsAnswer'],
-              message:
-                'Import openPointsAnswer from src/lib/design/system/open-points.fixtures: it warms the open-points worker first.',
-            },
-            {
-              regex: '(^|/)open-points-runner$',
-              importNames: ['openPointsInWorker'],
-              message:
-                'Import openPointsInWorker from src/lib/design/system/open-points.fixtures: it warms the open-points worker first.',
-            },
-          ],
-        },
-      ],
-    },
-  },
 ];

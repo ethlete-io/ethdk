@@ -1,32 +1,7 @@
 {
-  "sourceWide": [
-    "src/design-boundary.spec.ts",
-    "src/lib/design/render-missing-dist.spec.ts",
-    "src/lib/design/runtime-imports.spec.ts",
-    "src/lib/design/studio-api-level.spec.ts",
-    "src/lib/design/system/check-rules.spec.ts",
-    "src/lib/update/generator-requirements.spec.ts"
-  ],
+  "sourceWide": ["src/design-boundary.spec.ts", "src/lib/update/generator-requirements.spec.ts"],
   "src/bin.spec.ts": ["libs/cli/package.json", "libs/cli/src/index.ts"],
-  "src/lib/design/font-proof.spec.ts": [
-    ".ethlete/design/config.json",
-    ".ethlete/design/*/components/**",
-    ".ethlete/design/*/elements/**",
-    ".ethlete/design/*/foundations/**",
-    ".ethlete/design/*/pages/**",
-    "libs/cli/src/lib/design/render-worker.ts"
-  ],
-  "src/lib/design/frame-bootstrap.spec.ts": ["libs/cli/design/web/frame.ts"],
-  "src/lib/design/frame-surfaces.spec.ts": ["libs/core/design/theme-css.ts"],
-  "src/lib/design/new-call.spec.ts": ["libs/cli/design/define-call.ts"],
   "src/lib/playwright/failure-reporter.spec.ts": ["libs/cli/src/lib/playwright/failure-reporter.ts"],
-  "src/lib/design/system/check-rules.spec.ts": [
-    "libs/cli/src/lib/design/system/rules/*.ts",
-    "libs/cli/src/lib/design/system/render-check.ts",
-    "libs/cli/src/lib/design/system/nested-scroll.ts",
-    "libs/cli/src/lib/design/system/bespoke-controls.ts",
-    "libs/cli/src/lib/design/system/action-lost.ts"
-  ],
   "src/lib/update/generator-requirements.spec.ts": ["libs/*/migrations.json", "libs/*/generators/generators.json"],
   "src/lib/update/query-migrations.spec.ts": ["libs/query/migrations.json", "libs/query/generators/generators.json"],
   "src/lib/update/contentful-migrations.spec.ts": [
@@ -40,16 +15,5 @@
   "src/lib/update/agent-rules-migrations.spec.ts": [
     "libs/agent-rules/migrations.json",
     "libs/agent-rules/generators/generators.json"
-  ],
-  "src/lib/design/system/product-lock.spec.ts": [
-    "libs/cli/src/lib/design/system/product-lock.ts",
-    "libs/cli/src/lib/json-file.ts"
-  ],
-  "src/lib/design/system/sketch/merge-journal.spec.ts": [
-    "libs/cli/src/lib/design/system/sketch/merge-journal.child.ts",
-    "libs/cli/src/lib/design/system/sketch/merge-journal.kill.ts"
-  ],
-  "src/lib/design/system/sketch/undesigned-sketch.spec.ts": [
-    "libs/cli/src/lib/design/system/__fixtures__/.ethlete/design/acme/**"
   ]
 }

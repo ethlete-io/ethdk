@@ -9,7 +9,7 @@ import {
   repoInvocation,
   updateCommand,
 } from './lib';
-import { designCommand } from './lib/design';
+import { designCommand } from '@ethlete/design';
 import { staleCliBuildMessage } from './lib/source-hash';
 
 const USAGE_ROWS = [

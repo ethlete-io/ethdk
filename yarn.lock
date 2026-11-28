@@ -4410,6 +4410,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ethlete/design@workspace:libs/design":
+  version: 0.0.0-use.local
+  resolution: "@ethlete/design@workspace:libs/design"
+  languageName: unknown
+  linkType: soft
+
 "@ethlete/eslint-plugin@workspace:libs/eslint-plugin":
   version: 0.0.0-use.local
   resolution: "@ethlete/eslint-plugin@workspace:libs/eslint-plugin"

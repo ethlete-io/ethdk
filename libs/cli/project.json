@@ -45,21 +45,21 @@
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "node -e \"require('node:fs').rmSync('tmp/perf',{recursive:true,force:true})\" && vitest run --config libs/cli/vitest.perf.config.mts"
+        "command": "node -e \"require('node:fs').rmSync('tmp/perf',{recursive:true,force:true})\" && vitest run --config libs/design/vitest.perf.config.mts"
       }
     },
     "test-dist": {
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "vitest run --config libs/cli/vitest.dist.config.mts"
+        "command": "vitest run --config libs/design/vitest.dist.config.mts"
       }
     },
     "proof": {
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "vitest run --config libs/cli/vitest.proof.config.mts"
+        "command": "vitest run --config libs/design/vitest.proof.config.mts"
       }
     },
     "lint": {
@@ -80,30 +80,6 @@
       "options": {
         "command": "tsc -p libs/cli/tsconfig.spec.json --noEmit && tsc -p libs/cli/tsconfig.lib.json --noEmit"
       }
-    },
-    "compile-tsc": {
-      "executor": "@nx/js:tsc",
-      "options": {
-        "outputPath": "tmp/cli-build",
-        "main": "libs/cli/src/index.ts",
-        "tsConfig": "libs/cli/tsconfig.lib.json",
-        "assets": [
-          "libs/cli/*.md",
-          {
-            "input": "libs/cli/playwright",
-            "glob": "**/*",
-            "output": "playwright"
-          },
-          {
-            "input": "libs/cli/design",
-            "glob": "**/*",
-            "output": "design",
-            "ignore": ["tsconfig.json"]
-          }
-        ],
-        "clean": true
-      },
-      "cache": false
     }
   }
 }

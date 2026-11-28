@@ -3,8 +3,8 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(fileURLToPath(import.meta.url), '../../..');
-const mapPath = 'libs/cli/related-map.json';
-const cliRoot = 'libs/cli';
+const PROJECT_ROOTS = ['libs/cli', 'libs/design'];
+const mapPathOf = (projectRoot) => `${projectRoot}/related-map.json`;
 const READS = /\b(readFileSync|spawnSync|execFileSync)\b|node:vm|from ['"]vm['"]|\bvm\./;
 const LOCATES = /__dirname|import\.meta/;
 const SOURCE_LITERAL =
@@ -29,7 +29,9 @@ export const specsForFiles = (files, map) => [
     .filter(([spec]) => spec !== SOURCE_WIDE)
     .filter(([, globs]) => files.some((file) => globs.some((glob) => file === glob || matchesGlob(file, glob))))
     .map(([spec]) => spec),
-  ...(files.some((file) => file.startsWith('libs/cli/src/')) ? (map[SOURCE_WIDE] ?? []) : []),
+  ...(files.some((file) => PROJECT_ROOTS.some((projectRoot) => file.startsWith(`${projectRoot}/src/`)))
+    ? (map[SOURCE_WIDE] ?? [])
+    : []),
 ];
 
 export const matchesGlob = (file, glob) => {
@@ -54,27 +56,38 @@ const walk = (dir) =>
     return statSync(full).isDirectory() ? walk(full) : [full];
   });
 
-const loadMap = () => (existsSync(join(root, mapPath)) ? JSON.parse(readFileSync(join(root, mapPath), 'utf8')) : {});
+const loadMap = (projectRoot) =>
+  existsSync(join(root, mapPathOf(projectRoot)))
+    ? JSON.parse(readFileSync(join(root, mapPathOf(projectRoot)), 'utf8'))
+    : {};
 
 const [command, ...args] = process.argv.slice(2);
 
 if (command === 'check') {
-  const map = loadMap();
-  const specs = walk(join(root, cliRoot, 'src'))
-    .filter((file) => file.endsWith('.spec.ts'))
-    .map((file) => ({
-      path: relative(join(root, cliRoot), file),
-      text: readFileSync(file, 'utf8'),
-    }));
-  const missing = unmappedSpecs(specs, map);
-  const stale = [...Object.keys(map).filter((key) => key !== SOURCE_WIDE), ...(map.sourceWide ?? [])].filter(
-    (spec) => !existsSync(join(root, cliRoot, spec)),
-  );
-  for (const spec of missing) console.error(`${spec.path} reads a source path but has no entry in ${mapPath}`);
-  for (const spec of stale) console.error(`${mapPath} maps ${spec}, which does not exist`);
-  process.exit(missing.length || stale.length ? 1 : 0);
+  const problems = PROJECT_ROOTS.flatMap((projectRoot) => {
+    const mapPath = mapPathOf(projectRoot);
+    const map = loadMap(projectRoot);
+    const specs = walk(join(root, projectRoot, 'src'))
+      .filter((file) => file.endsWith('.spec.ts'))
+      .map((file) => ({
+        path: relative(join(root, projectRoot), file),
+        text: readFileSync(file, 'utf8'),
+      }));
+    const missing = unmappedSpecs(specs, map);
+    const stale = [...Object.keys(map).filter((key) => key !== SOURCE_WIDE), ...(map.sourceWide ?? [])].filter(
+      (spec) => !existsSync(join(root, projectRoot, spec)),
+    );
+
+    return [
+      ...missing.map((spec) => `${projectRoot}/${spec.path} reads a source path but has no entry in ${mapPath}`),
+      ...stale.map((spec) => `${mapPath} maps ${spec}, which does not exist`),
+    ];
+  });
+  for (const problem of problems) console.error(problem);
+  process.exit(problems.length ? 1 : 0);
 }
 
 if (command === 'specs') {
-  for (const spec of specsForFiles(args, loadMap())) console.log(join(cliRoot, spec));
+  for (const projectRoot of PROJECT_ROOTS)
+    for (const spec of specsForFiles(args, loadMap(projectRoot))) console.log(join(projectRoot, spec));
 }
