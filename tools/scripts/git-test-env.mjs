@@ -27,9 +27,11 @@ export const gitSpawn = (args, options) => spawnSync('git', args, withGitEnv(opt
 /** Runs git in `dir` with `GIT_*` stripped and returns trimmed stdout. */
 export const git = (dir, ...args) => gitExec(args, { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim();
 
-/** Makes a temp directory that is removed when the process exits, runs `git init` in it and returns its path. */
+/** Makes a temp directory that is removed when the process exits, runs `git init` in it with a commit identity and returns its path. */
 export const tempGitRepo = (prefix = 'git-spec-') => {
   const dir = tempDir(prefix);
   git(dir, 'init', '-q');
+  git(dir, 'config', 'user.name', 'spec');
+  git(dir, 'config', 'user.email', 'spec@example.com');
   return dir;
 };
