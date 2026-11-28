@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, normalize, relative } from 'node:path';
@@ -41,7 +41,33 @@ export const pendingSmokeMigrations = ({ sdkRoot, root, from, to }) => {
   return plan.orderMigrations(pending);
 };
 
-/** Copies the consumer's tracked and unignored files into a scratch dir and links its node_modules in. */
+const INSTALL_SCRIPTS = ['preinstall', 'install', 'postinstall'];
+
+const packageManager = (root, manifest) => {
+  const declared = /^(npm|yarn|pnpm)@/.exec(manifest.packageManager ?? '')?.[1];
+  if (declared) return declared;
+  if (existsSync(join(root, 'pnpm-lock.yaml'))) return 'pnpm';
+  if (existsSync(join(root, 'yarn.lock'))) return 'yarn';
+  return 'npm';
+};
+
+/** Runs the root package's install scripts in `root`, as an install would, and throws when one fails. */
+const runInstallScripts = (root) => {
+  const manifestPath = join(root, 'package.json');
+  if (!existsSync(manifestPath)) return;
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const manager = packageManager(root, manifest);
+  for (const script of INSTALL_SCRIPTS.filter((name) => manifest.scripts?.[name])) {
+    console.log(`  $ ${manager} run ${script}`);
+    const result = spawnSync(manager, ['run', script], { cwd: root, stdio: 'inherit' });
+    if (result.status !== 0) throw new Error(`${manager} run ${script} failed in ${root} (exit ${result.status})`);
+  }
+};
+
+/**
+ * Copies the consumer's tracked and unignored files into a scratch dir, links its node_modules in, and runs the
+ * install scripts the link skips, so the files they generate exist in the copy.
+ */
 export const copyConsumer = (appRoot) => {
   const dest = mkdtempSync(join(tmpdir(), 'release-smoke-src-'));
   const listed = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
@@ -56,6 +82,12 @@ export const copyConsumer = (appRoot) => {
     cpSync(source, join(dest, file), { recursive: true, verbatimSymlinks: true });
   }
   symlinkSync(join(appRoot, 'node_modules'), join(dest, 'node_modules'), 'dir');
+  try {
+    runInstallScripts(dest);
+  } catch (error) {
+    rmSync(dest, { recursive: true, force: true });
+    throw error;
+  }
   return dest;
 };
 

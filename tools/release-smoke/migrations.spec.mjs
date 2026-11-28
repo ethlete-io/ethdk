@@ -102,6 +102,45 @@ test('copies tracked and unignored files, never node_modules, and links node_mod
   }
 });
 
+test('runs the install scripts in the copy, so a file they generate exists for the typecheck', () => {
+  const root = mkdtempSync(join(tmpdir(), 'smoke-app-a-'));
+  let copy;
+  try {
+    spawnSync('git', ['init', '-q'], { cwd: root });
+    mkdirSync(join(root, 'node_modules'));
+    mkdirSync(join(root, 'src'));
+    writeFileSync(join(root, '.gitignore'), 'node_modules\nsrc/generated/\n');
+    writeFileSync(
+      join(root, 'package.json'),
+      JSON.stringify({ name: 'app-a', private: true, scripts: { postinstall: 'node gen.cjs' } }),
+    );
+    writeFileSync(
+      join(root, 'gen.cjs'),
+      "require('fs').mkdirSync('src/generated', { recursive: true });\n" +
+        "require('fs').writeFileSync('src/generated/version.json', JSON.stringify({ raw: 'v1' }));\n",
+    );
+    writeFileSync(
+      join(root, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: { strict: true, noEmit: true, module: 'preserve', resolveJsonModule: true, types: [] },
+        include: ['src'],
+      }),
+    );
+    writeFileSync(
+      join(root, 'src/main.ts'),
+      "import version from './generated/version.json';\nexport const raw = version.raw;\n",
+    );
+    copy = copyConsumer(root);
+    const tsc = spawnSync(process.execPath, [join(sdkRoot, 'node_modules/typescript/bin/tsc'), '-p', copy]);
+    assert.equal(tsc.stdout.toString() + tsc.stderr.toString(), '');
+    assert.equal(tsc.status, 0);
+    assert.equal(existsSync(join(root, 'src/generated')), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    if (copy) rmSync(copy, { recursive: true, force: true });
+  }
+});
+
 const fixtureText = (name) => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8');
 
 test('parses the errors of a captured tsc run in plain and pretty format', () => {
