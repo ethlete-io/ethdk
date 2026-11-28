@@ -1,7 +1,7 @@
 import { cpSync, mkdirSync, mkdtempSync, realpathSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, type TestContext } from 'vitest';
 import { DESIGN_DIR, readConfig } from './design-config';
 import { createDesignServer } from './serve';
 import { initGitRepo } from './system/git-repo.fixtures';
@@ -13,10 +13,17 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 const cwd = process.cwd();
 const closing: (() => Promise<void>)[] = [];
+const startTeardownTiming = new WeakMap<TestContext['task'], () => () => void>();
 
-afterEach(async () => {
-  await Promise.all(closing.splice(0).map((close) => close()));
-  process.chdir(cwd);
+afterEach(async ({ task }) => {
+  const finishTeardownTiming = startTeardownTiming.get(task)?.();
+
+  try {
+    await Promise.all(closing.splice(0).map((close) => close()));
+    process.chdir(cwd);
+  } finally {
+    finishTeardownTiming?.();
+  }
 });
 
 const MERGED = '#e4572e';
@@ -31,7 +38,8 @@ mkdirSync(dirname(file), { recursive: true });
 writeFileSync(file, '.acme-generated { border-color: ' + accent + '; }');
 `;
 
-const serveAcme = async (options: { generated?: boolean } = {}) => {
+const serveAcme = async (options: { generated?: boolean; startPhase?: (name: string) => void } = {}) => {
+  options.startPhase?.('fixture copy + seeding');
   const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-sketch-styles-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
@@ -79,6 +87,7 @@ const serveAcme = async (options: { generated?: boolean } = {}) => {
 
   writeFileSync(css, readFileSync(css, 'utf8').replace(MERGED, SKETCHED));
 
+  options.startPhase?.('createDesignServer');
   const vite = await createDesignServer({ target, config, listen: false });
 
   closing.push(() => vite.close());
@@ -182,9 +191,43 @@ describe('a product stylesheet drawn for a sketch variant', () => {
     }
   });
 
-  it('is what a frame of a variant that draws a part stylesheet of its own loads', async () => {
-    const { vite } = await serveAcme();
+  it('is what a frame of a variant that draws a part stylesheet of its own loads', async ({ task, onTestFailed }) => {
+    const phases: { name: string; startedAt: number }[] = [];
+    let failedPhase: string | undefined;
+    let teardownStarted = false;
+    let teardownFinishedAt: number | undefined;
+    const startPhase = (name: string) => {
+      if (!teardownStarted) phases.push({ name, startedAt: performance.now() });
+    };
+
+    startTeardownTiming.set(task, () => {
+      if (task.result?.state === 'fail') failedPhase = phases.at(-1)?.name;
+
+      startPhase('teardown/close');
+      teardownStarted = true;
+
+      return () => {
+        teardownFinishedAt = performance.now();
+      };
+    });
+
+    onTestFailed(() => {
+      const finishedAt = teardownFinishedAt ?? performance.now();
+      const timings = phases.map(({ name, startedAt }, index) => {
+        const nextStartedAt = phases[index + 1]?.startedAt ?? finishedAt;
+
+        return `${name} ${(nextStartedAt - startedAt).toFixed(1)} ms`;
+      });
+
+      console.error(`[sketch-stylesheets] failed in ${failedPhase ?? phases.at(-1)?.name} | ${timings.join(', ')}`);
+    });
+
+    const { vite } = await serveAcme({ startPhase });
+
+    startPhase('virtual load');
     const loaded = await vite.pluginContainer.load('\0virtual:design-explore/env');
+
+    startPhase('assertion');
     const env = typeof loaded === 'string' ? loaded : String(loaded?.code ?? '');
 
     expect(env).toMatch(
