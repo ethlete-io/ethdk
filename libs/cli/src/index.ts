@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
   apiCommand,
@@ -11,6 +12,7 @@ import {
 } from './lib';
 import { designCommand } from '@ethlete/design';
 import { staleCliBuildMessage } from '@ethlete/cli-core/source-hash';
+import { designRouteOf, forwardDesign } from './lib/design-forward/design-forward';
 
 const USAGE_ROWS = [
   { subcommand: 'release', args: '', lines: ['Turn pending changesets into a tagged, pushed release commit'] },
@@ -96,7 +98,20 @@ const cli = async (args: string[]): Promise<number> => {
       });
 
     case 'design': {
-      const stale = staleCliBuildMessage({ root: process.cwd(), buildDir: join(__dirname, '..') });
+      const buildDir = join(__dirname, '..');
+      const route = designRouteOf({ buildDir, platform: process.platform, env: process.env, home: homedir() });
+
+      if (route.kind === 'missing') {
+        console.error(route.message);
+
+        return 1;
+      }
+
+      if (route.kind === 'forward') {
+        return forwardDesign({ entry: route.entry, argv: args.slice(1), root: process.cwd() });
+      }
+
+      const stale = staleCliBuildMessage({ root: process.cwd(), buildDir });
 
       if (stale) {
         console.error(stale);
