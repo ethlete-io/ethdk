@@ -1,5 +1,18 @@
 # ethlete-studio
 
+## 0.2.0-next.41
+
+### Patch Changes
+
+- A sketch pick whose view closes while the merge runs (a failed product read) still opens the merged part when the merge answers, instead of reopening the edit sketch.
+- A restart no longer reloads the Studio window into a refused page: it waits for the page server, and shows "Studio startet neu" meanwhile.
+- A sketch cell that is still loading shows a softly pulsing tint skeleton with Lädt instead of a tiny spinner in an empty frame.
+- The stale `et design` build check also hashes a sibling `libs/design`, ready for the design tool to move there.
+- The host's signal watchdog waits fifteen seconds before ending a stalled exit, so a slow but normal exit under load is no longer cut.
+- The stale-check source hash is the same on Windows, Linux and macOS: paths are joined with `/`, files are ordered by bytes and symlinks are skipped.
+- End the host through its exit path on SIGINT, SIGTERM or SIGHUP that arrives while CEF starts, instead of dying without stopping its processes or ignoring the signal
+- End the host within two seconds of SIGINT, SIGTERM or SIGHUP when its shutdown stalls, and skip the exit handlers in that path so a running CEF shutdown cannot hold the process
+
 ## 0.2.0-next.40
 
 ### Minor Changes

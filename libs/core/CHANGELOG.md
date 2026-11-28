@@ -1,5 +1,12 @@
 # @ethlete/core
 
+## 5.0.0-next.82
+
+### Patch Changes
+
+- The `theme-token-names` migration lists the places it cannot rewrite as a WARN and exits 0, so the later migrations still run.
+- The `surface-roles` migration lists the places it cannot rewrite as a WARN and exits 0, so the later migrations still run.
+
 ## 5.0.0-next.81
 
 ### Major Changes
