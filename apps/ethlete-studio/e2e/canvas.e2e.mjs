@@ -1441,6 +1441,8 @@ const HEAVY_EDIT = {
 // A cold @edit without draw-ahead takes ~3.4 s on 2 cores (accepted 27.11.); do not raise this budget to fit it.
 const HEAVY_EDIT_HOLD_MS = 3000;
 const HEAVY_EDIT_WATCH_MS = 20000;
+// Row B787: a reopened heavy @edit shows its finished view, from navigation start, under this budget; do not raise it.
+const HEAVY_EDIT_REOPEN_MS = 4000;
 
 const namedWait = async (page, label, predicate, arg) => {
   try {
@@ -1821,12 +1823,26 @@ const CASES = [
           const { shownAt, cellsAt, loadingInView, cells, blank, left, hold } = await edit({ timeline: true });
 
           page.off('response', countSource);
+          const cdp = await page.context().newCDPSession(page);
+
+          await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+          await page.reload();
+          const reopen = await editLoadTimelineOf(page, { layoutMs: EDIT_WAIT_MS, watchMs: HEAVY_EDIT_WATCH_MS });
+
+          await cdp.send('Network.setCacheDisabled', { cacheDisabled: false });
+          await cdp.detach();
+          const reopenFinished =
+            reopen.shownAt !== null && reopen.shownAt <= HEAVY_EDIT_REOPEN_MS && reopen.loadingInView === 0;
           const blankSpan = blank.length > 0 ? `${blank[0]}-${blank.at(-1)} ms (${blank.length} samples)` : 'none';
 
           return {
             ok:
-              shownAt !== null && shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS && loadingInView === 0 && blank.length === 0,
-            detail: `${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, shot queue [${queued.join(', ')}], ${phaseLine()}`,
+              shownAt !== null &&
+              shownAt - cellsAt <= HEAVY_EDIT_HOLD_MS &&
+              loadingInView === 0 &&
+              blank.length === 0 &&
+              reopenFinished,
+            detail: `reopen finished at ${reopen.shownAt ?? 'never'} ms (<= ${HEAVY_EDIT_REOPEN_MS} ms, browser cache off), ${reopen.cells ?? 0} cells, loading in view: ${reopen.loadingInView ?? '-'}; first open: ${HEAVY_EDIT.part}@edit shown at ${shownAt ?? `never (watched ${HEAVY_EDIT_WATCH_MS} ms past the layout, layout waited up to ${EDIT_WAIT_MS} ms${left ? `, view left at ${left} ms` : ''})`} ms, cells laid out at ${cellsAt ?? '-'} ms (hold <= ${HEAVY_EDIT_HOLD_MS} ms), ${cells ?? 0} cells, loading in view when shown: ${loadingInView ?? '-'}, blank without zeichnet: ${blankSpan}, ${hold}, shot sources ${JSON.stringify(Object.fromEntries(sources))}, shot queue [${queued.join(', ')}], ${phaseLine()}`,
           };
         },
         HEAVY_EDIT,
