@@ -234,6 +234,7 @@ pub fn run() {
             peer::own_day_rows,
             process::run_process,
             reporter::reporter_vsix_path,
+            reporter::agent_mcp_path,
             reporter::save_report_file,
             secrets::secret_delete,
             secrets::secret_has,

@@ -444,6 +444,7 @@ export const createFakePorts = (): HostPorts => {
 
     reporter: {
       vsix$: () => ok(world.reporterVsix),
+      agentMcp$: () => ok(world.agentMcpPath),
     },
 
     specs: {

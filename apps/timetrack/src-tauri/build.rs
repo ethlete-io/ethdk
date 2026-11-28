@@ -57,6 +57,7 @@ const COMMANDS: &[&str] = &[
     "received_between",
     "repo_manifests",
     "reporter_vsix_path",
+    "agent_mcp_path",
     "save_report_file",
     "run_process",
     "secret_delete",

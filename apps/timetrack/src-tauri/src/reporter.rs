@@ -6,6 +6,8 @@ use tauri::Manager;
 /// `bundle.resources` in `tauri.conf.json` ships. Renaming it there renames it here.
 const REPORTER_VSIX: &str = "resources/timetrack-vscode.vsix";
 
+const AGENT_MCP: &str = "resources/timetrack-mcp.mjs";
+
 /// The absolute path of the reporter extension this build ships, and `None` when it ships none.
 ///
 /// A missing file is an answer rather than a failure: `bundle.resources` matches a glob, so a build
@@ -14,6 +16,16 @@ const REPORTER_VSIX: &str = "resources/timetrack-vscode.vsix";
 #[tauri::command]
 pub fn reporter_vsix_path(app: tauri::AppHandle) -> TimetrackResult<Option<String>> {
     let Ok(path) = app.path().resolve(REPORTER_VSIX, BaseDirectory::Resource) else {
+        return Ok(None);
+    };
+
+    Ok(path.exists().then(|| path.to_string_lossy().into_owned()))
+}
+
+/// The absolute path of the bundled MCP stdio adapter, and `None` when this build ships none.
+#[tauri::command]
+pub fn agent_mcp_path(app: tauri::AppHandle) -> TimetrackResult<Option<String>> {
+    let Ok(path) = app.path().resolve(AGENT_MCP, BaseDirectory::Resource) else {
         return Ok(None);
     };
 

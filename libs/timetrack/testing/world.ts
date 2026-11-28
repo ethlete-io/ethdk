@@ -203,6 +203,8 @@ export type TimetrackWorldSeed = {
   editors?: Partial<Record<EditorCli, Partial<FakeEditorState>>>;
   /** The reporter `.vsix` this build ships. `null` seeds a build that shipped none. */
   reporterVsix?: string | null;
+  /** The MCP adapter path this build ships. `null` seeds a build that shipped none. */
+  agentMcpPath?: string | null;
   git?: Partial<FakeGitState>;
   /** The specification one directory of the checkout holds. Absent: the seeded repository has none. */
   spec?: SpecFiles | null;
@@ -245,6 +247,7 @@ export type FakeWorld = {
   gh: FakeGitHubState;
   editors: FakeEditors;
   reporterVsix: string | null;
+  agentMcpPath: string | null;
   settings: TimetrackSettings;
   settingsReadDelayMs: number;
   agentLogs: FakeAgentLog[];
@@ -568,6 +571,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),
   reporterVsix: seed.reporterVsix === undefined ? FAKE_REPORTER_VSIX : seed.reporterVsix,
+  agentMcpPath: seed.agentMcpPath === undefined ? '/opt/Timetrack/resources/timetrack-mcp.mjs' : seed.agentMcpPath,
   backend: {
     jira: { ...defaultJira(), ...seed.jira },
     tempo: { ...defaultTempo(), ...seed.tempo },

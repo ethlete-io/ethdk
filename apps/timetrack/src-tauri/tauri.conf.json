@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../../../dist/apps/timetrack/browser",
     "devUrl": "http://localhost:4210",
-    "beforeDevCommand": "npx nx stage-reporter timetrack-app && npx nx serve timetrack-app",
-    "beforeBuildCommand": "npx nx stage-reporter timetrack-app && npx nx build timetrack-app"
+    "beforeDevCommand": "npx nx stage-reporter timetrack-app && npx nx stage-mcp timetrack-app && npx nx serve timetrack-app",
+    "beforeBuildCommand": "npx nx stage-reporter timetrack-app && npx nx stage-mcp timetrack-app && npx nx build timetrack-app"
   },
   "app": {
     "windows": [

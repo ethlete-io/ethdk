@@ -98,6 +98,7 @@ export type TimetrackSpecSource = {
  */
 export type TimetrackReporterBundle = {
   vsix$(): Observable<string | null>;
+  agentMcp$(): Observable<string | null>;
 };
 
 export type TimetrackPorts = {

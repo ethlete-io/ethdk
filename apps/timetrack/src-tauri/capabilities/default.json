@@ -62,6 +62,7 @@
     "allow-received-between",
     "allow-repo-manifests",
     "allow-reporter-vsix-path",
+    "allow-agent-mcp-path",
     "allow-run-process",
     "allow-save-report-file",
     "allow-secret-delete",

@@ -99,6 +99,13 @@
         "command": "node tools/scripts/stage-vscode-extension.mjs"
       }
     },
+    "stage-mcp": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src-tauri/resources/timetrack-mcp.mjs"],
+      "options": {
+        "command": "node tools/scripts/stage-timetrack-mcp.mjs"
+      }
+    },
     "format-rust": {
       "executor": "nx:run-commands",
       "cache": true,
