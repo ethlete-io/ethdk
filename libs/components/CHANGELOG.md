@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.106
+
+### Patch Changes
+
+- The `overlay-and-column-api` migration lists the places it cannot rewrite as a WARN and exits 0, so the later migrations still run.
+- The overlay-and-column-api migration now rewrites a `T | null` callback field that an `afterClosed` result is forwarded to, instead of leaving a type error.
+
 ## 1.0.0-next.105
 
 ### Patch Changes

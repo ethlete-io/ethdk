@@ -1,5 +1,12 @@
 # timetrack-app
 
+## 0.2.0-next.28
+
+### Patch Changes
+
+- A deleted worktree lands in its project's lane even when scratch clones of the repository hold its commits too.
+- A local clone of another checkout is drawn as the work of the checkout whose agent sessions worked in it, and is never picked as the main of a deleted worktree.
+
 ## 0.2.0-next.27
 
 ### Patch Changes

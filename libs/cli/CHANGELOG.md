@@ -1,5 +1,29 @@
 # @ethlete/cli
 
+## 3.0.0-next.54
+
+### Minor Changes
+
+- The `@ethlete/cli` entry no longer re-exports the design tool's internals. No documented API changes; `et design` works as before.
+
+### Patch Changes
+
+- A sketch listing waits briefly for a picture whose draw is already running, so the frame of that state is no longer left out.
+- The design server keeps running when a watched file is not readable yet (still being copied) or already gone; the next watcher event redraws it.
+- The design server now waits for a lib that nx rebuilds as a dependency or through `nx run-many -p a,b`, instead of answering an import error while its dist is rewritten.
+- The design server resolves a relative Tailwind `@source` or `source()` folder to its real path, so Tailwind no longer scans gitignored build folders (such as `src-tauri/target`) when the folder is reached through a symlink.
+- A build after a change in the bundled design tool no longer reuses a stale compile, and the source maps of the published package point at their sources.
+- Internal: the cli core no longer imports its design tool.
+- Move the helpers cli and design share into the private `libs/cli-core` lib; the published `@ethlete/cli` keeps the same file layout.
+- Move the design tool into the private `libs/design` lib; the published `@ethlete/cli` keeps the same file layout.
+- The stale `et design` build check also hashes a sibling `libs/design`, ready for the design tool to move there.
+- The stale-check source hash is the same on Windows, Linux and macOS: paths are joined with `/`, files are ordered by bytes and symlinks are skipped.
+- `et design shot` and the other mock-guarded design commands wait while nx builds `components` instead of refusing with MISSING DESIGN MOCKS.
+- Draw an edit sketch compare's `old` and `new` side by side instead of one variant after the other.
+- Compare the `old` of an edit sketch against its `new` instead of the product, so the first open of an edit view draws only
+  the pictures it shows.
+- Update Vite to 8.4.0, which frees a closed design server, so the design server's slow-check worker no longer grows by about 380 MB per check run.
+
 ## 3.0.0-next.53
 
 ### Patch Changes
