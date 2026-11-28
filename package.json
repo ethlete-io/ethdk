@@ -54,6 +54,7 @@
     "resident:e2e": "node ./tools/scripts/resident-e2e.mjs",
     "revert:check": "node ./tools/scripts/revert-check.mjs",
     "scratch:checkout": "node ./tools/scripts/scratch-checkout.mjs",
+    "sdk:decouple-probe": "node tools/scripts/sdk-decouple-probe.mjs",
     "sdk:tokens": "node tools/scripts/generate-sdk-tokens.mjs",
     "sdk:tokens:check": "node tools/scripts/generate-sdk-tokens.mjs --check",
     "sessions": "node .agents/skills/ethlete-agent-sessions/agent-sessions.mjs",

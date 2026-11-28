@@ -74,6 +74,9 @@ jobs:
       # The install above runs the root `postinstall` (husky), so this fails when that stops generating .husky/_.
       - run: yarn hooks:check
 
+      - name: Verify SDK without Studio and Timetrack
+        run: node tools/scripts/sdk-decouple-probe.mjs
+
       - run: node tools/scripts/check-migration-entries.mjs
       # yarn test:tools without the Studio ESLint rule specs: ci-apps.yml runs those, so a red Studio rule
       # never holds back the SDK publish.
