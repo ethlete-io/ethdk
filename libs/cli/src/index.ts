@@ -3,13 +3,13 @@ import { join } from 'node:path';
 import {
   apiCommand,
   authCommand,
-  designCommand,
   doctorCommand,
   migrationsCommand,
   release,
   repoInvocation,
   updateCommand,
 } from './lib';
+import { designCommand } from './lib/design';
 import { staleCliBuildMessage } from './lib/source-hash';
 
 const USAGE_ROWS = [

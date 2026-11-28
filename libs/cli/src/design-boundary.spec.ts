@@ -4,10 +4,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const DESIGN_DIR = join(__dirname, 'lib', 'design');
-const ALLOWED = [
-  { file: join(__dirname, 'index.ts'), specifier: './lib/design' },
-  { file: join(__dirname, 'lib', 'index.ts'), specifier: './design' },
-];
+const COMMAND_WIRING = { file: join(__dirname, 'index.ts'), specifier: './lib/design' };
 const DESIGN_WRITE_HELPER = join(DESIGN_DIR, 'system', 'design-file.ts');
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}${sep}`);
@@ -30,14 +27,12 @@ const offenders = (rows: { file: string; specifier: string }[]) =>
 describe('the design boundary in libs/cli', () => {
   const files = sourceFiles();
 
-  it('keeps every file outside lib/design from importing it, except the et design command wiring and the lib barrel', () => {
+  it('keeps every file outside lib/design from importing it, except the et design command wiring', () => {
     const rows = files
       .filter((file) => !isInside(DESIGN_DIR, file))
       .flatMap((file) => relativeImportsOf(file).map((row) => ({ file, ...row })))
       .filter(({ target }) => isInside(DESIGN_DIR, target))
-      .filter(
-        ({ file, specifier }) => !ALLOWED.some((allowed) => allowed.file === file && allowed.specifier === specifier),
-      );
+      .filter(({ file, specifier }) => !(file === COMMAND_WIRING.file && specifier === COMMAND_WIRING.specifier));
 
     expect(offenders(rows)).toEqual([]);
   });
