@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import * as helper from './git-test-env.mjs';
 
 const root = join(import.meta.dirname, '..', '..');
-const copies = ['libs/cli/src/lib', 'libs/agent-rules/src/lib'];
+const copies = ['libs/cli-core/src/lib', 'libs/agent-rules/src/lib'];
 const read = (dir, file) => readFileSync(join(root, dir, file), 'utf8');
 const exportedNames = (source) => [...source.matchAll(/^export const (\w+)/gm)].map(([, name]) => name).sort();
 
