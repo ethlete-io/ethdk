@@ -118,10 +118,10 @@
     "at": "2026-11-25T22:52:58.806Z"
   },
   "elements/variant-cell": {
-    "hash": "7920a471949a7e45",
-    "variant": "a",
-    "decidedBy": "builder: claude-sonnet",
-    "at": "2026-11-26T14:05:18.286Z"
+    "hash": "5a6e4aa4e720857e",
+    "variant": "new",
+    "decidedBy": "claude-opus-5-5",
+    "at": "2026-11-28T00:54:26.308Z"
   },
   "foundations/agent-logos": {
     "hash": "bc651c568c63f7f1",
