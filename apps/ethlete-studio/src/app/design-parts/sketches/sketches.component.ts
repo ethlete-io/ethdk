@@ -1,4 +1,4 @@
-import { foldedStatesOf, shownSketchRowsOf } from '@ethlete/cli/sketch-frames';
+import { foldedStatesOf, shownSketchRowsOf } from '@ethlete/design/sketch-frames';
 import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
   booleanAttribute,

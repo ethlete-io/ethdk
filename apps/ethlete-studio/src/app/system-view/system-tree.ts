@@ -17,7 +17,7 @@ import {
   rejectionOf,
   sketchPartOf,
 } from '../../host/design';
-import { keptStatesOf } from '@ethlete/cli/sketch-frames';
+import { keptStatesOf } from '@ethlete/design/sketch-frames';
 import { CanvasFrame, ColorScheme, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { isAnswered, isQuestion } from './comment-pins';
 import { SYSTEM_TREE_LABELS, TREE_ROW_LABELS } from '../i18n/system-labels';

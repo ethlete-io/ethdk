@@ -1,4 +1,4 @@
-import { shownSketchRowsOf } from '@ethlete/cli/sketch-frames';
+import { shownSketchRowsOf } from '@ethlete/design/sketch-frames';
 import { ListedCall, ListedPart, ListedProduct, ListedSketch, ListedSketches, SHOT_SESSION } from '../../host/design';
 import listing from './__fixtures__/studio-listing.json';
 import studioPartUsers from './__fixtures__/studio-part-users.json';

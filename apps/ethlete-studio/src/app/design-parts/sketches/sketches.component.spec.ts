@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { sketchFrameSetOf } from '@ethlete/cli/sketch-frames';
+import { sketchFrameSetOf } from '@ethlete/design/sketch-frames';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';

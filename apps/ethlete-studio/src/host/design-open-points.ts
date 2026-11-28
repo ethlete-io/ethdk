@@ -1,8 +1,8 @@
 import { Observable, defer, finalize, map, share } from 'rxjs';
-import { OpenPoint } from '@ethlete/cli/open-point';
+import { OpenPoint } from '@ethlete/design/open-point';
 import { ProductAddress, designAnswer$ } from './design';
 
-export type { OpenPoint, OpenPointKind } from '@ethlete/cli/open-point';
+export type { OpenPoint, OpenPointKind } from '@ethlete/design/open-point';
 
 /** One thing that keeps a part from being build-ready; `part` names the embedded part it is about. */
 export type BuildReadyBlocker = { kind: string; text: string; part?: string };
