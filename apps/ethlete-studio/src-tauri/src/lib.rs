@@ -1,4 +1,6 @@
 mod call_status;
+#[cfg(target_os = "linux")]
+pub mod cef_signals;
 mod child_env;
 mod console_log;
 #[cfg(debug_assertions)]
@@ -194,6 +196,8 @@ pub fn run() {
     child_env::remember();
 
     let signals = shutdown::listen();
+    #[cfg(target_os = "linux")]
+    cef_signals::hold();
     let builder = tauri::Builder::default();
     let builder = builder.runtime(cef_runtime());
     #[cfg(target_os = "macos")]
@@ -208,6 +212,8 @@ pub fn run() {
         .manage(update::PendingUpdate::default())
         .manage(window_chrome::ChromeWatch::default())
         .setup(|app| {
+            #[cfg(target_os = "linux")]
+            cef_signals::release();
             shutdown::end_on(signals, app.handle());
             #[cfg(debug_assertions)]
             debug_hooks::open_root(app.handle());

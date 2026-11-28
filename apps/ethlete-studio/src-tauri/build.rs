@@ -1,4 +1,8 @@
 fn main() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") {
+        println!("cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol=sigaction");
+    }
+
     // tauri-build fails on a resource that is not there, and the workspace builds the design
     // runtime, not cargo. An empty directory is skipped instead, so a bare `cargo build` still runs.
     std::fs::create_dir_all("../../../dist/apps/ethlete-studio/cli-runtime").expect("the design runtime folder");

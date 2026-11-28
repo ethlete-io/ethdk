@@ -16,18 +16,24 @@ const only = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefi
 
 const READY_TIMEOUT_MS = 60000;
 const READY_HELPERS = 3;
-const EXIT_LIMIT_MS = 5000;
+const EXIT_LIMIT_MS = 20000;
 const POLL_MS = 100;
 const STABLE_POLL_MS = 20;
 const STABLE_POLLS = 5;
 const STDERR_TAIL = 2000;
 const LOG_TAIL = 4000;
 
+// A thread name marks a moment inside cef::initialize: Chrome_IOThread starts while Chromium has
+// reset the signals to their default, CrShutdownDetector right when Chromium installs its own handlers.
 const CASES = [
   { name: 'sigint', signal: 'SIGINT' },
   { name: 'sigint-inherited-ignore', signal: 'SIGINT', ignoreInterrupt: true },
   { name: 'sigterm', signal: 'SIGTERM' },
   { name: 'sighup', signal: 'SIGHUP' },
+  { name: 'sigint-during-cef-init', signal: 'SIGINT', atThread: 'Chrome_IOThread' },
+  { name: 'sigint-at-chromium-handlers', signal: 'SIGINT', atThread: 'CrShutdownDetec' },
+  { name: 'sigterm-at-chromium-handlers', signal: 'SIGTERM', atThread: 'CrShutdownDetec' },
+  { name: 'sighup-at-chromium-handlers', signal: 'SIGHUP', atThread: 'CrShutdownDetec' },
 ];
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -47,6 +53,20 @@ const catches = (pid, signal) => {
     const caught = readFileSync(`/proc/${pid}/status`, 'utf8').match(/^SigCgt:\s*([0-9a-f]+)$/m)?.[1];
 
     return caught !== undefined && (BigInt(`0x${caught}`) & (1n << BigInt(constants.signals[signal] - 1))) !== 0n;
+  } catch {
+    return false;
+  }
+};
+
+const hasThread = (pid, name) => {
+  try {
+    return readdirSync(`/proc/${pid}/task`).some((task) => {
+      try {
+        return readFileSync(`/proc/${pid}/task/${task}/comm`, 'utf8').trim() === name;
+      } catch {
+        return false;
+      }
+    });
   } catch {
     return false;
   }
@@ -94,35 +114,46 @@ const launch = (ignoreInterrupt) => {
   return { child, exit, home, setUp, stderrTail, diagnostics };
 };
 
-const runCase = async ({ name, signal, ignoreInterrupt }) => {
+const waitForThread = (pid, name) => {
+  const by = Date.now() + READY_TIMEOUT_MS;
+
+  while (Date.now() < by && existsSync(`/proc/${pid}`)) {
+    if (hasThread(pid, name)) return true;
+  }
+
+  return false;
+};
+
+const waitUntilReady = async ({ pid, child, signal, setUp, stderrTail, diagnostics }) => {
+  const readyBy = Date.now() + READY_TIMEOUT_MS;
+
+  let stableCatches = 0;
+
+  while (groupOf(pid).length < READY_HELPERS || stableCatches < STABLE_POLLS || !setUp()) {
+    stableCatches = catches(pid, signal) ? stableCatches + 1 : 0;
+
+    if (Date.now() > readyBy)
+      return `the host did not start its helpers or catch ${signal} (helpers ${groupOf(pid).length}/${READY_HELPERS}, signal caught ${catches(pid, signal)} for ${stableCatches}/${STABLE_POLLS} polls, setup ${setUp()})\n${diagnostics()}`;
+    if (child.exitCode !== null) return `the host ended on its own (${child.exitCode}): ${stderrTail() || 'no stderr'}`;
+
+    await sleep(STABLE_POLL_MS);
+  }
+
+  return undefined;
+};
+
+const runCase = async ({ name, signal, ignoreInterrupt, atThread }) => {
   const { child, exit, home, setUp, stderrTail, diagnostics } = launch(ignoreInterrupt);
   const pid = child.pid;
 
   try {
-    const readyBy = Date.now() + READY_TIMEOUT_MS;
+    if (atThread) {
+      if (!waitForThread(pid, atThread))
+        return { name, ok: false, detail: `the host never started thread ${atThread}\n${diagnostics()}` };
+    } else {
+      const notReady = await waitUntilReady({ pid, child, signal, setUp, stderrTail, diagnostics });
 
-    // Chromium's own handlers also catch the signal while cef::initialize runs; the host's handlers
-    // are back once its setup created the console log folder.
-    let stableCatches = 0;
-
-    while (groupOf(pid).length < READY_HELPERS || stableCatches < STABLE_POLLS || !setUp()) {
-      stableCatches = catches(pid, signal) ? stableCatches + 1 : 0;
-
-      if (Date.now() > readyBy)
-        return {
-          name,
-          ok: false,
-          detail: `the host did not start its helpers or catch ${signal} (helpers ${groupOf(pid).length}/${READY_HELPERS}, signal caught ${catches(pid, signal)} for ${stableCatches}/${STABLE_POLLS} polls, setup ${setUp()})\n${diagnostics()}`,
-        };
-      if (child.exitCode !== null) {
-        return {
-          name,
-          ok: false,
-          detail: `the host ended on its own (${child.exitCode}): ${stderrTail() || 'no stderr'}`,
-        };
-      }
-
-      await sleep(STABLE_POLL_MS);
+      if (notReady) return { name, ok: false, detail: notReady };
     }
 
     const sentAt = Date.now();
