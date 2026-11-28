@@ -93,7 +93,7 @@ describe('unchangedStatesOf', () => {
     expect(await unchangedStatesOf({ product, sketch, variant: 'new', load: counting().load })).toEqual([]);
   });
 
-  it('draws the edit sketch variant new as spare work once the first frame draws old unlike the product', async () => {
+  it('draws the edit sketch variant old against new, never the product, at every frame', async () => {
     const { product } = acme();
     const sketch = createSketch({
       product,
@@ -116,13 +116,40 @@ describe('unchangedStatesOf', () => {
     writeFileSync(resolve(variantDirOf(sketch, 'old'), 'elements', 'hero', 'hero.css'), '.acme-hero { color: red; }');
 
     expect(await unchangedStatesOf({ product, sketch, variant: 'old', load, pictureOf })).toEqual([]);
-    expect(drawn.filter((entry) => entry.includes(' new'))).toEqual(['default@320 new spare']);
-    expect(new Set(drawn.filter((entry) => entry.endsWith(' old')))).toEqual(
-      new Set(['default@320 old', 'default@1440 old']),
+    expect(new Set(drawn)).toEqual(
+      new Set(['default@320 old', 'default@1440 old', 'default@320 new', 'default@1440 new']),
     );
   });
 
-  it('draws no spare new for a state whose first frame old draws the same as the product', async () => {
+  it('asks no product draw or product load for the edit compare', async () => {
+    const { product } = acme();
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero', sketch: 'edit' },
+      variants: ['new', 'old'],
+    }) as Sketch;
+    const { load: plain } = counting();
+    const loaded: (string | null)[] = [];
+    const load: SketchPartLoader = async (options) => {
+      loaded.push(options.sketch?.variant ?? null);
+
+      return plain(options);
+    };
+    const drawn: (string | null)[] = [];
+    const pictureOf: PictureOf = async ({ sketch: on }) => {
+      drawn.push(on?.variant ?? null);
+
+      return { png: Buffer.from(on?.variant ?? 'now'), marks: [] };
+    };
+
+    writeFileSync(resolve(variantDirOf(sketch, 'old'), 'elements', 'hero', 'hero.css'), '.acme-hero { color: red; }');
+
+    expect(await unchangedStatesOf({ product, sketch, variant: 'old', load, pictureOf })).toEqual([]);
+    expect(drawn).not.toContain(null);
+    expect(loaded).not.toContain(null);
+  });
+
+  it('names a state unchanged whose old draws the same as its new', async () => {
     const { product } = acme();
     const sketch = createSketch({
       product,
@@ -141,7 +168,7 @@ describe('unchangedStatesOf', () => {
     expect(await unchangedStatesOf({ product, sketch, variant: 'old', load: counting().load, pictureOf })).toEqual([
       'default',
     ]);
-    expect(drawn).not.toContain('new spare');
+    expect(new Set(drawn)).toEqual(new Set(['old', 'new']));
   });
 
   it('leaves out a state whose demo frame the variant changed', async () => {

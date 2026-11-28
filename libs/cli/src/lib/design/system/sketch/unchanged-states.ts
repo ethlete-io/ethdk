@@ -146,13 +146,13 @@ const drawsTheSame = async (options: {
   presets: string[] | null;
   state: string;
   sketch: SketchVariant;
-  alongside: SketchVariant | null;
+  base: SketchVariant | null;
 }) => {
-  const { pictureOf, product, key, part, presets, state, sketch, alongside } = options;
+  const { pictureOf, product, key, part, presets, state, sketch, base } = options;
 
   try {
     const changes = await Promise.all(
-      framesOf(part, presets).map(async (frame, index) => {
+      framesOf(part, presets).map(async (frame) => {
         const asked = (drawn: SketchVariant | null) => ({
           product,
           part: key,
@@ -161,12 +161,9 @@ const drawsTheSame = async (options: {
           sketch: drawn,
           params: new URLSearchParams(),
         });
-        const draw = (drawn: SketchVariant | null, fresh: boolean) => pictureOf({ ...asked(drawn), fresh });
+        const draw = (drawn: SketchVariant | null, fresh: boolean) => pictureOf({ ...asked(drawn ?? base), fresh });
 
         const { same, change } = await drawnPair(draw, sketch);
-
-        if (alongside && index === 0 && !same)
-          void pictureOf({ ...asked(alongside), priority: 'spare' }).catch(() => undefined);
 
         return same ? null : (change ?? undefined);
       }),
@@ -250,7 +247,8 @@ export const keptComparisonOf = async (
 
 /**
  * The states of the sketch's target, or of the part `part` names, that `variant` renders to the same markup and styles as the product
- * does now, with the same widths and interactions, so every frame of them matches, unless the variant changes a
+ * does now (the `old` of an edit sketch: as its `new` does, never drawing the product), with the same widths and
+ * interactions, so every frame of them matches, unless the variant changes a
  * part stylesheet the product's stylesheets `@import`. With `pictureOf`, any other state, or one that cannot be
  * rendered outside a browser (`ng()`), is unchanged when every frame draws the
  * same pixels in the default theme. A state the product lacks, or one that fails to draw on either side, is never
@@ -317,8 +315,15 @@ export const unchangedStatesOf = async (options: {
 
   if (isKept(stored)) return remember(key, stored);
 
+  const base = isEditSketch(sketch) && variant === EDIT_OLD ? { target: sketch.target, variant: EDIT_NEW } : null;
+  const baseFile = base
+    ? overlaySketch({ product, sketch, variant: base.variant }).parts.find((part) => partKeyOf(part) === compared)?.file
+    : merged;
+
+  if (!baseFile) return [];
+
   const [now, after] = await Promise.all([
-    renderedOf(() => load({ file: merged, product: product.name, sketch: null })),
+    renderedOf(() => load({ file: baseFile, product: product.name, sketch: base })),
     renderedOf(() => load({ file: drawn, product: product.name, sketch: { target: sketch.target, variant } })),
   ]);
 
@@ -327,6 +332,7 @@ export const unchangedStatesOf = async (options: {
   const parts: DrawnPart[] = [
     { product: product.name, part: compared, sketch: null },
     { product: product.name, part: compared, sketch: { target: sketch.target, variant } },
+    ...(base ? [{ product: product.name, part: compared, sketch: base }] : []),
   ];
 
   const keep = (kept: Kept) => {
@@ -364,8 +370,7 @@ export const unchangedStatesOf = async (options: {
             presets,
             state,
             sketch: { target: sketch.target, variant },
-            alongside:
-              isEditSketch(sketch) && variant === EDIT_OLD ? { target: sketch.target, variant: EDIT_NEW } : null,
+            base,
           })
         : ({ result: 'different' } as const);
     }),
