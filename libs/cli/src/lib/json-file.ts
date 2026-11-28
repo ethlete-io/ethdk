@@ -11,9 +11,7 @@ import {
   writeSync,
 } from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { designContentOf } from './design/system/design-file';
-import { formattedTextOf } from './design/system/prettier';
-import { noteWrite } from './design/system/write-journal';
+import { formattedTextOf } from './prettier';
 
 /** `text` (JSON) formatted as `file` by the target checkout's Prettier; unchanged without Prettier or when it fails. */
 export const formattedJsonTextOf = (options: { target: string; file: string; text: string }) => {
@@ -47,18 +45,32 @@ const dropDeadTmpFiles = (file: string) => {
   }
 };
 
-const writeBytesAtomically = (file: string, text: string | Buffer) => {
+export type BeforeWrite = (path: string) => void;
+
+/**
+ * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
+ * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. An equal file is left untouched and keeps its mtime. `beforeWrite` gets each path before the write touches it.
+ */
+export const writeChangedFile = ({
+  file,
+  text,
+  beforeWrite,
+}: {
+  file: string;
+  text: string | Buffer;
+  beforeWrite?: BeforeWrite;
+}) => {
   const bytes = typeof text === 'string' ? Buffer.from(text, 'utf8') : text;
 
   if (existsSync(file) && readFileSync(file).equals(bytes)) return;
 
-  noteWrite(file);
+  beforeWrite?.(file);
   mkdirSync(dirname(file), { recursive: true });
   dropDeadTmpFiles(file);
 
   const tmp = tmpFileOf(file);
 
-  noteWrite(tmp);
+  beforeWrite?.(tmp);
 
   try {
     const fd = openSync(tmp, 'wx');
@@ -79,20 +91,14 @@ const writeBytesAtomically = (file: string, text: string | Buffer) => {
   }
 };
 
-/**
- * Writes `text` to `file` through a temporary file in the same folder and a rename, so a reader or a killed writer
- * sees either the old or the new text, never a part of it; the next write drops a dead writer's temporary file. A file under `.ethlete/design` is formatted first (see `designContentOf`). An equal file is left untouched and keeps its mtime.
- */
-export const writeChangedFile = (file: string, text: string | Buffer) =>
-  writeBytesAtomically(file, designContentOf(file, text));
-
 /** `value` serialized as JSON and written to `file`, formatted like {@link formattedJsonTextOf}; an equal file stays untouched. */
-export const writeJsonFile = (options: { file: string; value: unknown }) => {
+export const writeJsonFile = (options: { file: string; value: unknown; beforeWrite?: BeforeWrite }) => {
   const file = resolve(options.file);
   const target = dirname(file);
 
-  writeBytesAtomically(
+  writeChangedFile({
     file,
-    formattedJsonTextOf({ target, file, text: `${JSON.stringify(options.value, null, 2)}\n` }),
-  );
+    text: formattedJsonTextOf({ target, file, text: `${JSON.stringify(options.value, null, 2)}\n` }),
+    beforeWrite: options.beforeWrite,
+  });
 };

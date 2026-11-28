@@ -23,7 +23,7 @@ import {
 import { EDIT_OLD } from './edit-sketch';
 import { isEditSketch } from './merged-parts';
 import { gitTopOf } from '../../git-top';
-import { writeChangedFile } from '../../../json-file';
+import { writeChangedDesignFile } from '../design-file';
 import { withProductLock } from '../product-lock';
 import { journaled, noteWrite } from '../write-journal';
 
@@ -324,7 +324,7 @@ export const portBaseChanges = (options: {
         if (content === null) {
           noteWrite(path);
           rmSync(path, { force: true });
-        } else writeChangedFile(path, content);
+        } else writeChangedDesignFile(path, content);
       }
 
       return {

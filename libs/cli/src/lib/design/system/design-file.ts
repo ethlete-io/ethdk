@@ -1,7 +1,9 @@
 import { writeFileSync } from 'fs';
 import { extname, resolve, sep } from 'path';
+import { writeChangedFile, writeJsonFile } from '../../json-file';
+import { formattedTextOf } from '../../prettier';
 import { gitStatusOf } from '../git-reader';
-import { formattedTextOf } from './prettier';
+import { noteWrite } from './write-journal';
 
 const DESIGN_SEGMENT = `${sep}.ethlete${sep}design${sep}`;
 const FORMATTED = new Set([
@@ -64,7 +66,19 @@ export const designContentOf = <T extends string | Buffer>(file: string, content
 
 /**
  * Writes `content` to `file` like `writeFileSync`, formatted first when the file lies under `.ethlete/design` (see
- * {@link designContentOf}). Every write by a design command goes through here or `writeChangedFile`.
+ * {@link designContentOf}). Every write by a design command goes through here, {@link writeChangedDesignFile} or
+ * {@link writeDesignJsonFile}.
  */
 export const writeDesignFile = (file: string, content: string | Buffer) =>
   writeFileSync(file, designContentOf(file, content));
+
+/**
+ * `writeChangedFile` for a design command: formatted like {@link writeDesignFile} and recorded in the open write
+ * journal, so a killed step can be undone.
+ */
+export const writeChangedDesignFile = (file: string, text: string | Buffer) =>
+  writeChangedFile({ file, text: designContentOf(file, text), beforeWrite: noteWrite });
+
+/** `writeJsonFile` for a design command, recorded in the open write journal. */
+export const writeDesignJsonFile = (options: { file: string; value: unknown }) =>
+  writeJsonFile({ ...options, beforeWrite: noteWrite });

@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import { writeJsonFile } from '../../../json-file';
+import { writeDesignJsonFile } from '../design-file';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { CommentPoint, CommentSize, FITTED, goneSizeOf, goneStateOf, isPoint, isSize } from '../comments/comment';
@@ -48,7 +48,7 @@ export const noteProblemOf = (options: { product: ResolvedProduct; note: NoteFil
   );
 };
 
-const writeNote = (file: string, note: NoteFile) => writeJsonFile({ file: file, value: note });
+const writeNote = (file: string, note: NoteFile) => writeDesignJsonFile({ file: file, value: note });
 
 /** Every note on a state of a product, `<product>/notes/<id>.json`; a file that cannot be read answers with its problem. */
 export const listNotes = (productDir: string) => {

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../design-config';
 import { gitResult } from '../git-repo.fixtures';
 import { resolveProduct } from '../resolve-product';
-import { formattedTextOf } from '../prettier';
+import { formattedTextOf } from '../../../prettier';
 import { mergeInWorker } from './merge-runner';
 import { mergeAndRecord } from './merge-step';
 import { createSketch, decideSketch, findSketch, markSketchReady, Sketch, SketchTarget } from './sketch';

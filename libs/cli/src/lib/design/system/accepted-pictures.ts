@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { writeJsonFile } from '../../json-file';
+import { writeDesignJsonFile } from './design-file';
 import { dirname, resolve } from 'path';
 import { chromiumOf } from '../browser';
 import { pngSizeOf } from '../contact-sheet';
@@ -162,7 +162,7 @@ export const writePictures = (options: { dir: string; part: string; pictures: Om
     a.localeCompare(b),
   );
 
-  writeJsonFile({ file: picturesFileOf(dir), value: Object.fromEntries(entries) });
+  writeDesignJsonFile({ file: picturesFileOf(dir), value: Object.fromEntries(entries) });
 };
 
 /** The states whose picture differs between two drawings, added and removed states included, sorted. */

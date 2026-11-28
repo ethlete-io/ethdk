@@ -11,7 +11,7 @@ import {
   writeSync,
 } from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { writeChangedFile } from '../../json-file';
+import { writeChangedDesignFile } from './design-file';
 import { productCacheDirOf } from './product';
 import { hasJournal, recoverJournal } from './write-journal';
 
@@ -193,8 +193,9 @@ export const productDirOfSketch = (sketchDir: string) => resolve(sketchDir, '..'
 export const writeDecisionFile = (file: string, text: string) => {
   const name = basename(file);
 
-  if (name === 'sketch.json') withProductLock(productDirOfSketch(dirname(file)), () => writeChangedFile(file, text));
+  if (name === 'sketch.json')
+    withProductLock(productDirOfSketch(dirname(file)), () => writeChangedDesignFile(file, text));
   else if (name === 'ready.json' || name === 'merged.json')
-    withProductLock(dirname(file), () => writeChangedFile(file, text));
-  else writeChangedFile(file, text);
+    withProductLock(dirname(file), () => writeChangedDesignFile(file, text));
+  else writeChangedDesignFile(file, text);
 };

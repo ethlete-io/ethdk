@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 import { dirname, join, resolve } from 'path';
-import { spawnPlain } from '../../plain-output';
+import { spawnPlain } from './plain-output';
 
 /** The Prettier CLI of the target checkout, else the one this package resolves, else `null`. */
 export const prettierBinOf = (target: string) => {

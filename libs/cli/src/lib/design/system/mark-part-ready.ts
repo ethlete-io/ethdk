@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { writeJsonFile } from '../../json-file';
+import { writeDesignJsonFile } from './design-file';
 import { gitStatusOf } from '../git-reader';
 import { Blocker } from './build-ready-contract';
 import { actionsRerunReasonOf } from './embedded-actions';
@@ -151,7 +151,7 @@ const commitOwnEntry = (options: { target: string; dir: string; part: string; sl
       .filter(([, entry]) => entry !== undefined)
       .sort(([a], [b]) => a.localeCompare(b));
 
-    writeJsonFile({ file, value: Object.fromEntries(composed) });
+    writeDesignJsonFile({ file, value: Object.fromEntries(composed) });
 
     try {
       return commitOwnFilesSync({ target, files: [file], slug, subject });

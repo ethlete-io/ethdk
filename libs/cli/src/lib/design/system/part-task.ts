@@ -1,4 +1,4 @@
-import { writeJsonFile } from '../../json-file';
+import { writeDesignJsonFile } from './design-file';
 import { createHash } from 'crypto';
 import { posix, relative, resolve } from 'path';
 import { appFilesOf } from './app-files';
@@ -118,7 +118,7 @@ export const markImplemented = (options: {
     a.localeCompare(b),
   );
 
-  writeJsonFile({ file: implementedFileOf(found.dir), value: Object.fromEntries(entries) });
+  writeDesignJsonFile({ file: implementedFileOf(found.dir), value: Object.fromEntries(entries) });
 
   return implemented;
 };

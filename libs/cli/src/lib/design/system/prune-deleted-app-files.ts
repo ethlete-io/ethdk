@@ -1,4 +1,4 @@
-import { writeJsonFile } from '../../json-file';
+import { writeDesignJsonFile } from './design-file';
 import { existsSync, readFileSync } from 'fs';
 import { relative, resolve } from 'path';
 import { implementationBaselineFileOf } from './implementation-baseline';
@@ -32,7 +32,7 @@ const pruneFile = (options: { root: string; file: string }) => {
     });
   });
 
-  if (dropped.length > 0) writeJsonFile({ file, value: parsed });
+  if (dropped.length > 0) writeDesignJsonFile({ file, value: parsed });
 
   return dropped;
 };

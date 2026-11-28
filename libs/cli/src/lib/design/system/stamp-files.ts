@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { existsSync, readFileSync, rmSync } from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { writeChangedFile, writeJsonFile } from '../../json-file';
+import { writeChangedDesignFile, writeDesignJsonFile } from './design-file';
 import { productCacheDirOf } from './product';
 import { withProductLock } from './product-lock';
 
@@ -124,7 +124,7 @@ const writeTrackedStamp = (options: { file: string; value: unknown; keys: readon
   const seen = diskStampTextOf(file);
 
   if (seen === tracked || !isEntries(tracked)) {
-    writeJsonFile({ file, value });
+    writeDesignJsonFile({ file, value });
 
     return;
   }
@@ -139,7 +139,7 @@ const writeTrackedStamp = (options: { file: string; value: unknown; keys: readon
     else onto[key] = written[key];
   }
 
-  if (next !== null || staleInTracked.length > 0) writeChangedFile(file, sortedTextOf(onto));
+  if (next !== null || staleInTracked.length > 0) writeChangedDesignFile(file, sortedTextOf(onto));
 };
 
 /** The text of a stamp file as git tracks it, without the entries the stamp cache holds over it. */
@@ -165,7 +165,7 @@ const writeCachedStamp = (file: string, value: unknown) => {
     return;
   }
 
-  writeChangedFile(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
+  writeChangedDesignFile(cacheFile, JSON.stringify({ base: tracked, text: `${JSON.stringify(value, null, 2)}\n` }));
 };
 
 const withoutAt = (entry: unknown) => {
@@ -212,7 +212,7 @@ export const keepHeldStamps = (name: string, keys: readonly string[] | 'all') =>
         dropped = true;
       }
 
-      if (dropped) writeJsonFile({ file, value: JSON.parse(sortedTextOf(inTracked)) });
+      if (dropped) writeDesignJsonFile({ file, value: JSON.parse(sortedTextOf(inTracked)) });
 
       writeCachedStamp(file, JSON.parse(sortedTextOf(onDisk)));
     });

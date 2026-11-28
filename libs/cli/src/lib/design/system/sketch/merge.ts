@@ -25,7 +25,7 @@ import { forgetUnnamedActions } from '../part-ready';
 import { partKeyOf, ResolvedPart, ResolvedProduct, resolveProduct } from '../resolve-product';
 import { rebaseAfterMerge } from './after-merge';
 import { conflictsOf, partHashHolds } from './baseline';
-import { prettierBinOf } from '../prettier';
+import { prettierBinOf } from '../../../prettier';
 import { withProductLock } from '../product-lock';
 import { journaled, noteWrite } from '../write-journal';
 import { carryShared, productSharedChangesOf, sharedPlanOf } from './merge-shared';

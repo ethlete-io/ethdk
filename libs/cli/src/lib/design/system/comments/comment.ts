@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import { writeJsonFile } from '../../../json-file';
+import { writeDesignJsonFile } from '../design-file';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { INTERACTIONS } from '../../force-interactions';
@@ -195,7 +195,7 @@ const migratedOf = (stored: CommentFile): CommentFile => {
 const rewrite = (file: string, change: (stored: CommentFile) => CommentFile) => {
   const changed = change(migratedOf(JSON.parse(readFileSync(file, 'utf8')) as CommentFile));
 
-  writeJsonFile({ file: file, value: changed });
+  writeDesignJsonFile({ file: file, value: changed });
 
   return changed;
 };
@@ -365,7 +365,7 @@ export const createComment = (options: {
   const file = resolve(dir, `${id}.json`);
 
   mkdirSync(dir, { recursive: true });
-  writeJsonFile({ file: file, value: comment });
+  writeDesignJsonFile({ file: file, value: comment });
 
   return { ...comment, interaction: comment.interaction ?? REST, replies: [], id, product: product.name, file };
 };

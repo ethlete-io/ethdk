@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { writeJsonFile } from '../../json-file';
+import { writeDesignJsonFile } from './design-file';
 import { resolve } from 'path';
 
 export const HANDOFF_FILE = 'handoff.json';
@@ -37,5 +37,5 @@ export const recordHandoff = (options: { productDir: string; part: string; at?: 
   };
   const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b)));
 
-  writeJsonFile({ file: handoffFileOf(options.productDir), value: sorted });
+  writeDesignJsonFile({ file: handoffFileOf(options.productDir), value: sorted });
 };
