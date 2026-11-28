@@ -52,6 +52,24 @@ describe('et design mcp registration', () => {
     expect(existsSync(join(root, '.codex/config.toml'))).toBe(false);
   });
 
+  it('preserves existing Claude Code and Codex entries without the et binary', () => {
+    const root = repo({ cli: false, vars: { designMcpCommand: 'node new-server.mjs' } });
+    const claudeFile = join(root, '.mcp.json');
+    const codexFile = join(root, '.codex/config.toml');
+    const claudeContents =
+      '{ "mcpServers": { "ethlete-design": { "command": "yarn", "args": ["et", "design", "mcp"] } } }\n';
+    const codexContents = '[mcp_servers.ethlete-design]\ncommand = "yarn"\nargs = ["et", "design", "mcp"]\n';
+
+    mkdirSync(join(root, '.codex'));
+    writeFileSync(claudeFile, claudeContents, 'utf8');
+    writeFileSync(codexFile, codexContents, 'utf8');
+
+    run(root);
+
+    expect(readFileSync(claudeFile, 'utf8')).toBe(claudeContents);
+    expect(readFileSync(codexFile, 'utf8')).toBe(codexContents);
+  });
+
   it('writes .mcp.json in the format of the checkout Prettier config', async () => {
     const root = repo({ cli: true });
     const file = join(root, '.mcp.json');
