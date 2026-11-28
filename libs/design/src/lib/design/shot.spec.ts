@@ -736,6 +736,29 @@ describe('createPartShooter', () => {
     ]);
   });
 
+  it('draws a frame that boots differently while a backlog of frames of one boot still waits, instead of behind all of them', async () => {
+    const { shots } = acme();
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const card = 'product=acme&part=components/card&priority=low';
+    const olds = Array.from({ length: DRAWS_AT_ONCE + 4 }, (_, at) => `${card}&state=old-${at + 1}`);
+    const fresh = `${card}&state=long&interaction=fresh`;
+    const drawnKinds = () => drawnUrls().map((url) => (new URL(url).searchParams.has('interaction') ? 'fresh' : 'old'));
+
+    const opening = goto.getMockImplementation();
+
+    onTestFinished(() => void goto.mockImplementation(opening as never));
+    goto.mockImplementation(() => held);
+
+    const asked = [...olds, fresh].map((query) => ask(shots, query));
+
+    await vi.waitFor(() => expect(drawnKinds()).toContain('fresh'), { timeout: 1500 });
+    expect(drawnKinds().filter((kind) => kind === 'old').length).toBeLessThan(DRAWS_AT_ONCE);
+
+    release();
+    await Promise.all(asked);
+  });
+
   it('draws the active frame of a newly shown view next, then its visible cells, before the backlog of the old view', async () => {
     const { shots } = acme();
     let release = () => undefined as void;
