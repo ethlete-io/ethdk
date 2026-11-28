@@ -58,6 +58,8 @@ workspace, and fifagg's `.mcp.json` still opens the design MCP.
   verdict was ok, and `pages-overview@a` drew. Not run: a real Tauri start; the headless e2e harness starts
   the server itself and never reaches `entry_of`.
 - Next: S4 (cli-runtime from a design entry), then coupling 4.
+- S4 draw verified: the pre-S4 (794a21b8dc) and S4 shots of tomflix `pages/overview` variant a are
+  byte-identical; the poster cards are text-only in the sketch itself (no image, no poster URL).
 
 ## Suspects after step 2 (Codex review, 28.11.)
 
