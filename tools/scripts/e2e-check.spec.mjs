@@ -268,15 +268,16 @@ test('a started case is the last case reached when the suite then goes silent', 
   assert.equal(result.lastCase, 'RUN   [timing] slow one');
 });
 
-const fakeTree = ({ recorded, hashOf = 'h1', link }) => {
+const fakeTree = ({ recorded, hashOf = 'h1', link, guardLib = 'cli-core' }) => {
   const dir = mkdtempSync(join(tmpdir(), 'b267b-tree-'));
   const dist = link ?? join(dir, 'dist/libs/cli');
   mkdirSync(join(dist, 'src/lib'), { recursive: true });
   writeFileSync(join(dist, 'src/index.js'), '');
   writeFileSync(join(dist, 'src/lib/source-hash.js'), `exports.cliSourceHash = () => ${JSON.stringify(hashOf)};`);
   writeFileSync(join(dist, 'build-info.json'), JSON.stringify({ sourceHash: recorded }));
-  mkdirSync(join(dir, 'libs/cli-core/src/lib'), { recursive: true });
-  writeFileSync(join(dir, 'libs/cli-core/src/lib/source-hash.ts'), '');
+  const guardDir = join(dir, 'libs', guardLib, 'src/lib');
+  mkdirSync(guardDir, { recursive: true });
+  writeFileSync(join(guardDir, 'source-hash.ts'), '');
   if (link) {
     mkdirSync(join(dir, 'dist/libs'), { recursive: true });
     symlinkSync(link, join(dir, 'dist/libs/cli'));
@@ -294,6 +295,13 @@ test('cliBuildProblem fails for a dist built from other sources', () => {
   const dir = fakeTree({ recorded: 'other' });
   assert.match(check.cliBuildProblem(dir), /not built from the tree revision/);
   rmSync(dir, { recursive: true, force: true });
+});
+
+test('cliBuildProblem rejects a stale dist when the guard is still in libs/cli', (t) => {
+  const dir = fakeTree({ recorded: 'other', guardLib: 'cli' });
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  assert.match(check.cliBuildProblem(dir), /not built from the tree revision/);
 });
 
 test('cliBuildProblem fails for a dist symlinked out of the tree', () => {

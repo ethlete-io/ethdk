@@ -18,6 +18,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const CACHE = 'tmp/studio-cli';
+const CLI_ROOT = 'libs/cli';
 
 export const WORKING_CLI_CACHE = 'tmp/studio-cli-working';
 
@@ -36,7 +37,7 @@ export const APP_SOURCES = [
 ];
 
 export const AREAS = {
-  cli: 'libs/cli',
+  cli: [CLI_ROOT, 'libs/cli-core', 'libs/design'],
   frontend: APP_SOURCES,
   host: 'apps/ethlete-studio/src-tauri',
 };
@@ -53,27 +54,29 @@ const git = (root, args) => {
 
 export const lastCommitOf = (root, ...paths) => git(root, ['log', '-1', '--format=%H', '--', ...paths]) || null;
 
-export const isDirty = (root, path) => git(root, ['status', '--porcelain', '--', path]) !== '';
+export const isDirty = (root, path) => git(root, ['status', '--porcelain', '--', ...[].concat(path)]) !== '';
+
+const cliState = (root) => ({ latest: lastCommitOf(root, ...AREAS.cli), dirty: isDirty(root, AREAS.cli) });
 
 export const areaState = (root) => ({
-  cli: { latest: lastCommitOf(root, AREAS.cli), dirty: isDirty(root, AREAS.cli) },
+  cli: cliState(root),
   frontend: { latest: lastCommitOf(root, ...AREAS.frontend) },
   host: { latest: lastCommitOf(root, AREAS.host) },
 });
 
-/** The line `et:design` prints when `libs/cli` has uncommitted changes, or `null` for a clean `libs/cli`. */
+/** The line `et:design` prints when CLI sources have uncommitted changes, or `null` for clean sources. */
 export const dirtyCliNoteOf = ({ sha, dirty, args }) =>
   dirty
-    ? `et:design runs the cli built from ${sha.slice(0, 9)}; libs/cli has uncommitted changes. ` +
+    ? `et:design runs the cli built from ${sha.slice(0, 9)}; CLI sources have uncommitted changes. ` +
       `To run them: yarn et:design --working-tree ${args.join(' ')}`.trimEnd()
     : null;
 
-/** How a timings line names the CLI build that ran: its commit, `+dirty` when built from a changed `libs/cli`. */
+/** How a timings line names the CLI build that ran: its commit, with `+dirty` when built from uncommitted sources. */
 export const cliBuildMarkOf = ({ sha, dirty }) => `${sha.slice(0, 9)}${dirty ? '+dirty' : ''}`;
 
 /**
- * Picks the committed build to run. A dirty `libs/cli` never yields a copy of the working build;
- * the last commit that touched the CLI is built when no copy of it exists yet.
+ * Picks the committed build to run. With uncommitted CLI sources, build the last commit that touched them
+ * if no copy of it exists yet.
  */
 export const cliCopyPlan = ({ latest, dirty, copies, distMatches }) => {
   if (copies.includes(latest)) return { action: 'use', sha: latest };
@@ -86,7 +89,7 @@ const sourceHashOf = (root) => {
 
   if (!existsSync(module)) return null;
 
-  return createRequire(import.meta.url)(module).cliSourceHash(join(root, AREAS.cli));
+  return createRequire(import.meta.url)(module).cliSourceHash(join(root, CLI_ROOT));
 };
 
 /** `et design status`'s push state of `root` (unpushed commits, oldest age), or null without a built CLI. */
@@ -205,7 +208,7 @@ export const ensureCliCopy = (
 ) => {
   const cache = join(root, CACHE);
   const currentFile = join(cache, 'current');
-  const { latest, dirty } = areaState(root).cli;
+  const { latest, dirty } = cliState(root);
   mkdirSync(cache, { recursive: true });
 
   const copies = copiesOf(cache);
@@ -250,7 +253,7 @@ const compileWithNx = (root, output, log) => {
 };
 
 /**
- * Builds the working tree's `libs/cli`, uncommitted edits included, into `tmp/studio-cli-working/<id>`, never into
+ * Builds the working tree's CLI, uncommitted edits included, into `tmp/studio-cli-working/<id>`, never into
  * `dist/` or the committed copies. The caller removes `dir` when its run ends.
  */
 export const workingTreeCliCopy = (
@@ -259,8 +262,8 @@ export const workingTreeCliCopy = (
 ) => {
   const cache = join(root, WORKING_CLI_CACHE);
   const dir = join(cache, id);
-  const sha = lastCommitOf(root, AREAS.cli) ?? git(root, ['rev-parse', 'HEAD']);
-  const dirty = isDirty(root, AREAS.cli);
+  const { latest, dirty } = cliState(root);
+  const sha = latest ?? git(root, ['rev-parse', 'HEAD']);
 
   for (const name of existsSync(cache) ? readdirSync(cache) : []) {
     const pid = Number(name);

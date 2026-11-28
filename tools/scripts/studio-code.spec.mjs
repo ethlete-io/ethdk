@@ -28,7 +28,7 @@ const C = 'c'.repeat(40);
 test('a dirty libs/cli names the build commit and the command that runs the working copy', () => {
   const note = dirtyCliNoteOf({ sha: B, dirty: true, args: ['check', '--product', 'sdk'] });
 
-  assert.match(note, /built from bbbbbbbbb; libs\/cli has uncommitted changes/);
+  assert.match(note, /built from bbbbbbbbb; CLI sources have uncommitted changes/);
   assert.match(note, /yarn et:design --working-tree check --product sdk$/);
 });
 
@@ -323,6 +323,40 @@ const phaseSpecRepo = () => {
 
   return root;
 };
+
+for (const lib of ['cli-core', 'design']) {
+  test(`a ${lib}-only commit invalidates the pinned CLI copy`, (t) => {
+    const root = phaseSpecRepo();
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+
+    const source = join('libs', lib, 'src', 'file.ts');
+    const build = (_root, tree) => {
+      const output = join(tree, 'dist/libs/cli/src');
+      mkdirSync(output, { recursive: true });
+      writeFileSync(join(output, 'index.js'), readFileSync(join(tree, source)));
+    };
+
+    mkdirSync(join(root, source, '..'), { recursive: true });
+    writeFileSync(join(root, source), 'before\n');
+    git(root, 'add', source);
+    git(root, 'commit', '--amend', '--no-edit');
+    const first = ensureCliCopy(root, { log: quiet, build });
+    assert.equal(readFileSync(first.entry, 'utf8'), 'before\n');
+
+    writeFileSync(join(root, source), 'after\n');
+    git(root, 'commit', '-qm', `${lib} change`, '--', source);
+    const refreshed = ensureCliCopy(root, { log: quiet, build });
+
+    assert.equal(readFileSync(refreshed.entry, 'utf8'), 'after\n');
+    assert.equal(refreshed.sha, git(root, 'rev-parse', 'HEAD'));
+
+    writeFileSync(join(root, source), 'uncommitted\n');
+    const dirty = ensureCliCopy(root, { log: quiet, build });
+
+    assert.deepEqual(dirty, { ...refreshed, dirty: true });
+    assert.equal(readFileSync(dirty.entry, 'utf8'), 'after\n');
+  });
+}
 
 test('a CLI build logs the cli-build phase before the build runs, a kept copy logs none', () => {
   const root = phaseSpecRepo();
