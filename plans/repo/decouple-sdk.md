@@ -1,6 +1,6 @@
 # Decouple the SDK from its apps
 
-Status: planning, 28.11.2026. Built after the weekly reset by a Fable lead with subagents. Inventory:
+Status: planning, 28.11.2026. Built by the builder as rows B912 (step 1) and B913 (steps 2-5), from the night of 28.11. Inventory:
 `.claude/handoffs/agent-results/decouple-inventory.md`.
 
 ## Decided (human, 28.11.)
