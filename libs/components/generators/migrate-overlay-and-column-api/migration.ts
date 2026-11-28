@@ -38,16 +38,14 @@ export default function migrateOverlayAndColumnApi(tree: Tree, schema: Migration
   console.log(filesChanged === 0 ? '   Nothing to migrate.\n' : `\n✅ Migrated ${filesChanged} file(s).\n`);
 
   return (schema.skipFormat ? Promise.resolve() : formatFiles(tree)).then(() => {
-    if (review.length === 0) return undefined;
+    if (review.length === 0) return;
 
-    return () => {
-      throw new Error(
-        [
-          `${review.length} place(s) need a hand fix; the files above are written, these lines are left as they were:`,
-          ...review.map((entry) => `   ✗ ${entry}`),
-          'Fix them, then run the migration again until it reports nothing.',
-        ].join('\n'),
-      );
-    };
+    console.log(
+      [
+        `WARN ${review.length} place(s) need a hand fix; the files above are written, these lines are left as they were:`,
+        ...review.map((entry) => `   ✗ ${entry}`),
+        'Fix them, then run the migration again until it reports nothing.',
+      ].join('\n'),
+    );
   });
 }

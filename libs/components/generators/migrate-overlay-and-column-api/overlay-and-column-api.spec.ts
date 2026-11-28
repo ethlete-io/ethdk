@@ -310,7 +310,7 @@ describe('migrate-overlay-and-column-api', () => {
   });
 
   describe('the generator', () => {
-    it('writes the rewrites and returns a callback that throws with file:line for the rest', () => {
+    it('writes the rewrites and warns with file:line for the rest without failing', () => {
       vi.spyOn(console, 'log').mockImplementation(() => undefined);
       const tree = createTreeWithEmptyWorkspace();
       tree.write(
@@ -321,8 +321,13 @@ describe('migrate-overlay-and-column-api', () => {
 
       return migrateOverlayAndColumnApi(tree, { skipFormat: true }).then((callback) => {
         expect(tree.read('apps/app-a/src/a.ts', 'utf-8')).toContain('(r: boolean | undefined) => log(r !== undefined)');
-        expect(callback).toBeTypeOf('function');
-        expect(() => callback?.()).toThrow(/apps\/app-a\/src\/b\.ts:3:/);
+        expect(callback).toBeUndefined();
+        const output = vi
+          .mocked(console.log)
+          .mock.calls.map((call) => call.join(' '))
+          .join('\n');
+        expect(output).toContain('WARN');
+        expect(output).toMatch(/apps\/app-a\/src\/b\.ts:3:/);
       });
     });
 
