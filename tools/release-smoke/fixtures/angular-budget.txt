@@ -1,0 +1,2 @@
+✘ [ERROR] bundle initial exceeded maximum budget. Budget 2.25 MB was not met by 44.00 kB with a total of 2.29 MB. [plugin angular-compiler]
+

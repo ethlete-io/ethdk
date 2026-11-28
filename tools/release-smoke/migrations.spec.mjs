@@ -10,6 +10,7 @@ import {
   copyConsumer,
   installedVersions,
   judgeSmokeBuild,
+  parseBudgetErrors,
   parseBuildErrors,
   pendingSmokeMigrations,
   snapshotFiles,
@@ -199,4 +200,18 @@ test('FAIL: a red build with no parseable error never downgrades to a warning', 
 
 test('PASS: a green build has neither failures nor warnings', () => {
   assert.deepEqual(judge({ buildCode: 0 }), { failures: [], warnings: [] });
+});
+
+test('WARN: a budget overrun in the consumer build is its own state, not a failure', () => {
+  const buildOutput = fixtureText('angular-budget.txt');
+  assert.equal(parseBudgetErrors(buildOutput).length, 1);
+  const verdict = judge({ buildOutput });
+  assert.deepEqual(verdict.failures, []);
+  assert.match(verdict.warnings.join('\n'), /^WARN .*bundle initial exceeded maximum budget/);
+});
+
+test('FAIL: a real compile error next to a budget error stays a failure', () => {
+  const buildOutput = `${fixtureText('angular-budget.txt')}\n${fixtureText('tsc-plain.txt')}`;
+  const verdict = judge({ buildOutput, rewritten: new Set(['src/a.ts']) });
+  assert.equal(verdict.failures.length, 2);
 });

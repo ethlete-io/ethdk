@@ -154,6 +154,19 @@ export const classifyBuildErrors = ({ errors, rewritten, root }) => {
   return { rewrittenErrors, untouchedErrors };
 };
 
+const BUDGET_ERROR =
+  /\[ERROR\] (.*exceeded maximum budget\. Budget .* was not met by .* with a total of [^.]*\.\d+ \w+)/;
+
+/** Angular budget overruns (`[ERROR] bundle initial exceeded maximum budget ...`) in a build output. */
+export const parseBudgetErrors = (output) =>
+  output
+    .replace(ANSI, '')
+    .split(/\r?\n/)
+    .flatMap((line) => {
+      const match = BUDGET_ERROR.exec(line);
+      return match ? [match[1]] : [];
+    });
+
 export const formatBuildError = (error) => `${error.file}:${error.line}:${error.column} ${error.code} ${error.message}`;
 
 /** Decides FAIL (failures) or WARN (warnings) for one consumer after its migrations ran and its build finished. */
@@ -166,6 +179,10 @@ export const judgeSmokeBuild = ({ migrationLines, buildCode, buildOutput, rewrit
     return { failures, warnings };
   }
   if (buildCode === 0) return { failures, warnings };
+  const budgetErrors = parseBudgetErrors(buildOutput);
+  for (const budgetError of budgetErrors)
+    warnings.push(`WARN consumer budget exceeded, its call to make: ${budgetError}`);
+  if (budgetErrors.length && !parseBuildErrors(buildOutput).length) return { failures, warnings };
   const { rewrittenErrors, untouchedErrors } = classifyBuildErrors({
     errors: parseBuildErrors(buildOutput),
     rewritten,
