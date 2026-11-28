@@ -1,4 +1,4 @@
-import { fromEvent, take } from 'rxjs';
+import { firstValueFrom, from, fromEvent, of, take, timeout } from 'rxjs';
 import { createHash } from 'crypto';
 import { IncomingMessage, ServerResponse } from 'http';
 import { isAbsolute } from 'path';
@@ -416,6 +416,8 @@ export const markSlotsScriptOf = () => `(() => {
 
 const DRAW_LIMIT_MS = 4 * DRAW_TIMEOUT_MS;
 
+const KEPT_DRAW_WAIT_MS = 2000;
+
 const SHOT_OPTIONS = { type: 'png', fullPage: true, omitBackground: true, timeout: DRAW_TIMEOUT_MS } as const;
 
 const CHECKER_SQUARE_PX = 8;
@@ -790,7 +792,12 @@ export const createPartShooter = (options: {
     if (frame instanceof ThumbMissingError) return null;
 
     const key = pictureKeyOf(frame.key, options.params);
-    const drawn = await Promise.race([cache.get(key)?.shot ?? null, null]).catch(() => null);
+    const shot = cache.get(key)?.shot;
+    const drawn = shot
+      ? await firstValueFrom(
+          from(shot).pipe(timeout({ first: loadScaledMs(KEPT_DRAW_WAIT_MS), with: () => of(null) })),
+        ).catch(() => null)
+      : null;
 
     if (drawn) return { picture: drawn, source: 'memory' };
 
@@ -1228,7 +1235,8 @@ export const createPartShooter = (options: {
      * Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. The default
      * `priority: 'high'` draws it ahead of every shot asked with `priority=low`; `'low'` queues it behind the shots the
      * board shows. Once `signal` aborts, the drawing leaves the queue unless it started or another ask still waits.
-     * `kept` answers only a picture drawn before, from memory or disk, and draws nothing: it rejects with a `NotKeptError` when none is kept.
+     * `kept` answers only a picture drawn before, from memory or disk, and draws nothing: it waits up to 2 s, stretched
+     * by the machine load, for a draw of it already asked, then rejects with a `NotKeptError` when none is kept.
      * `kept: 'size'` also answers a picture an older picture code drew from the same files, for its size.
      */
     pictureOf: ({

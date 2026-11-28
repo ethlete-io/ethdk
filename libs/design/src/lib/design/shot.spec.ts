@@ -11,7 +11,10 @@ import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf, NotKeptError } from './shot';
 import { createShotStore } from './shot-store';
 import { createDrawQueue, DRAWS_AT_ONCE, ShotUnprocessableError } from './thumb';
-import { createSketch, parseTarget } from './system/sketch/sketch';
+import { blankPngOf } from './blank-png';
+import { resolveProduct } from './system/resolve-product';
+import { shotFramesOf } from './system/sketch/shot-frames';
+import { createSketch, parseTarget, Sketch } from './system/sketch/sketch';
 import { unviewedShotLinesOf } from './system/sketch/viewed-shots';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
@@ -1368,6 +1371,53 @@ describe('createPartShooter for a call', () => {
     }
 
     expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('lists the frame of the zoom-chip reset state while its picture is still drawing', async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-zoom-chip-')));
+
+    cpSync(join(__dirname, '../../../../..', DESIGN_DIR), join(root, DESIGN_DIR), {
+      recursive: true,
+      filter: (file) => !/(^|\/)(pictures\.json|\.timings\.jsonl)$/.test(file),
+    });
+    onTestFinished(() => rmSync(root, { recursive: true, force: true }));
+
+    const config = readConfig(root) ?? {};
+    const shots = createPartShooter({
+      target: root,
+      base: 'http://localhost:1',
+      system: createSystemModules({ target: root, config }),
+      chromiumOf: withBrowser,
+      ledger: createDrawLedger(),
+    });
+    const part = 'components/zoom-chip';
+    const states = ['reset', 'reset-hover', 'reset-active', 'reset-focus-visible'];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+
+    closing.push(() => shots.close());
+    screenshot.mockImplementation(async () => blankPngOf(202, 62));
+
+    for (const state of states.slice(1)) await ask(shots, `product=studio&part=${part}&state=${state}&scheme=light`);
+
+    screenshot.mockImplementationOnce(() => held.then(() => blankPngOf(202, 62)));
+
+    const drawing = ask(shots, `product=studio&part=${part}&state=reset&scheme=light&priority=low`);
+
+    await vi.waitFor(() => expect(screenshot).toHaveBeenCalledTimes(states.length));
+
+    const listing = shotFramesOf({
+      product: resolveProduct({ target: root, name: 'studio', config: config.products?.['studio'] ?? {} }),
+      sketch: { target: part, layer: 'components' } as Sketch,
+      part,
+      drawn: [{ variant: null, states }],
+      pictureOf: shots.pictureOf,
+    });
+
+    setTimeout(release, 50);
+
+    expect((await listing).map(({ state }) => state)).toEqual(states);
+    await expect(drawing).resolves.toMatchObject({ status: 200 });
   });
 });
 
