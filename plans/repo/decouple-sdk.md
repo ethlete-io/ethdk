@@ -115,4 +115,7 @@ answers initialize. Report: `.claude/handoffs/agent-results/b913-probe.md`. Left
   graph fails until they leave with Timetrack. Not in the coupling list before.
 - `publish.yml:46` excludes the app projects by name; root `package.json` workspaces and the `studio*`,
   `timetrack*`, `test:tools`, `test:e2e-helpers`, `studio:classes:check` scripts point at app paths.
+- Dropped (doc 28.11.): publish.yml:46, root `package.json` workspaces and app scripts, and the
+  `implicitDependencies` of timetrack-e2e/vscode. The probe (32316bfc26) removes them in its scratch;
+  a real repo split builds them.
 - `libs/agent-rules/src/lib/timetrack.ts` keeps a jira.issue client for git-flow-start (HTTP only).
