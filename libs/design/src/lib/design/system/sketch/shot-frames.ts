@@ -2,6 +2,7 @@ import { dirname } from 'path';
 import { pngSizeOf } from '../../contact-sheet';
 import { FRAME_FIT_PADDING } from '../../frame-fit-padding';
 import { PictureOf } from '../../merge-compare';
+import { NotKeptError } from '../../shot';
 import { readPictures, StateSizes } from '../accepted-pictures';
 import { partOwnerOf } from '../inventory-approval';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
@@ -17,6 +18,9 @@ export type ShotFrame = {
   width: number | null;
   frame: { width: number; height: number };
 };
+
+/** A shot the listing left out: `heldMs` is how long it waited for a draw of it that still ran, null when none was asked. */
+export type LeftOutShot = Omit<ShotFrame, 'frame'> & { heldMs: number | null };
 
 type Drawn = { variant: string | null; states: readonly string[]; widths?: readonly number[] };
 
@@ -57,12 +61,14 @@ export const shotFramesOf = async ({
   part,
   drawn,
   pictureOf,
+  onLeftOut,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
   part: string;
   drawn: readonly Drawn[];
   pictureOf: PictureOf;
+  onLeftOut?: (shot: LeftOutShot) => void;
 }): Promise<ShotFrame[]> => {
   const sizes = sizesOf({ product, sketch, drawn });
   const recorded = recordedSizesOf({ product, part });
@@ -75,6 +81,8 @@ export const shotFramesOf = async ({
       : [];
   };
   const keptOf = async (shot: Omit<ShotFrame, 'frame'>) => {
+    let heldMs: number | null = null;
+
     for (const scheme of SCHEMES) {
       const picture = await pictureOf({
         product: product.name,
@@ -86,12 +94,20 @@ export const shotFramesOf = async ({
         interaction: null,
         params: new URLSearchParams({ scheme }),
         kept: 'size',
-      }).catch(() => null);
+      }).catch((error: unknown) => {
+        if (error instanceof NotKeptError && error.heldMs !== null) heldMs = Math.max(heldMs ?? 0, error.heldMs);
+
+        return null;
+      });
 
       if (picture) return [{ ...shot, frame: picture.size ?? pngSizeOf(picture.png) }];
     }
 
-    return recordedOf(shot);
+    const recorded = recordedOf(shot);
+
+    if (recorded.length === 0) onLeftOut?.({ ...shot, heldMs });
+
+    return recorded;
   };
 
   const frames = await Promise.all(
@@ -102,3 +118,26 @@ export const shotFramesOf = async ({
 
   return frames.flat();
 };
+
+const shotNameOf = (shot: Omit<ShotFrame, 'frame'>) =>
+  `${shot.variant ?? 'current'} ${shot.state}${shot.preset ? ` @${shot.preset}` : shot.width === null ? '' : ` @${shot.width}`}`;
+
+/** With this env var at `1`, a design server logs `leftOutLineOf` for each sketch listing that left a shot out. */
+export const LISTING_LOG_ENV = 'ETHLETE_DESIGN_LISTING_LOG';
+
+/** The server log line for a listing of `target` that left shots out, naming each listed and each left-out shot. */
+export const leftOutLineOf = ({
+  target,
+  listed,
+  leftOut,
+}: {
+  target: string;
+  listed: readonly ShotFrame[];
+  leftOut: readonly LeftOutShot[];
+}) =>
+  `design-explore: sketch listing ${target} left out ${leftOut.length} of ${listed.length + leftOut.length} frame(s): ${leftOut
+    .map(
+      (shot) =>
+        `${shotNameOf(shot)} (${shot.heldMs === null ? 'no draw asked, none stored' : `draw still running after ${shot.heldMs} ms`})`,
+    )
+    .join(', ')}; listed: ${listed.map(shotNameOf).join(', ') || 'none'}`;

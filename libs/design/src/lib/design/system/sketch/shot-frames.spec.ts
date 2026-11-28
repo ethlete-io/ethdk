@@ -8,7 +8,8 @@ import { PictureOf, SourcedPicture } from '../../merge-compare';
 import { writePictures } from '../accepted-pictures';
 import { resolveProduct } from '../resolve-product';
 import { partHashOf } from './baseline';
-import { shotFramesOf } from './shot-frames';
+import { NotKeptError } from '../../shot';
+import { LeftOutShot, leftOutLineOf, shotFramesOf } from './shot-frames';
 import { Sketch } from './sketch';
 
 const ZOOM_CHIP = 'components/zoom-chip';
@@ -118,5 +119,33 @@ describe('shotFramesOf', () => {
       ['b', { width: 1472, height: 718 }],
       ['c', { width: 1472, height: 640 }],
     ]);
+  });
+
+  it('names each zoom-chip shot it leaves out with the draw it waited for, and each shot it lists', async () => {
+    const { productOf } = checkout();
+    const leftOut: LeftOutShot[] = [];
+    const pictureOf: PictureOf = async ({ state, sketch: variant }) => {
+      if (state === 'reset' && variant === null) return { png: blankPngOf(202, 62) } as SourcedPicture;
+      if (state === 'reset-hover') throw new NotKeptError('held', 12600);
+
+      throw new NotKeptError('not kept');
+    };
+
+    const listed = await shotFramesOf({
+      product: productOf(),
+      sketch,
+      part: ZOOM_CHIP,
+      drawn: [
+        { variant: null, states: ['reset', 'reset-hover'] },
+        { variant: 'a', states: ['reset'] },
+      ],
+      pictureOf,
+      onLeftOut: (shot) => leftOut.push(shot),
+    });
+
+    expect(leftOutLineOf({ target: ZOOM_CHIP, listed, leftOut })).toBe(
+      'design-explore: sketch listing components/zoom-chip left out 2 of 3 frame(s): current reset-hover ' +
+        '(draw still running after 12600 ms), a reset (no draw asked, none stored); listed: current reset',
+    );
   });
 });

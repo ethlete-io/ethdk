@@ -93,7 +93,7 @@ import {
   KeptStates,
   unchangedForFoldOf,
 } from './system/sketch/unchanged-states';
-import { shotFramesOf } from './system/sketch/shot-frames';
+import { LeftOutShot, leftOutLineOf, LISTING_LOG_ENV, shotFramesOf } from './system/sketch/shot-frames';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -449,10 +449,15 @@ const partTargetsOf = async ({
     ...targets.filter((entry) => !('error' in entry)),
   ];
 
-  return {
-    targets,
-    frames: pictureOf ? await shotFramesOf({ product, sketch, part, drawn, pictureOf }) : [],
-  };
+  const leftOut: LeftOutShot[] = [];
+  const frames = pictureOf
+    ? await shotFramesOf({ product, sketch, part, drawn, pictureOf, onLeftOut: (shot) => leftOut.push(shot) })
+    : [];
+
+  if (leftOut.length > 0 && process.env[LISTING_LOG_ENV] === '1')
+    console.warn(leftOutLineOf({ target: sketch.target, listed: frames, leftOut }));
+
+  return { targets, frames };
 };
 
 const targetsOf = async (options: {

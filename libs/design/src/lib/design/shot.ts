@@ -177,8 +177,18 @@ export type PartMark = { parts: string[]; x: number; y: number; width: number; h
 /** Where a shot response's picture came from: the disk store, the in-memory cache or a fresh draw. */
 export type ShotSource = 'disk' | 'memory' | 'drawn';
 
-/** A picture asked with `kept` that is not kept, so answering it would need a draw. */
-export class NotKeptError extends Error {}
+/**
+ * A picture asked with `kept` that is not kept, so answering it would need a draw. `heldMs` is how long it waited for
+ * a draw of it that was asked but still ran, or null when no draw of it was asked.
+ */
+export class NotKeptError extends Error {
+  constructor(
+    message: string,
+    readonly heldMs: number | null = null,
+  ) {
+    super(message);
+  }
+}
 
 export const TEXT_AMBIENT_PROPERTIES = [
   'fontFamily',
@@ -786,26 +796,29 @@ export const createPartShooter = (options: {
   const keptPictureOf = async (
     options: PartAddress & { params: URLSearchParams },
     anyCode = false,
-  ): Promise<{ picture: Picture; source: ShotSource } | null> => {
+  ): Promise<{ picture: Picture; source: ShotSource } | { heldMs: number } | null> => {
     const frame = partFrameOf({ system, ...options });
 
     if (frame instanceof ThumbMissingError) return null;
 
     const key = pictureKeyOf(frame.key, options.params);
     const shot = cache.get(key)?.shot;
+    const waitMs = loadScaledMs(KEPT_DRAW_WAIT_MS);
     const drawn = shot
-      ? await firstValueFrom(
-          from(shot).pipe(timeout({ first: loadScaledMs(KEPT_DRAW_WAIT_MS), with: () => of(null) })),
-        ).catch(() => null)
+      ? await firstValueFrom(from(shot).pipe(timeout({ first: waitMs, with: () => of('held' as const) }))).catch(
+          () => null,
+        )
       : null;
 
-    if (drawn) return { picture: drawn, source: 'memory' };
+    if (drawn && drawn !== 'held') return { picture: drawn, source: 'memory' };
 
     const { product, part, sketch, props } = options;
     const address = { product, part, sketch, props: props ?? null };
     const stored = anyCode ? store?.readAnyCode(key, address) : store?.read(key, address);
 
-    return stored ? { picture: stored, source: 'disk' } : null;
+    if (stored) return { picture: stored, source: 'disk' };
+
+    return drawn === 'held' ? { heldMs: waitMs } : null;
   };
 
   const cached = (options: {
@@ -1253,7 +1266,11 @@ export const createPartShooter = (options: {
     }): Promise<Picture & { source?: ShotSource; drawnAt: number | null }> => {
       if (kept)
         return keptPictureOf(options, kept === 'size').then((found) => {
-          if (!found) throw new NotKeptError(`design-explore: no kept picture of ${options.part} ${options.state}`);
+          if (!found || 'heldMs' in found)
+            throw new NotKeptError(
+              `design-explore: no kept picture of ${options.part} ${options.state}`,
+              found?.heldMs ?? null,
+            );
 
           const sourced = { source: found.source, drawnAt: null };
 

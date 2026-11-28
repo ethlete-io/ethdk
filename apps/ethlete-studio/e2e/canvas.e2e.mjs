@@ -1163,6 +1163,22 @@ const eventLog = (startedAt = Date.now()) => {
 let streamTimeline = eventLog();
 let writeSeen = false;
 let awaitingListing = false;
+let openedListings = [];
+
+const listedShotsOf = async ({ at, body }) => {
+  const answer = await body;
+  const frames = (answer?.sketches ?? []).flatMap((sketch) => sketch.shotFrames ?? []);
+  const named = frames.map(
+    (frame) => `${frame.variant ?? 'current'} ${frame.state}${frame.width === null ? '' : ` @${frame.width}`}`,
+  );
+
+  return `@${at} ms ${answer?.error ?? `${frames.length} frame(s): ${named.join(', ') || 'none'}`}`;
+};
+
+const openedListingLines = async () =>
+  openedListings.length === 0
+    ? 'no opened sketch listing answered'
+    : (await Promise.all(openedListings.map(listedShotsOf))).join(' | ');
 let writtenIds = [];
 
 const markWrite = (what) => {
@@ -1217,7 +1233,9 @@ const watchStream = (page, designPort) => {
   writeSeen = false;
   awaitingListing = false;
   writtenIds = [];
+  openedListings = [];
 
+  const watchedAt = performance.now();
   const pathOf = (request) => new URL(request.url()).pathname;
   const onRequest = (request) => {
     if (pathOf(request) === '/__design/comment-events') streamTimeline.add('stream request', request.url());
@@ -1229,6 +1247,11 @@ const watchStream = (page, designPort) => {
     }
   };
   const onResponse = (response) => {
+    if (pathOf(response.request()) === '/__design/sketches' && new URL(response.url()).searchParams.has('sketch'))
+      openedListings.push({
+        at: Math.round(performance.now() - watchedAt),
+        body: response.json().catch((error) => ({ error: String(error) })),
+      });
     if (pathOf(response.request()) === '/__design/comment-events')
       streamTimeline.add('stream response', response.url());
     else if (writeSeen && pathOf(response.request()) === '/__design/comments')
@@ -5975,7 +5998,7 @@ const CASES = [
 
       return {
         ok: kept,
-        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}${later ? `; cell width and scale before the zoom w ${unwheeled?.width} (${unwheeled?.cell}), before the hide (${before?.cell}), after (${after?.cell}), ${(SETTLE_MS * 5) / 1000} s later w ${later.width} (${later.cell})` : ''}`,
+        detail: `${describe(cameraBefore, cameraAfter)} frame ${before?.left},${before?.top} w ${before?.width} -> ${after?.left},${after?.top} w ${after?.width}, canvas left ${before?.canvasLeft} -> ${after?.canvasLeft}${later ? `; cell width and scale before the zoom w ${unwheeled?.width} (${unwheeled?.cell}), before the hide (${before?.cell}), after (${after?.cell}), ${(SETTLE_MS * 5) / 1000} s later w ${later.width} (${later.cell}); opened listings since the case start: ${await openedListingLines()}` : ''}`,
       };
     },
   },

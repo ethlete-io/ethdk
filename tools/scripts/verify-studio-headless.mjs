@@ -58,6 +58,7 @@ const spawnDesignServer = (checkout, stamp, echo, entry) =>
     stamp(`design server starting in ${checkout}`);
     const child = spawn(process.execPath, [entry, 'design', checkout], {
       cwd: checkout,
+      env: { ...process.env, ETHLETE_DESIGN_LISTING_LOG: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const logFile = designServerLogFile(child.pid);
