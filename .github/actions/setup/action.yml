@@ -9,6 +9,11 @@ inputs:
     required: false
     default: ''
 
+outputs:
+  no-previous-build:
+    description: '`true` when nx-set-shas found no green run of this workflow on the branch, so NX_BASE is a guess.'
+    value: ${{ steps.nx-shas.outputs.noPreviousBuild }}
+
 runs:
   using: composite
   steps:
@@ -29,8 +34,12 @@ runs:
         node-version-file: '.node-version'
         cache: 'yarn'
 
+    # The lookup branch defaults to main, so a next run would diff from a green main run.
     - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      id: nx-shas
       uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4.4.0
+      with:
+        main-branch-name: ${{ github.base_ref || github.ref_name }}
 
     - run: yarn install --immutable
       shell: bash

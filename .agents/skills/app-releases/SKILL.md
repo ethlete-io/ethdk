@@ -16,10 +16,12 @@ never publishes it, and `yarn versions:sync` copies the new version into `tauri.
 fails CI on drift.
 
 The SDK publish and the app releases are separate. `ci-groups.yml` (`tools/scripts/ci-groups.mjs`) picks
-the groups a change hits in the Nx affected graph since the last green run: SDK libs, Studio, Timetrack.
-`ci.yml` checks the SDK projects and gates `publish.yml`; `ci-apps.yml` checks the Studio and Timetrack
-projects in separate jobs, and `release-apps.yml` releases only an app whose own group passed (or was not
-hit). A skipped group counts as passed, and an app version without a release forces its group. `ci-repo.yml`
+the groups a change hits in the Nx affected graph since the last green run of the same branch: SDK libs,
+Studio, Timetrack. With no green run, or a base outside the branch history, every group runs. `ci.yml` checks
+the SDK projects and gates `publish.yml`; `ci-apps.yml` checks the Studio and Timetrack projects in separate
+jobs, and `release-apps.yml` releases only an app whose own group ran and passed in this run. A skipped group
+counts as passed for `All verified`, and an app version without a release forces its group (on push and
+manual runs). A cancelled run releases nothing. `ci-repo.yml`
 (format, changesets, commitlint) runs on every change; `All verified` is the single check to require. An
 app project added to the workspace goes into `APP_GROUP_PROJECTS` in `ci-groups.mjs` and the `--exclude`
 list in `publish.yml`.

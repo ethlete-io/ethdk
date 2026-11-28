@@ -14,6 +14,10 @@ on:
         description: Comma list of the Timetrack group projects to check (ci-groups.yml). Empty skips Timetrack.
         type: string
         default: ''
+      base:
+        description: The verified base ci-groups.yml diffed from. Empty runs every change-gated job.
+        type: string
+        default: ''
     outputs:
       studio_ok:
         description: '`true` when every Studio check passed or Studio was not checked.'
@@ -262,6 +266,32 @@ jobs:
       - run: xvfb-run -a yarn studio:e2e:host-signal
         timeout-minutes: 5
 
+  # ci.yml runs cli:test-dist when cli is an SDK project; a design-only change moves cli here.
+  studio-cli-dist:
+    name: CLI dist specs
+    if: contains(format(',{0},', inputs.studio_projects), ',cli,')
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: studio-cli-dist
+
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+
+      - run: yarn nx run-many -t build -p cli,components,core
+
+      - run: yarn nx run cli:test-dist
+        timeout-minutes: 5
+
   design-changes:
     name: Design server changes
     if: inputs.studio_projects != ''
@@ -279,7 +309,7 @@ jobs:
 
       - id: diff
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE: ${{ inputs.base }}
         run: |
           if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BASE^{commit}"; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -315,7 +345,7 @@ jobs:
     name: Studio verified
     # The check the Studio release waits for. Skipped jobs pass.
     if: always()
-    needs: [studio-checks, studio-e2e, studio-rust, webkit-design-events]
+    needs: [studio-checks, studio-e2e, studio-rust, studio-cli-dist, design-changes, webkit-design-events]
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # node:24.22.1-bookworm
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}

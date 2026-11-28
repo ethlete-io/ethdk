@@ -24,6 +24,13 @@ export const libsWithChangedDependencies = (root, base, head) => {
     .map((file) => file.split('/')[1]);
 };
 
+/** Keeps the libs in the comma list `projects`; without a list, every lib. */
+export const limitTo = (libs, projects) => {
+  if (projects === undefined) return libs;
+  const allowed = new Set(projects.split(',').filter(Boolean));
+  return libs.filter((lib) => allowed.has(lib));
+};
+
 export const buildLibs = (root, libs) => {
   if (!libs.length) return 0;
   const run = spawnSync('npx', ['nx', 'run-many', '-t', 'build', '-p', libs.join(','), '--outputStyle=static'], {
@@ -40,6 +47,6 @@ export const buildLibs = (root, libs) => {
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [base, head] = process.argv.slice(2);
-  process.exit(buildLibs(process.cwd(), libsWithChangedDependencies(process.cwd(), base, head)));
+  const [base, head, projects] = process.argv.slice(2);
+  process.exit(buildLibs(process.cwd(), limitTo(libsWithChangedDependencies(process.cwd(), base, head), projects)));
 }

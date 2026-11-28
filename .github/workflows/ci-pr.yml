@@ -54,6 +54,7 @@ jobs:
     with:
       studio_projects: ${{ needs.groups.outputs.studio_projects }}
       timetrack_projects: ${{ needs.groups.outputs.timetrack_projects }}
+      base: ${{ needs.groups.outputs.base }}
     secrets: inherit
 
   verified:

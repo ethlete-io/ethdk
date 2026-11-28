@@ -7,7 +7,7 @@ on:
   workflow_call:
     inputs:
       apps:
-        description: Comma list of the app packages allowed to release (`timetrack-app`, `ethlete-studio`).
+        description: Comma list of the app packages this run checked and passed (`timetrack-app`, `ethlete-studio`).
         type: string
         required: true
 
@@ -41,7 +41,7 @@ jobs:
             version=$(jq -r .version "$dir/package.json")
             tag="$name@$version"
             if [[ ",$ALLOWED," != *",$name,"* ]]; then
-              echo "$tag: its checks did not pass, not released"
+              echo "$tag: not verified by this run, not released"
               continue
             fi
             draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || echo missing)

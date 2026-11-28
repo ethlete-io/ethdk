@@ -46,12 +46,13 @@ jobs:
     with:
       studio_projects: ${{ needs.groups.outputs.studio_projects }}
       timetrack_projects: ${{ needs.groups.outputs.timetrack_projects }}
+      base: ${{ needs.groups.outputs.base }}
     secrets: inherit
 
   publish:
     needs: [groups, repo, ci]
     if: >-
-      ${{ always() && needs.groups.result == 'success' && needs.repo.result == 'success' &&
+      ${{ !cancelled() && needs.groups.result == 'success' && needs.repo.result == 'success' &&
       (needs.ci.result == 'success' || (needs.ci.result == 'skipped' && needs.groups.outputs.sdk != 'true')) }}
     uses: ./.github/workflows/publish.yml
     permissions:
@@ -67,15 +68,15 @@ jobs:
 
   release-apps:
     needs: [groups, repo, ci-apps]
-    if: ${{ always() && needs.groups.result == 'success' && needs.repo.result == 'success' }}
+    if: ${{ !cancelled() && needs.groups.result == 'success' && needs.repo.result == 'success' }}
     uses: ./.github/workflows/release-apps.yml
     permissions:
       contents: write
     with:
       apps: >-
         ${{ format('{0},{1}',
-        (needs.groups.outputs.timetrack != 'true' || needs.ci-apps.outputs.timetrack_ok == 'true') && 'timetrack-app' || '',
-        (needs.groups.outputs.studio != 'true' || needs.ci-apps.outputs.studio_ok == 'true') && 'ethlete-studio' || '') }}
+        (needs.groups.outputs.timetrack == 'true' && needs.ci-apps.outputs.timetrack_ok == 'true') && 'timetrack-app' || '',
+        (needs.groups.outputs.studio == 'true' && needs.ci-apps.outputs.studio_ok == 'true') && 'ethlete-studio' || '') }}
     secrets: inherit
 
   verified:

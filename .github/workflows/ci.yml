@@ -75,7 +75,9 @@ jobs:
       - run: yarn hooks:check
 
       - run: node tools/scripts/check-migration-entries.mjs
-      - run: yarn test:tools
+      # yarn test:tools without the Studio ESLint rule specs: ci-apps.yml runs those, so a red Studio rule
+      # never holds back the SDK publish.
+      - run: node --import ./tools/scripts/spec-tmp-hook.mjs --test tools/scripts/*.spec.mjs
 
       # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
       - run: yarn docs:error-codes:check
@@ -195,7 +197,7 @@ jobs:
       - run: yarn nx run-many -t build -p "$SDK_PROJECTS"
 
       - name: Lib build gate over the pushed range
-        run: node tools/scripts/lib-build-gate.mjs "$NX_BASE" "$NX_HEAD"
+        run: node tools/scripts/lib-build-gate.mjs "$NX_BASE" "$NX_HEAD" "$SDK_PROJECTS"
 
       # Bundle-size goldens: fails when something in core/query/components becomes unshakeable again.
       # Accept a real change with `nx run treeshake:bundle-goldens:update` and commit goldens.json.
@@ -211,7 +213,7 @@ jobs:
 
   storybook:
     name: Storybook
-    if: inputs.run_storybook && contains(format(',{0},', inputs.projects), ',storybook,')
+    if: inputs.run_storybook && (contains(format(',{0},', inputs.projects), ',storybook,') || contains(format(',{0},', inputs.projects), ',storybook-e2e,'))
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
@@ -280,7 +282,7 @@ jobs:
 
   storybook-e2e:
     name: Component behavior tests (${{ matrix.shard }}/3)
-    if: inputs.run_storybook && contains(format(',{0},', inputs.projects), ',storybook,')
+    if: inputs.run_storybook && (contains(format(',{0},', inputs.projects), ',storybook,') || contains(format(',{0},', inputs.projects), ',storybook-e2e,'))
     needs: storybook
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
