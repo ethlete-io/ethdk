@@ -40,11 +40,8 @@ import {
   ListedPart,
   ListedProduct,
   ListedSketch,
-  DesignRefusalError,
-  MergeNeedsRebaseError,
   SketchAddress,
   discardSketch$,
-  pickSketch$,
   approveSketch$,
   rejectionOf,
   saveListWidth,
@@ -66,7 +63,7 @@ import {
   SketchStatus,
   SketchWithdrawn,
 } from '../design-parts/sketches/sketches-sample';
-import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
+import { SKETCHES_LABELS } from '../i18n/sketches-labels';
 import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { isInSketch } from './comment-pins';
 import { injectCommentStore } from './comment-store';
@@ -98,6 +95,7 @@ import { partOpenPoints$ } from '../../host/design-open-points';
 import { keptRead$ } from './kept-read';
 import { sketchPointGroupsOf } from './open-points';
 import { undecidedShotsOf } from './undecided-shots';
+import { SketchPickRequest } from './sketch-pick';
 import { OpenPointGroup, OpenPointTarget } from '../design-parts/system-page/system-page-sample';
 
 type Busy = 'merge' | 'discard';
@@ -266,7 +264,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
       [rows]="rows()"
       [fresh]="!part()"
       [autoMerge]="sketch().autoMergeForecast?.merges === true"
-      [merging]="busy() === 'merge'"
+      [merging]="busy() === 'merge' || picking()"
       [subSketch]="!!sketch().parent"
       [approved]="sketch().approved?.variant ?? null"
       [subSketchesOpen]="(sketch().openSubSketches?.length ?? 0) > 0"
@@ -283,7 +281,7 @@ export const repicksOf = (sketch: ListedSketch): Record<string, SketchRepick> =>
       [selected]="taken() ?? undefined"
       [openPoints]="openPointGroups()"
       [errored]="erroredVariants()"
-      [error]="mergeError()"
+      [error]="mergeError() ?? pickError()"
       [listError]="listError()"
       [comments]="sketchCommentRows()"
       [selectedComment]="jumpedCommentId()"
@@ -397,6 +395,8 @@ export class SketchViewComponent {
   public restoredCamera = input<Camera | null>(null);
   public shell = input.required<PageShell>();
   public listError = input<string | null>(null);
+  public picking = input(false);
+  public pickError = input<string | null>(null);
   public retry = output();
   public shellAction = output<PageShellAction>();
   public openPoint = output<OpenPointTarget>();
@@ -406,11 +406,8 @@ export class SketchViewComponent {
 
   public decide = output<void>();
 
-  /** Whether a merge of this sketch runs. */
-  public merging = output<boolean>();
-
-  /** The sketch's target once its merge succeeded. */
-  public mergeComplete = output<string>();
+  /** Asks the host to pick and merge a variant; the host runs the request, so its answer outlives this view. */
+  public pick = output<SketchPickRequest>();
   public discardComplete = output<string>();
 
   private shotFrames = viewChildren<ElementRef<HTMLIFrameElement>>('shotFrame');
@@ -1132,7 +1129,7 @@ export class SketchViewComponent {
   protected merge(variant: string) {
     const address = this.address();
 
-    if (this.busy()) return;
+    if (this.busy() || this.picking()) return;
 
     this.taken.set(variant);
 
@@ -1142,28 +1139,8 @@ export class SketchViewComponent {
       return;
     }
 
-    this.merging.emit(true);
     this.mergeError.set(null);
-    this.run(
-      'merge',
-      pickSketch$(address, { variant, discardSubSketches: variant in this.repicks() }).pipe(
-        tap(({ subSketches }) => {
-          if (subSketches.length === 0) this.mergeComplete.emit(address.sketch);
-        }),
-        catchError((error: unknown) => {
-          this.mergeError.set(
-            error instanceof MergeNeedsRebaseError
-              ? MERGE_LABELS.needsRebase(error.changed)
-              : error instanceof DesignRefusalError && error.reason === 'sub-sketches-open'
-                ? SKETCHES_LABELS.waitsOnSubSketches(error.findings)
-                : refusalMessageOf(error),
-          );
-
-          return of(null);
-        }),
-        tap({ complete: () => this.merging.emit(false) }),
-      ),
-    );
+    this.pick.emit({ address, variant, discardSubSketches: variant in this.repicks() });
   }
 
   protected saveListWidth(width: number) {
@@ -1266,7 +1243,7 @@ export class SketchViewComponent {
   }
 
   private run(busy: Busy, work$: Observable<unknown>) {
-    if (this.busy()) return;
+    if (this.busy() || this.picking()) return;
 
     this.busy.set(busy);
     this.mergeError.set(null);

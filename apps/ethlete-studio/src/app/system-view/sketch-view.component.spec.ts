@@ -1,5 +1,6 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { SKETCHES_LABELS, MERGE_LABELS } from '../i18n/sketches-labels';
@@ -8,6 +9,8 @@ import { THEMES } from '../../themes';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { repicksOf, SketchViewComponent, frameFitsCell, liveShotsOf, nearShotsOf } from './sketch-view.component';
 import { undecidedShotsOf } from './undecided-shots';
+import { SketchPickRequest } from './sketch-pick';
+import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
 
@@ -720,21 +723,12 @@ describe('SketchViewComponent', () => {
     expect(root.querySelector('[data-sk-row="b"]')).not.toBeNull();
   });
 
-  // Decision: a pick in Studio is a merge, so Übernehmen calls the host once and no pick waits for a merge.
-  it('asks to confirm Übernehmen and merges the variant only once confirmed', async () => {
-    const bodies: Record<string, unknown> = {};
-    const { fixture, root } = await render(SKETCH, (url, init) => {
-      const path = ['sketch-decision', 'sketch-merge'].find((entry) => url.includes(`/__design/${entry}`));
+  // Decision: a pick in Studio is a merge, so Übernehmen asks the host once and no pick waits for a merge.
+  it('asks to confirm Übernehmen and asks the host to merge the variant only once confirmed', async () => {
+    const { fixture, root } = await render(SKETCH, noComments);
+    const picks: SketchPickRequest[] = [];
 
-      if (!path) return noComments(url);
-
-      bodies[path] = JSON.parse(String(init?.body ?? '{}'));
-
-      return json({ merged: ['components/card'] });
-    });
-    const completed: string[] = [];
-
-    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.componentInstance.pick.subscribe((request) => picks.push(request));
 
     expect(mergeButtons(root)).toHaveLength(2);
 
@@ -749,13 +743,14 @@ describe('SketchViewComponent', () => {
     dialog?.querySelector<HTMLElement>('[data-sk-confirm-cancel]')?.click();
     await settle(fixture);
 
-    expect(bodies).toEqual({});
+    expect(picks).toEqual([]);
 
     await confirmed(mergeButtons(root)[0], fixture);
     await settle(fixture);
 
-    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'a' } });
-    expect(completed).toEqual(['components/card']);
+    expect(picks).toEqual([
+      { address: { port: 4402, product: 'web', sketch: 'components/card' }, variant: 'a', discardSubSketches: false },
+    ]);
   });
 
   // Decision B726: a sub-sketch is approved, never merged, so it offers Freigeben in place of Übernehmen.
@@ -772,10 +767,10 @@ describe('SketchViewComponent', () => {
 
       return json({});
     });
-    const completed: string[] = [];
+    const picks: SketchPickRequest[] = [];
     let decided = 0;
 
-    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.componentInstance.pick.subscribe((request) => picks.push(request));
     fixture.componentInstance.decide.subscribe(() => decided++);
 
     expect(mergeButtons(root)).toHaveLength(0);
@@ -792,7 +787,7 @@ describe('SketchViewComponent', () => {
     await settle(fixture);
 
     expect(bodies).toEqual({ 'sketch-approve': { variant: 'a' } });
-    expect(completed).toEqual([]);
+    expect(picks).toEqual([]);
     expect(decided).toBe(1);
   });
 
@@ -808,52 +803,7 @@ describe('SketchViewComponent', () => {
     expect(buttonsLabelled(root, SKETCHES_LABELS.approve)).toHaveLength(1);
   });
 
-  // Decision B726: a pick that opens sub-sketches merges nothing, so the view stays on the parent and reloads the sketches.
-  it('stays on the sketch and reloads when the pick opens sub-sketches', async () => {
-    const { fixture, root } = await render(SKETCH, (url) =>
-      url.includes('/__design/sketch-decision')
-        ? json({ merged: [], subSketches: ['components/card-badge'] })
-        : noComments(url),
-    );
-    const completed: string[] = [];
-    let decided = 0;
-
-    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
-    fixture.componentInstance.decide.subscribe(() => decided++);
-
-    await confirmed(mergeButtons(root)[0], fixture);
-    await settle(fixture);
-
-    expect(completed).toEqual([]);
-    expect(decided).toBe(1);
-  });
-
-  it('names the open sub-sketches in German when the parent pick waits on them', async () => {
-    const { fixture, root } = await render(SKETCH, (url) =>
-      url.includes('/__design/sketch-decision')
-        ? Promise.resolve(
-            new Response(
-              JSON.stringify({
-                error: 'components/card waits on its sub-sketches components/card-badge - approve each',
-                reason: 'sub-sketches-open',
-                findings: ['components/card-badge'],
-              }),
-              { status: 422 },
-            ),
-          )
-        : noComments(url),
-    );
-
-    await confirmed(mergeButtons(root)[0], fixture);
-    await settle(fixture);
-
-    expect(root.querySelector('[data-sk-merge-error]')?.textContent?.trim()).toBe(
-      'Wartet auf Freigabe: components/card-badge',
-    );
-  });
-
   it('sends the discard confirmation on a pick of another variant and lists what it discards and keeps', async () => {
-    const bodies: unknown[] = [];
     const parent: ListedSketch = {
       ...SKETCH,
       decision: { kind: 'pick', variant: 'a', decidedAt: '2026-11-25T10:00:00Z' },
@@ -865,86 +815,50 @@ describe('SketchViewComponent', () => {
       b: { discards: ['components/card-badge'], keeps: ['components/card-dots'] },
     });
 
-    const { fixture } = await render(parent, (url, init) => {
-      if (url.includes('/__design/sketch-decision')) {
-        bodies.push(JSON.parse(String(init?.body)));
+    const { fixture } = await render(parent, noComments);
+    const picks: SketchPickRequest[] = [];
 
-        return json({ merged: [], subSketches: ['components/card-dots'] });
-      }
-
-      return noComments(url);
-    });
-
+    fixture.componentInstance.pick.subscribe((request) => picks.push(request));
     fixture.componentInstance['merge']('b');
     await settle(fixture);
 
-    expect(bodies).toEqual([{ kind: 'pick', variant: 'b', discardSubSketches: true }]);
+    expect(picks.map(({ variant, discardSubSketches }) => ({ variant, discardSubSketches }))).toEqual([
+      { variant: 'b', discardSubSketches: true },
+    ]);
   });
 
-  it('ignores a second merge while one runs', async () => {
+  it('asks for no pick or discard while the host runs a pick, and shows it as merging', async () => {
     const requests: string[] = [];
     const { fixture } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-decision')) {
-        requests.push('decision');
-
-        return new Promise<Response>(() => undefined);
-      }
+      if (url.includes('/__design/sketch-discard')) requests.push('discard');
 
       return noComments(url);
     });
+    const picks: SketchPickRequest[] = [];
 
-    fixture.componentInstance['merge']('a');
-    fixture.componentInstance['merge']('b');
+    fixture.componentInstance.pick.subscribe((request) => picks.push(request));
+    fixture.componentRef.setInput('picking', true);
     await settle(fixture);
 
-    expect(requests).toEqual(['decision']);
+    fixture.componentInstance['merge']('b');
+    fixture.componentInstance['discard']();
+    await settle(fixture);
+
+    expect(picks).toEqual([]);
+    expect(requests).toEqual([]);
+    expect(fixture.debugElement.query(By.directive(SketchesComponent)).componentInstance.merging()).toBe(true);
   });
 
-  it('shows a merge refusal and a merge failure in the head', async () => {
-    let refusal: { status: number; body: unknown } = {
-      status: 422,
-      body: { error: 'stale', changed: ['components/card'], rebase: 'design sketch rebase' },
-    };
-    const { fixture, root } = await render(SKETCH, (url) => {
-      if (url.includes('/__design/sketch-decision'))
-        return Promise.resolve(new Response(JSON.stringify(refusal.body), { status: refusal.status }));
-
-      return noComments(url);
-    });
+  it('shows the host refusal of a pick in the head', async () => {
+    const { fixture, root } = await render(SKETCH, noComments);
     const errorText = () => root.querySelector('ethlete-sketches [role="alert"]')?.textContent?.trim();
-    const completed: string[] = [];
-    const merge = async () => {
-      await confirmed(mergeButtons(root)[0], fixture);
-      await settle(fixture);
-    };
-
-    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
 
     expect(errorText()).toBeUndefined();
 
-    await merge();
+    fixture.componentRef.setInput('pickError', MERGE_LABELS.needsRebase(['components/card']));
+    await settle(fixture);
 
     expect(errorText()).toBe(MERGE_LABELS.needsRebase(['components/card']));
-
-    refusal = {
-      status: 422,
-      body: {
-        error: 'the check failed after the merge',
-        reason: 'check-failed',
-        findings: ['INLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline'],
-      },
-    };
-    await merge();
-
-    expect(errorText()).toBe(
-      'the check failed after the merge\nINLINE-SVG components/title-bar/shared/chrome.ts: draws an <svg> inline',
-    );
-
-    refusal = { status: 500, body: { error: 'boom' } };
-    await merge();
-
-    expect(errorText()).toBe('boom');
-    expect(completed).toEqual([]);
   });
 
   it('shows no status or refusal for a not-ready sketch, offers no merge and does not wait for a pick', async () => {
@@ -1290,8 +1204,6 @@ describe('SketchViewComponent', () => {
       problems: [{ variant: 'c', problems: [{ file: 'c.ts', rule: 'UTILITY-CSS', message: 'flex' }] }],
     };
     const fetch = (url: string) => {
-      if (url.includes('/__design/sketch-decision'))
-        return Promise.resolve(new Response(JSON.stringify({ error: 'UTILITY-CSS c.ts: flex' }), { status: 422 }));
       if (!url.includes('/__design/open-points')) return noComments(url);
       asked.push(new URL(url).searchParams.get('part') ?? '');
 
@@ -1316,6 +1228,7 @@ describe('SketchViewComponent', () => {
     expect(asked).toEqual([]);
 
     fixture.componentInstance['merge']('c');
+    fixture.componentRef.setInput('pickError', 'UTILITY-CSS c.ts: flex');
     await settle(fixture);
 
     const chip = root.querySelector('[data-sk-row="c"][data-selected] [data-sk-points] [data-open-points-chip]');

@@ -80,6 +80,7 @@ import { inboxCommentOf, inboxPartOf, inboxThreadOf, writerOf } from './inbox-co
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchesComponent } from '../design-parts/sketches/sketches.component';
 import { SketchViewComponent } from './sketch-view.component';
+import { SketchPickRequest, sketchPickOutcome$ } from './sketch-pick';
 import { FlowRead, flowRead$, keepLastFlows } from './flow-read';
 import { keptRead$ } from './kept-read';
 import { SketchRead, sketchRead$ } from './sketch-read';
@@ -252,10 +253,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         [restoredCamera]="restoredCamera()"
         [shell]="pageShell()"
         [listError]="sketchesError()"
+        [picking]="shownPick()?.running === true"
+        [pickError]="shownPick()?.error ?? null"
         (retry)="reloadSketches()"
         (decide)="reloadSketches()"
-        (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
-        (mergeComplete)="leaveGone($event)"
+        (pick)="pickSketch(shown.sketch.target, $event)"
         (discardComplete)="leaveGone($event)"
         (expandedChange)="rememberOpen($event)"
         (cameraChange)="rememberCamera($event)"
@@ -508,7 +510,9 @@ export class SystemViewComponent {
 
   private sketchReloads = signal(0);
 
-  protected mergingSketch = signal<string | null>(null);
+  private mergingSketch = signal<string | null>(null);
+
+  private sketchPick = signal<{ target: string; running: boolean; error: string | null } | null>(null);
 
   private statusChanges = toSignal(
     designStatusChanges$().pipe(
@@ -694,6 +698,12 @@ export class SystemViewComponent {
       sketch,
       part: product.parts.find((candidate) => partKeyOf(candidate) === sketchPartOf(sketch)) ?? null,
     };
+  });
+
+  protected shownPick = computed(() => {
+    const pick = this.sketchPick();
+
+    return pick !== null && pick.target === this.sketchShown()?.sketch.target ? pick : null;
   });
 
   private sketchRevisionSource = computed(() => {
@@ -1586,6 +1596,24 @@ export class SystemViewComponent {
       .pipe(
         // eslint-disable-next-line ethlete/no-silent-catch-error -- not surfaced yet, finding 145
         catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected pickSketch(target: string, request: SketchPickRequest) {
+    if (this.sketchPick()?.running) return;
+
+    this.sketchPick.set({ target, running: true, error: null });
+    this.mergingSketch.set(target);
+    sketchPickOutcome$(request)
+      .pipe(
+        tap(({ merged, error }) => {
+          this.sketchPick.set(error === null ? null : { target, running: false, error });
+          if (merged && this.picked() === sketchKeyOf(target)) this.leaveGone(target);
+          else if (this.mergingSketch() === target) this.mergingSketch.set(null);
+          this.reloadSketches();
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

@@ -1850,6 +1850,7 @@ describe('SystemViewComponent on a merge', () => {
       if (url.includes('/__design/system')) return json([PRODUCT]);
       if (url.includes('/__design/calls')) return json([]);
       if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) return json({ merged: ['elements/rating'] });
 
       return new Promise(() => undefined);
     });
@@ -1860,10 +1861,12 @@ describe('SystemViewComponent on a merge', () => {
     expect(view.sketches().length).toBe(1);
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     merged = true;
-    merged = true;
-    fixture.debugElement
-      .query(By.directive(SketchViewComponent))
-      .componentInstance.mergeComplete.emit('elements/rating');
+    fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance.pick.emit({
+      address: { port: 4402, product: 'web', sketch: 'elements/rating' },
+      variant: 'a',
+      discardSubSketches: false,
+    });
+    await vi.advanceTimersByTimeAsync(0);
     fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, sketches: 1 });
     await vi.advanceTimersByTimeAsync(1000);
     await fixture.whenStable();
@@ -1998,6 +2001,115 @@ describe('SystemViewComponent on a merge', () => {
 
     expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
     expect(rememberedView().systemEntry).toBe('elements/rating');
+  });
+
+  it('selects the target part when a failed product read closes the sketch view while the merge runs', async () => {
+    const target = 'elements/rating@edit';
+    const sketch: ListedSketch = {
+      target,
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      problems: [],
+      variants: ['new', 'old'],
+      targetParts: ['elements/rating'],
+    };
+    let sketches = [sketch];
+    let systemFails = false;
+    let finishMerge = () => undefined as void;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches, unreadable: [] });
+      if (url.includes('/__design/system'))
+        return systemFails ? Promise.resolve(new Response('', { status: 500 })) : json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision'))
+        return new Promise<Response>((done) => {
+          finishMerge = () => {
+            sketches = [];
+            done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
+          };
+        });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: `sketch:${target}` });
+    const root: HTMLElement = fixture.nativeElement;
+    const clickButton = (label: string) =>
+      [...root.querySelectorAll<HTMLButtonElement>('button')].filter((button) => button.textContent?.trim() === label);
+    const sketchView = () => fixture.debugElement.query(By.directive(SketchViewComponent));
+
+    clickButton('Übernehmen')[1]?.click();
+    await settle(fixture);
+    [...document.querySelectorAll<HTMLElement>('[data-sk-confirm]')].at(-1)?.click();
+    await settle(fixture);
+
+    systemFails = true;
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, products: 1 });
+    await settle(fixture);
+
+    expect(sketchView()).toBeNull();
+
+    systemFails = false;
+    fixture.componentRef.setInput('lists', { ...NO_LIST_REVISIONS, products: 2 });
+    await settle(fixture);
+
+    finishMerge();
+    await settle(fixture);
+
+    expect(sketchView()).toBeNull();
+    expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
+    expect(rememberedView().systemEntry).toBe('elements/rating');
+  });
+
+  // Decision B726: a pick that opens sub-sketches merges nothing, so the view stays on the parent and reloads the sketches.
+  it('stays on the sketch and lists the sketches again when the pick opens sub-sketches', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      problems: [],
+      variants: ['a', 'b'],
+    };
+    let listings = 0;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        listings++;
+
+        return json({ sketches: [sketch], unreadable: [] });
+      }
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision'))
+        return json({ merged: [], subSketches: ['elements/rating-badge'] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: 'sketch:elements/rating' });
+    const before = listings;
+
+    fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance.pick.emit({
+      address: { port: 4402, product: 'web', sketch: 'elements/rating' },
+      variant: 'a',
+      discardSubSketches: false,
+    });
+    await settle(fixture);
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('sketch:elements/rating');
+    expect(fixture.debugElement.query(By.directive(SketchViewComponent))).not.toBeNull();
+    expect(listings).toBeGreaterThan(before);
   });
 });
 
