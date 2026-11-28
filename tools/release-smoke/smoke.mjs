@@ -34,6 +34,7 @@ import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
+import { copyConsumer, installedVersions, pendingSmokeMigrations, runSmokeMigrations } from './migrations.mjs';
 import { runWebkitZoomStep } from './webkit-zoom-step.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -287,9 +288,26 @@ const smokeApp = async (name) => {
   const output = mkdtempSync(join(tmpdir(), `release-smoke-${name}-`));
 
   console.log(`\n${name}: swapping the SDK build into ${root}/node_modules/@ethlete`);
+  const from = installedVersions(scopeDir(name), appConfig.libs);
   swapIn(name);
   let buildCode;
+  let scratch;
   try {
+    scratch = copyConsumer(root);
+    const to = installedVersions(scopeDir(name), appConfig.libs);
+    const pending = pendingSmokeMigrations({ sdkRoot, root: scratch, from, to });
+    console.log(
+      `  ${pending.length} et update migration(s) pending for ${JSON.stringify(from)} -> ${JSON.stringify(to)}`,
+    );
+    const lines = runSmokeMigrations({ sdkRoot, root: scratch, pending });
+    for (const line of lines) console.log(`  migration ${line}`);
+    result.notes.push(...lines.map((line) => `migration ${line}`));
+    const failedMigration = lines.find((line) => / (failed|not-run)\b/.test(line));
+    if (failedMigration) {
+      result.failures.push(`et update migration did not apply in the copy: ${failedMigration}`);
+      rmSync(output, { recursive: true, force: true });
+      return result;
+    }
     buildCode = await run(
       'npx',
       [
@@ -299,10 +317,11 @@ const smokeApp = async (name) => {
         `--output-path=${output}`,
         '--skip-nx-cache',
       ],
-      { cwd: root, env: { ...process.env, CI: 'true', NX_DAEMON: 'false', NX_NO_CLOUD: 'true', NX_TUI: 'false' } },
+      { cwd: scratch, env: { ...process.env, CI: 'true', NX_DAEMON: 'false', NX_NO_CLOUD: 'true', NX_TUI: 'false' } },
     );
   } finally {
     restore(name);
+    if (scratch) rmSync(scratch, { recursive: true, force: true });
   }
   if (buildCode !== 0) {
     result.failures.push(`production build exited with ${buildCode}`);
