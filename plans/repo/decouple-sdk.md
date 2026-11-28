@@ -100,3 +100,14 @@ Research: `.claude/handoffs/agent-results/b913-step4-research.md`.
   "Run one line with the path to your SDK checkout" goes, no placeholder stays; new shot to the doc session.
 - (a), (b), (c) partly verified: one real tool call through a running Timetrack and one snapshot/compare run,
   when Tom has the app open. Agents never start or navigate his app.
+
+## Deletion probe (28.11.)
+
+Scratch with Studio and Timetrack deleted: cli and agent-rules build, lint, test and pack (exit 0); `design mcp`
+answers initialize. Report: `.claude/handoffs/agent-results/b913-probe.md`. Left for step 5:
+
+- `apps/timetrack-e2e` and `apps/timetrack-vscode` have `implicitDependencies` on the Timetrack projects; the nx
+  graph fails until they leave with Timetrack. Not in the coupling list before.
+- `publish.yml:46` excludes the app projects by name; root `package.json` workspaces and the `studio*`,
+  `timetrack*`, `test:tools`, `test:e2e-helpers`, `studio:classes:check` scripts point at app paths.
+- `libs/agent-rules/src/lib/timetrack.ts` keeps a jira.issue client for git-flow-start (HTTP only).
