@@ -93,3 +93,10 @@ Research: `.claude/handoffs/agent-results/b913-step4-research.md`.
   tools; (c) skill text into the server instructions, snapshot/compare to a Timetrack script over `day.rows`, delete
   `ethlete-agents timetrack`. (c) updates the AGENTS.md snapshot paragraph and the commit-msg hook text in the same
   commit.
+
+## Step 4 open (28.11.)
+
+- Copy row not done: the app ships the stdio adapter as a bundled resource and shows its own path; the help text
+  "Run one line with the path to your SDK checkout" goes, no placeholder stays; new shot to the doc session.
+- (a), (b), (c) partly verified: one real tool call through a running Timetrack and one snapshot/compare run,
+  when Tom has the app open. Agents never start or navigate his app.
