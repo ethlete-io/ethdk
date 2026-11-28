@@ -53,6 +53,9 @@ workspace, and fifagg's `.mcp.json` still opens the design MCP.
 
 Each fix needs a bite that is red on HEAD; without one the finding stays a Suspect.
 
+1 and 2: fixed in 9f311d026d (spec bites), partly verified. Open: after the push, a cli-core-only change must reach
+the live `et:design` (pinned Studio cli) and the e2e check; this check goes into the batch with 3-7.
+
 1. `tools/scripts/e2e-check.mjs:28`: the sentinel skips the hash check for revisions with the guard still at
    `libs/cli/src/lib/source-hash.ts`, so a stale dist passes.
 2. `tools/scripts/studio-code.mjs:214`: the pinned cli cache keys only on `libs/cli`, so a commit that touches only
