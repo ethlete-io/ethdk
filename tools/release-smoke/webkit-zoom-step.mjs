@@ -85,3 +85,10 @@ export const runWebkitZoomStep = async (deps = {}) => {
     ? null
     : `WebKit zoom gate failed: median p50 ${median} ms > ${ZOOM_P50_BUDGET_MS} ms (${runs}), case "${WEBKIT_ZOOM_CASE}" on tank (B910)`;
 };
+
+export const webkitGateResult = (failure) => ({
+  name: 'webkit zoom gate',
+  failures: failure ? [failure] : [],
+  notes: [],
+  warnings: [],
+});

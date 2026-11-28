@@ -43,7 +43,8 @@ import {
   runSmokeMigrations,
   snapshotFiles,
 } from './migrations.mjs';
-import { runWebkitZoomStep } from './webkit-zoom-step.mjs';
+import { summaryLines } from './summary.mjs';
+import { runWebkitZoomStep, webkitGateResult } from './webkit-zoom-step.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const sdkRoot = resolve(here, '../..');
@@ -421,17 +422,8 @@ for (const dir of [join(sdkRoot, 'dist/libs/cli'), ...(existsSync(studioCli) ? [
 const results = [];
 for (const name of apps) results.push(await smokeApp(name));
 const webkitFailure = await runWebkitZoomStep();
-if (webkitFailure) results.push({ name: 'webkit zoom gate', failures: [webkitFailure], notes: [] });
+if (webkitFailure) results.push(webkitGateResult(webkitFailure));
 
-console.log('\nRelease smoke summary');
-for (const { name, failures, notes, warnings } of results) {
-  console.log(`${failures.length ? '✖' : warnings.length ? '⚠' : '✔'} ${name}`);
-  for (const warning of warnings) console.warn(`  ${warning}`);
-  for (const note of notes) console.log(`    ${note}`);
-  for (const failure of failures) console.error(`  ✖ ${failure}`);
-}
 const failed = results.filter((result) => result.failures.length);
-console.log(
-  failed.length ? `\nFAIL: ${failed.length} of ${results.length} app(s)` : `\nPASS: ${results.length} app(s)`,
-);
+console.log(`\n${summaryLines(results).join('\n')}`);
 process.exit(failed.length ? 1 : 0);
