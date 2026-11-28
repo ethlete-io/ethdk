@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { isBuildRunning } from './build-running';
 
 const MOCKS_DIR = 'libs/components/design';
 const BUILT_DIR = 'dist/libs/components/design';
@@ -64,9 +65,35 @@ export const guardsDesignMocks = (argv: string[]) =>
     ? GUARDED_SKETCH.has(argv[1] ?? '')
     : GUARDED.has(argv[0] ?? '') && !(argv[0] === 'check' && SOURCE_ONLY_CHECKS.some((flag) => argv.includes(flag)));
 
-/** Prints the refusal and answers false while the mocks are stale. */
-export const designMocksFresh = (options: { target: string }) => {
-  const stale = staleDesignMocksOf(options);
+const BUILD_WAIT_MS = 10 * 60 * 1000;
+const BUILD_POLL_MS = 500;
+
+const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/**
+ * Prints the refusal and answers false while the mocks are stale. While nx builds `components` the mocks are
+ * rewritten, so it polls until the build ends (at most `waitMs`) and judges the finished build.
+ */
+export const designMocksFresh = (options: {
+  target: string;
+  waitMs?: number;
+  pollMs?: number;
+  buildRunning?: () => boolean;
+  sleep?: (ms: number) => void;
+}) => {
+  const { target, waitMs = BUILD_WAIT_MS, pollMs = BUILD_POLL_MS, sleep = sleepSync } = options;
+  const buildRunning =
+    options.buildRunning ?? (() => isBuildRunning({ dir: join(target, BUILT_DIR), name: 'components' }));
+  let waited = 0;
+
+  while (staleDesignMocksOf({ target }) && waited < waitMs && buildRunning()) {
+    if (waited === 0) console.error('Waiting for the running nx build of components to finish the design mocks...');
+
+    sleep(pollMs);
+    waited += pollMs;
+  }
+
+  const stale = staleDesignMocksOf({ target });
 
   if (stale) console.error(stale.message);
 
