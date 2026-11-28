@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
-import { typecheckCommands } from './staged-typecheck.mjs';
+import { linkNodeModules, typecheckCommands } from './staged-typecheck.mjs';
 
 const projects = {
   'libs/cli/project.json': { name: 'cli', targets: { typecheck: { options: { command: 'tsc -p libs/cli' } } } },
@@ -27,4 +30,20 @@ test('skips projects without a typecheck target, non-source files and paths outs
     typecheckCommands(['libs/core/src/a.ts', 'libs/cli/README.md', 'tools/x.ts', 'a.ts'], read, exists),
     [],
   );
+});
+
+test('links node_modules only into projects the staged tree holds', () => {
+  const base = mkdtempSync(join(tmpdir(), 'staged-typecheck-spec-'));
+  try {
+    const from = join(base, 'work');
+    const to = join(base, 'staged');
+    for (const dir of ['node_modules', 'apps', 'libs/app-a/node_modules', 'libs/app-b/node_modules'])
+      mkdirSync(join(from, dir), { recursive: true });
+    mkdirSync(join(to, 'libs/app-a'), { recursive: true });
+    linkNodeModules(from, to);
+    assert.ok(existsSync(join(to, 'libs/app-a/node_modules')));
+    assert.ok(!existsSync(join(to, 'libs/app-b')));
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
 });

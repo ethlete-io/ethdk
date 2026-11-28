@@ -23,6 +23,15 @@ export const typecheckCommands = (files, read, exists) => {
   return [...commands.values()].sort((a, b) => a.name.localeCompare(b.name));
 };
 
+export const linkNodeModules = (from, to) => {
+  for (const parent of ['', ...PARENTS])
+    for (const name of parent ? readdirSync(join(from, parent)) : ['.']) {
+      const modules = join(parent, name, 'node_modules');
+      if (existsSync(join(from, modules)) && existsSync(join(to, parent, name)))
+        symlinkSync(join(from, modules), join(to, modules));
+    }
+};
+
 const git = (args, options = {}) => spawnSync('git', args, { cwd: root, encoding: 'utf8', ...options });
 
 const main = () => {
@@ -44,11 +53,7 @@ const main = () => {
       process.stderr.write(exported.stderr);
       return 1;
     }
-    for (const parent of ['', ...PARENTS])
-      for (const name of parent ? readdirSync(join(root, parent)) : ['.']) {
-        const modules = join(parent, name, 'node_modules');
-        if (existsSync(join(root, modules))) symlinkSync(join(root, modules), join(dir, modules));
-      }
+    linkNodeModules(root, dir);
     for (const { name, command } of toCheck) {
       const run = spawnSync(command, {
         cwd: dir,
