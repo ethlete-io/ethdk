@@ -546,7 +546,7 @@ They are ready colors, so apply an alpha with `color-mix()`. They are not genera
 
 A case a migration cannot rewrite safely stays as it is and comes back as a `file:line` finding with a reason. Fix
 each by hand, regenerate the theme files, and run the migration again until it reports nothing. The token rename
-reports three kinds:
+prints its findings as a `WARN` list and exits 0, so the later migrations still run. It reports three kinds:
 
 **A name inside a larger string.** A string whose whole content is one old name is renamed. A name that is only part
 of a string or a template string is reported as `old theme token left: <name>`:

@@ -73,15 +73,13 @@ export default async function migrateThemeTokenNamesGenerator(tree: Tree, schema
     await formatFiles(tree);
   }
 
-  if (review.length === 0) return;
-
-  return () => {
-    throw new Error(
+  if (review.length > 0) {
+    console.log(
       [
-        `${review.length} place(s) need a hand fix; the files above are written, these lines are left as they were:`,
+        `WARN ${review.length} place(s) need a hand fix; the files above are written, these lines are left as they were:`,
         ...review.map((entry) => `   ✗ ${entry}`),
         'Fix them, regenerate the theme files, then run the migration again until it reports nothing.',
       ].join('\n'),
     );
-  };
+  }
 }

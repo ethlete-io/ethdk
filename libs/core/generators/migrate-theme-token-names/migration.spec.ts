@@ -1,5 +1,6 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import migrateSurfaceRoles from '../migrate-surface-roles/migration';
 import migrateThemeTokenNames from './migration';
 
 describe('migrate-theme-token-names', () => {
@@ -40,7 +41,7 @@ describe('migrate-theme-token-names', () => {
     );
   });
 
-  it('writes what it can and fails with file and line for the rest', async () => {
+  it('writes what it can and warns with file and line for the rest without failing', async () => {
     tree.write(
       'apps/web/src/button.css',
       `.button {
@@ -50,14 +51,22 @@ describe('migrate-theme-token-names', () => {
   }
 }`,
     );
+    tree.write(
+      'apps/web/src/menu.component.ts',
+      'const t = `<a class="[--et-avatar-background:var(--et-surface-bg-solid)]"></a>`;',
+    );
+    tree.write('apps/web/src/loader.scss', '.l {\n  color: var(--et-color-primary);\n}\n');
 
     const task = await migrateThemeTokenNames(tree, { skipFormat: true });
 
     expect(tree.read('apps/web/src/button.css', 'utf-8')).toContain('color: var(--et-tone-fill-rest);');
-    expect(task).toBeTypeOf('function');
-    expect(() => task?.()).toThrow(
-      /apps\/web\/src\/button\.css:4: --et-theme-color-primary-rgb is reassigned without --et-theme-color-primary-solid/,
-    );
+    expect(task).toBeUndefined();
+    await expect(migrateSurfaceRoles(tree, { skipFormat: true })).resolves.not.toThrow();
+    const output = logged();
+    expect(output).toContain('WARN');
+    expect(output).toMatch(/apps\/web\/src\/button\.css:4: --et-theme-color-primary-rgb is reassigned/);
+    expect(output).toMatch(/menu\.component\.ts:1: old theme token left: --et-surface-bg-solid/);
+    expect(output).toMatch(/loader\.scss:2: --et-color-primary is a triplet read outside rgb\(\)/);
   });
 
   it('prints no regenerate hint when nothing changed', async () => {
