@@ -93,18 +93,19 @@ The command is idempotent - every step detects the migrated state and skips itse
 
 ## Commands
 
-| Command        | What it does                                                                                         |
-| -------------- | ---------------------------------------------------------------------------------------------------- |
-| `sync`         | Writes the generated rules, skills, hooks and git hooks. Flags: `--targets`, `--root`, `--dry-run`.  |
-| `check`        | Exits non-zero when the generated files are stale. Flags: `--targets`, `--root`.                     |
-| `init`         | Writes a starter `ethlete-agents.config.json`; refuses when one exists. Flag: `--root`.              |
-| `migrate`      | Converts the repo to the AGENTS.md layout. Flags: `--targets`, `--root`, `--dry-run`.                |
-| `git-flow`     | `start`, `check`, `repair` and `explain` for branches against the repo's git flow.                   |
-| `timetrack`    | Asks the running Timetrack app about Jira (`status`, `issue`, `search`, `project`, `create`, `log`). |
-| `output-style` | Installs an Ethlete output style into this machine's Claude Code config.                             |
+| Command        | What it does                                                                                        |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| `sync`         | Writes the generated rules, skills, hooks and git hooks. Flags: `--targets`, `--root`, `--dry-run`. |
+| `check`        | Exits non-zero when the generated files are stale. Flags: `--targets`, `--root`.                    |
+| `init`         | Writes a starter `ethlete-agents.config.json`; refuses when one exists. Flag: `--root`.             |
+| `migrate`      | Converts the repo to the AGENTS.md layout. Flags: `--targets`, `--root`, `--dry-run`.               |
+| `git-flow`     | `start`, `check`, `repair` and `explain` for branches against the repo's git flow.                  |
+| `output-style` | Installs an Ethlete output style into this machine's Claude Code config.                            |
 
 `--targets` takes a comma-separated subset of `claude`, `codex`, `cursor` and `copilot`. `sync`, `check`,
 `init` and `migrate` reject a flag they do not know and print the usage.
+
+Use the Timetrack app’s MCP server for Jira, Tempo and day evidence. The server provides tool usage and approval instructions.
 
 ## Configuration
 

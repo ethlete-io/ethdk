@@ -48,10 +48,10 @@ const contentItem = (options: { name: string; body?: string; resources?: string[
 
 describe('exclude warnings', () => {
   it('accepts the name of a packaged skill', () => {
-    const plan = planWithConfig({ exclude: ['timetrack'] });
+    const plan = planWithConfig({ exclude: ['handoff'] });
 
     expect(plan.warnings).toEqual([]);
-    expect(plan.skipped).toContainEqual({ name: 'timetrack', cause: 'excluded', reason: 'excluded by config' });
+    expect(plan.skipped).toContainEqual({ name: 'handoff', cause: 'excluded', reason: 'excluded by config' });
   });
 
   it('warns about names that do not match packaged content', () => {

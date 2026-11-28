@@ -57,7 +57,6 @@ its own replacement for one of them.
 | `story-styling`       | Styling Storybook stories with the repository's trimmed Tailwind theme.                                          | Consumer profile; requires `@ethlete/core`          |
 | `styleguide`          | Applying the TypeScript and Angular judgment calls that lint cannot enforce.                                     | Consumer profile; requires `@ethlete/eslint-plugin` |
 | `theming`             | Using surface and semantic color theming, including across overlays and portals.                                 | Consumer profile; requires `@ethlete/core`          |
-| `timetrack`           | Reading and writing Jira data through the running Timetrack app without repository credentials.                  | All profiles                                        |
 | `verify-in-app`       | Driving the running app with Playwright to verify a view or style change and prove a fix with a test.            | Consumer profile                                    |
 | `verify-in-storybook` | Driving a Storybook story with Playwright to verify DOM, styles, animations and interactions.                    | Consumer profile                                    |
 
