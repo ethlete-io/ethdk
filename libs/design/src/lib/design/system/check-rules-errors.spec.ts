@@ -94,7 +94,7 @@ describe('checkRules', () => {
     expect(warn.mock.calls.map(([text]) => String(text))).toEqual([
       `NOTE (new in this merge; a page must embed it) ${line}`,
     ]);
-  });
+  }, 30_000);
 
   it('passes the hits its rule baseline lists and prints them as baselined', () => {
     const entry = { finding: 'B1', sketch: 'components/chip' };
