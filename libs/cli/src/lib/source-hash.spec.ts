@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cliSourceHash, staleCliBuildMessage } from './source-hash';
+import { cliSourceHash, compareBytes, staleCliBuildMessage, toPosixPath } from './source-hash';
 
 describe('staleCliBuildMessage', () => {
   let root: string;
@@ -109,5 +109,36 @@ describe('cliSourceHash fixture', () => {
     const fixtures = resolve(__dirname, '../../fixtures/source-hash');
 
     expect(cliSourceHash(join(fixtures, 'cli'))).toBe(readFileSync(join(fixtures, 'expected-hash.txt'), 'utf8').trim());
+  });
+});
+
+describe('cliSourceHash portability', () => {
+  it('joins relative paths with / whatever the platform separator is', () => {
+    expect(toPosixPath('src\\a\\b.ts', '\\')).toBe('src/a/b.ts');
+    expect(toPosixPath('src/a/b.ts', '/')).toBe('src/a/b.ts');
+  });
+
+  it('orders names by their UTF-8 bytes, not by UTF-16 code units', () => {
+    const names = ['\u{1F600}.ts', '\uFF21.ts', '_.ts', 'a.ts', 'B.ts'];
+
+    expect([...names].sort(compareBytes)).toEqual(['B.ts', '_.ts', 'a.ts', '\uFF21.ts', '\u{1F600}.ts']);
+    expect([...names].sort()).not.toEqual([...names].sort(compareBytes));
+  });
+
+  it('skips symlinks', () => {
+    const root = mkdtempSync(join(tmpdir(), 'b918-'));
+
+    try {
+      mkdirSync(join(root, 'cli/src'), { recursive: true });
+      writeFileSync(join(root, 'cli/src/a.ts'), 'a');
+      const before = cliSourceHash(join(root, 'cli'));
+
+      symlinkSync(join(root, 'cli/src/a.ts'), join(root, 'cli/src/link.ts'));
+      symlinkSync(join(root, 'cli/src'), join(root, 'cli/src/loop'));
+
+      expect(cliSourceHash(join(root, 'cli'))).toBe(before);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

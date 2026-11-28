@@ -526,6 +526,7 @@ fn source_files(dir: &Path) -> Vec<PathBuf> {
     entries
         .flatten()
         .filter(|entry| entry.file_name() != "node_modules")
+        .filter(|entry| entry.file_type().is_ok_and(|kind| !kind.is_symlink()))
         .flat_map(|entry| {
             let path = entry.path();
 
@@ -541,6 +542,10 @@ fn source_files(dir: &Path) -> Vec<PathBuf> {
             !name.ends_with(".spec.ts") && !name.ends_with(".md")
         })
         .collect()
+}
+
+fn posix_path(path: &str, separator: char) -> String {
+    path.split(separator).collect::<Vec<_>>().join("/")
 }
 
 /// Mirrors `cliSourceHash` in libs/cli/src/lib/source-hash.ts.
@@ -564,21 +569,23 @@ fn cli_source_hash(cli_root: &Path) -> String {
             continue;
         }
 
-        let mut files = source_files(&path);
+        let mut files: Vec<(String, PathBuf)> = source_files(&path)
+            .into_iter()
+            .map(|file| {
+                let relative = prefix.join(file.strip_prefix(&root).unwrap_or(&file));
 
-        files.sort_by_key(|file| file.to_string_lossy().into_owned());
+                (posix_path(&relative.to_string_lossy(), std::path::MAIN_SEPARATOR), file)
+            })
+            .collect();
 
-        for file in files {
+        files.sort_by(|a, b| a.0.as_bytes().cmp(b.0.as_bytes()));
+
+        for (key, file) in files {
             let Ok(content) = std::fs::read(&file) else {
                 continue;
             };
 
-            hash.update(
-                prefix
-                    .join(file.strip_prefix(&root).unwrap_or(&file))
-                    .to_string_lossy()
-                    .as_bytes(),
-            );
+            hash.update(key.as_bytes());
             hash.update([0]);
             hash.update(content);
             hash.update([0]);
@@ -1214,6 +1221,31 @@ mod tests {
         let expected = std::fs::read_to_string(fixture().join("expected-hash.txt")).expect("an expected hash");
 
         assert_eq!(cli_source_hash(&fixture().join("cli")), expected.trim());
+    }
+
+    #[test]
+    fn source_hash_paths_join_with_a_slash_whatever_the_platform_separator() {
+        assert_eq!(posix_path("src\\a\\b.ts", '\\'), "src/a/b.ts");
+        assert_eq!(posix_path("src/a/b.ts", '/'), "src/a/b.ts");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_cli_source_hash_skips_symlinks() {
+        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-b918", std::process::id()));
+        let src = root.join("src");
+
+        std::fs::create_dir_all(&src).expect("a directory");
+        std::fs::write(src.join("a.ts"), "a").expect("a file");
+
+        let before = cli_source_hash(&root);
+
+        std::os::unix::fs::symlink(src.join("a.ts"), src.join("link.ts")).expect("a link");
+        std::os::unix::fs::symlink(&src, src.join("loop")).expect("a link");
+
+        assert_eq!(cli_source_hash(&root), before);
+
+        std::fs::remove_dir_all(&root).expect("cleanup");
     }
 
     #[test]
