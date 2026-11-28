@@ -408,6 +408,7 @@ export const serveOnlyAnswer = (dir, answer, view) => async (request, response) 
  * stubbed desktop shell. Stops only
  * what it started. `built` serves an existing Studio build folder instead of building one. `restartDesign(downMs)` stops
  * the design server, leaves its port refused for `downMs`, and starts a new one; pin the port with DE_PORT to keep it.
+ * `studioServer.stop()` / `.start()` close and reopen the server of the Studio page on its port.
  * `onStep(name)` is called after each open step. `serveOnly: { view }` launches no browser: it serves the Studio build with the same shim, forwarding host commands over `POST /__host`,
  * and calls `run({ studioUrl, designPort })`. `chrome: { value, delayMs }` answers `window_chrome_watch` with `value` after `delayMs`, like the desktop shell does;
  * without it the stubbed shell sends no window chrome and Studio draws no title bar. `host(command, args, designPort)` answers
@@ -489,12 +490,22 @@ export const withStudio = async (
       design = await startDesignServer(checkout, stamp, echoDesign);
     };
 
+    const studioServer = {
+      stop: () =>
+        new Promise((done) => {
+          app.close(() => done());
+          app.closeAllConnections();
+        }),
+      start: () => new Promise((done) => app.listen(studioPort, '::1', () => done())),
+    };
+
     stamp('first case starting');
     return await run({
       page,
       studioUrl: `http://[::1]:${studioPort}`,
       designPort: design.port,
       restartDesign,
+      studioServer,
       designChildState: () => designChildState(design?.child),
     });
   } finally {

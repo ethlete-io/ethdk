@@ -76,6 +76,8 @@ export const CODE_LABELS = {
   cli: 'CLI geändert - neu starten',
   frontend: 'Oberfläche geändert - neu starten',
   restart: 'Neu starten',
+  reloading: 'Studio startet neu',
+  reloadingHint: 'Die Oberfläche lädt, sobald ihr Server wieder antwortet.',
   restartFailedTitle: 'Neustart fehlgeschlagen',
   restartFailedMessage: 'Der Design-Server antwortet nicht. Das Log steht im Studio-Menü.',
 } as const;

@@ -28,6 +28,7 @@ import { restartForUpdate$ } from '../../../host/update';
 import { injectUpdateCheck } from '../../update-check';
 import { UpdateDialogComponent, updateDialogConfigOf } from '../update-dialog/update-dialog.component';
 import { isWindowMaximized$, WindowButton, WindowChrome } from '../../../host/window';
+import { RestartState } from '../../code-watch';
 import { CODE_LABELS, TITLE_BAR_LABELS } from '../../i18n/shell-labels';
 import { ErrorToastComponent } from '../../design-parts/error-toast/error-toast.component';
 import { TitleSearchComponent } from '../title-search/title-search.component';
@@ -312,7 +313,7 @@ export class TitleBarComponent {
   public update = input(false, { transform: booleanAttribute });
   public notice = input(false);
   public noticeText = input<string | null>(null);
-  public restart = input<'pending' | 'failed' | null>(null);
+  public restart = input<RestartState>(null);
   public product = input('');
 
   public part = input('');
@@ -334,7 +335,7 @@ export class TitleBarComponent {
 
   protected readonly CLOSE_KIND = WINDOW_CONTROL_BUTTON_KINDS.CLOSE;
 
-  protected restarting = computed(() => this.restart() === 'pending');
+  protected restarting = computed(() => this.restart() === 'pending' || this.restart() === 'reloading');
   protected round = computed(() => this.os() === 'linux');
   protected caption = computed(() => this.os() === 'windows');
 

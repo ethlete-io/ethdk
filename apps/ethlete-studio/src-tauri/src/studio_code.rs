@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
@@ -10,6 +11,14 @@ use crate::design_server::DesignServers;
 use crate::error::{StudioError, StudioResult};
 
 const SCRIPT: &str = "tools/scripts/studio-code.mjs";
+
+const FRONTEND_SERVER: &str = "tools/scripts/studio-app-serve.mjs";
+
+const FRONTEND_WAIT: Duration = Duration::from_secs(15);
+
+const FRONTEND_POLL: Duration = Duration::from_millis(250);
+
+static FRONTEND_CHILD: Mutex<Option<tokio::process::Child>> = Mutex::new(None);
 
 const PREFACE_LINES: usize = 40;
 
@@ -170,14 +179,114 @@ pub async fn app_copy(on_phase: &(dyn Fn(&str) + Send + Sync)) -> StudioResult<A
     parsed(&run_script("app-copy", on_phase).await?.0)
 }
 
-/// Reloads every window once `app-copy` points the frontend server at another commit.
-pub fn reload_on_switch(app: &AppHandle, copy: &AppCopy) {
-    if !copy.switched {
-        return;
+/// Reloads every window once `app-copy` points the frontend server at another commit, but only once
+/// the window's frontend port answers: a dead frontend server is started again first, and a window
+/// whose server stays down keeps its page instead of a refused one.
+pub async fn reload_on_switch(app: &AppHandle, copy: &AppCopy) {
+    for window in app.webview_windows().values() {
+        let reload = || {
+            if copy.switched {
+                let _ = window.reload();
+            }
+        };
+
+        match window.url().ok().as_ref().and_then(local_port) {
+            Some(port) => {
+                reload_if_answering(port, FRONTEND_WAIT, revive_frontend, reload).await;
+            }
+            None => reload(),
+        }
+    }
+}
+
+fn local_port(url: &tauri::Url) -> Option<u16> {
+    let local = matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+
+    (local && matches!(url.scheme(), "http" | "https"))
+        .then(|| url.port_or_known_default())
+        .flatten()
+}
+
+async fn answers(port: u16) -> bool {
+    matches!(
+        tokio::time::timeout(
+            Duration::from_secs(1),
+            tokio::net::TcpStream::connect(("localhost", port))
+        )
+        .await,
+        Ok(Ok(_))
+    )
+}
+
+async fn answers_within(port: u16, wait: Duration) -> bool {
+    let until = Instant::now() + wait;
+
+    loop {
+        if answers(port).await {
+            return true;
+        }
+
+        if Instant::now() >= until {
+            return false;
+        }
+
+        tokio::time::sleep(FRONTEND_POLL).await;
+    }
+}
+
+async fn reload_if_answering(
+    port: u16,
+    wait: Duration,
+    revive: impl FnOnce(u16) -> bool,
+    reload: impl FnOnce(),
+) -> bool {
+    let up = answers(port).await || (revive(port) && answers_within(port, wait).await);
+
+    if up {
+        reload();
     }
 
-    for window in app.webview_windows().values() {
-        let _ = window.reload();
+    up
+}
+
+fn revive_frontend(port: u16) -> bool {
+    if !cfg!(debug_assertions) {
+        return false;
+    }
+
+    let Ok(mut held) = FRONTEND_CHILD.lock() else {
+        return false;
+    };
+
+    if let Some(child) = held.as_mut() {
+        if matches!(child.try_wait(), Ok(None)) {
+            return true;
+        }
+    }
+
+    let spawned = crate::child_env::command("node")
+        .arg(FRONTEND_SERVER)
+        .arg(port.to_string())
+        .current_dir(repo_root())
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(true)
+        .spawn();
+
+    match spawned {
+        Ok(child) => {
+            *held = Some(child);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// Stops the frontend server Studio started again after it had died.
+pub fn stop_frontend() {
+    if let Some(mut child) = FRONTEND_CHILD.lock().ok().and_then(|mut held| held.take()) {
+        let _ = child.start_kill();
     }
 }
 
@@ -299,5 +408,47 @@ mod tests {
         let areas: Areas = parsed(answer).expect("the state answer parses");
 
         assert_eq!(areas.uncommitted, vec!["SKETCH UNTRACKED studio a.b: x".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn a_window_reloads_only_once_its_frontend_answers() {
+        let closed = std::net::TcpListener::bind("127.0.0.1:0")
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port();
+        let mut reloads = 0;
+
+        assert!(!reload_if_answering(closed, Duration::from_millis(300), |_| false, || reloads += 1).await);
+        assert_eq!(reloads, 0, "a refused frontend keeps the running page");
+
+        let mut revived = None;
+        let up = reload_if_answering(
+            closed,
+            Duration::from_secs(3),
+            |port| {
+                revived = std::net::TcpListener::bind(("127.0.0.1", port)).ok();
+                revived.is_some()
+            },
+            || reloads += 1,
+        )
+        .await;
+
+        assert!(up);
+        assert_eq!(reloads, 1, "a revived frontend reloads the window");
+
+        let open = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = open.local_addr().unwrap().port();
+
+        assert!(
+            reload_if_answering(
+                port,
+                Duration::ZERO,
+                |_| panic!("an answering frontend is not revived"),
+                || reloads += 1
+            )
+            .await
+        );
+        assert_eq!(reloads, 2);
     }
 }

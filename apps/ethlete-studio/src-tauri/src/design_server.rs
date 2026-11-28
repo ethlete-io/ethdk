@@ -890,7 +890,7 @@ pub async fn design_server_start(
     let answer = state(servers.inner(), &checkout, port, None).await;
 
     if let Some(copy) = app_copy {
-        crate::studio_code::reload_on_switch(&app, &copy);
+        crate::studio_code::reload_on_switch(&app, &copy).await;
     }
 
     answer
@@ -976,7 +976,7 @@ async fn restarted(
     let answer = judged(servers, checkout, port, None).await;
 
     if let Some(copy) = app_copy {
-        crate::studio_code::reload_on_switch(app, &copy);
+        crate::studio_code::reload_on_switch(app, &copy).await;
     }
 
     answer

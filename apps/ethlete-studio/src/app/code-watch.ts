@@ -1,16 +1,18 @@
 import { DOCUMENT } from '@angular/common';
-import { computed, inject, signal } from '@angular/core';
+import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { EMPTY, Subject, catchError, exhaustMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, defer, exhaustMap, first, map, of, tap, timer } from 'rxjs';
 import { StudioCodeState, quitForRebuild$, studioCodeState$ } from '../host/studio-code';
 import { CODE_LABELS } from './i18n/shell-labels';
 
 export const CODE_WATCH_INTERVAL_MS = 10_000;
 
+export const PAGE_POLL_MS = 1000;
+
 export type CodeAction = 'restartStudio' | 'restartServer' | 'restartServerAndReload';
 
-export type RestartState = 'pending' | 'failed' | null;
+export type RestartState = 'pending' | 'reloading' | 'failed' | null;
 
 export type CodeNotice = { text: string; action: CodeAction };
 
@@ -40,6 +42,14 @@ export const serverRenewalOf = (state: StudioCodeState | null, pageLoadedAt: str
     ? `${state.cli.running}>${state.cli.latest}`
     : null;
 
+/** Whether the server that serves this page answers it again, so a reload cannot land on a refused page. */
+export const pageAnswers$ = (view: Window): Observable<boolean> =>
+  defer(() => view.fetch(view.location.pathname, { cache: 'no-store' })).pipe(
+    map((response) => response.ok),
+    // eslint-disable-next-line ethlete/no-silent-catch-error -- a refused fetch means the server is still down; the poll asks again
+    catchError(() => of(false)),
+  );
+
 const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const state = signal<StudioCodeState | null>(null);
   const pageLoadedAt = signal<string | null>(null);
@@ -64,7 +74,24 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const restart = signal<RestartState>(null);
   const document = inject(DOCUMENT);
+  const destroyRef = inject(DestroyRef);
   let reloadAfterRestart = false;
+
+  const reloadOncePageAnswers = () => {
+    const view = document.defaultView;
+
+    if (!view) return;
+
+    restart.set('reloading');
+    timer(0, PAGE_POLL_MS)
+      .pipe(
+        exhaustMap(() => pageAnswers$(view)),
+        first(Boolean),
+        tap(() => view.location.reload()),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe();
+  };
 
   const act = (action: CodeAction) => {
     restart.set('pending');
@@ -95,7 +122,7 @@ const CODE_WATCH_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (restart() !== 'pending') return;
 
       if (reloadAfterRestart) {
-        document.defaultView?.location.reload();
+        reloadOncePageAnswers();
 
         return;
       }

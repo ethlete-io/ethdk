@@ -244,6 +244,7 @@ pub fn run() {
         .run(|handle, event| {
             if matches!(event, tauri::RunEvent::Exit) {
                 design_server::stop_every(&handle.state::<design_server::DesignServers>());
+                studio_code::stop_frontend();
                 update::install_pending(&handle.state::<update::PendingUpdate>());
                 handle.state::<window_chrome::ChromeWatch>().stop();
                 drain_cef();

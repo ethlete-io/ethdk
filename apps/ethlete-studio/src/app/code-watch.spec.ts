@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { NEVER } from 'rxjs';
 import { StudioCodeState } from '../host/studio-code';
-import { codeNoticeOf, injectCodeWatch } from './code-watch';
+import { PAGE_POLL_MS, codeNoticeOf, injectCodeWatch } from './code-watch';
 
 vi.mock('../host/studio-code', () => ({ studioCodeState$: () => NEVER, quitForRebuild$: () => NEVER }));
 
@@ -77,9 +77,12 @@ describe('codeNoticeOf', () => {
 });
 
 describe('the restart of a changed page', () => {
-  const setup = () => {
+  const setup = (pageUp: boolean[] = [true]) => {
     const reload = vi.fn();
-    const document = { defaultView: { location: { reload } } };
+    const fetch = vi.fn(() =>
+      pageUp.shift() === false ? Promise.reject(new TypeError('Failed to fetch')) : Promise.resolve({ ok: true }),
+    );
+    const document = { defaultView: { location: { reload, pathname: '/' }, fetch } };
 
     TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT, useValue: document }] });
 
@@ -88,19 +91,41 @@ describe('the restart of a changed page', () => {
 
     watch.serverRestarts$.subscribe(() => restarts.push(undefined));
 
-    return { watch, reload, restarts };
+    return { watch, reload, restarts, fetch };
   };
 
-  it('restarts the server, then reloads the page and stays pending until the new page is up', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('restarts the server, then reloads the page once its server answers', async () => {
+    vi.useFakeTimers();
     const { watch, reload, restarts } = setup();
     const action = codeNoticeOf({ ...settled, frontend: { latest: B } }, A)?.action;
 
     watch.act(action!);
     watch.settleRestart();
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(restarts).toHaveLength(1);
     expect(reload).toHaveBeenCalledOnce();
-    expect(watch.restart()).toBe('pending');
+    expect(watch.restart()).toBe('reloading');
+  });
+
+  it('keeps the page while its server refuses, and reloads once it answers', async () => {
+    // A reload into a refused server shows the browser's error page, which has no way back.
+    vi.useFakeTimers();
+    const { watch, reload, fetch } = setup([false, false, true]);
+
+    watch.act('restartServerAndReload');
+    watch.settleRestart();
+    await vi.advanceTimersByTimeAsync(PAGE_POLL_MS);
+
+    expect(reload).not.toHaveBeenCalled();
+    expect(watch.restart()).toBe('reloading');
+
+    await vi.advanceTimersByTimeAsync(PAGE_POLL_MS);
+
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(reload).toHaveBeenCalledOnce();
   });
 
   it('only settles after a cli restart, with no page reload', () => {
