@@ -15,7 +15,7 @@ import {
 } from './system/sketch/sub-sketches';
 import { fromEvent, take } from 'rxjs';
 import { setImmediate } from 'timers/promises';
-import { repoInvocation } from '@ethlete/cli/src/lib/invocation';
+import { repoInvocation } from '@ethlete/cli-core/invocation';
 import { DesignConfig, readConfig } from './design-config';
 import {
   CommentSize,

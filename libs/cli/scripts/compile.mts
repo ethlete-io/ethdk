@@ -13,7 +13,7 @@ import {
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { assertCompleteBuild } from './move-into-place.mts';
 
-const CLI_CORE_ALIASES = ['@ethlete/cli-core/', '@ethlete/cli/src/lib/'];
+const CLI_CORE_ALIASES = ['@ethlete/cli-core/'];
 const DESIGN_ALIAS = '@ethlete/design';
 const SPECIFIER = /(require\(|import\(|from )(["'])([^"']+)\2/g;
 const BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

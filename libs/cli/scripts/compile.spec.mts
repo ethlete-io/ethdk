@@ -147,7 +147,7 @@ describe('layOutPackage', () => {
   it('refuses an alias whose target is not part of the package', () => {
     const { emitted, run } = emit();
 
-    tree(emitted, { 'design/src/lib/design/stray.js': 'require("@ethlete/cli/src/lib/missing/../../../../../x");\n' });
+    tree(emitted, { 'design/src/lib/design/stray.js': 'require("@ethlete/cli-core/missing/../../../../../x");\n' });
 
     expect(() => layOutPackage(emitted, run)).toThrow('design/src/lib/design/stray.js imports');
   });
