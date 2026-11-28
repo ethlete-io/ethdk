@@ -1,0 +1,35 @@
+{
+  "takenAt": "2026-11-28T12:21:22.858Z",
+  "days": [
+    {
+      "day": "2026-08-12",
+      "loggedMs": 0,
+      "proposedMs": 5400000,
+      "rows": [
+        {
+          "id": "ABC-3010@2026-08-12T09:00:00.000Z",
+          "fromMs": 1786525200000,
+          "toMs": 1786530600000,
+          "issueKey": "ABC-3010",
+          "state": "accepted",
+          "edited": false,
+          "durationMs": 5400000,
+          "description": "feat(users): Invite a member by email",
+          "laneKey": "repo:/Users/e2e/dev/fut-frontend",
+          "hidden": false
+        },
+        {
+          "id": "unnamed:repo:/Users/e2e/dev/fut-frontend@2026-08-12T11:00:00.000Z",
+          "fromMs": 1786532400000,
+          "toMs": 1786536000000,
+          "state": "suggested",
+          "edited": false,
+          "durationMs": 3600000,
+          "description": "Try pdfkit for the invoice export",
+          "laneKey": "repo:/Users/e2e/dev/fut-frontend",
+          "hidden": false
+        }
+      ]
+    }
+  ]
+}

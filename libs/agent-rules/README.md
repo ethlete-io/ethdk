@@ -258,52 +258,9 @@ Everything is checked before the first mutation, and it refuses rather than half
 
 ## Jira, through Timetrack
 
-A Jira token in every repository is a secret nobody can rotate. There is one on this machine
-instead, in the Timetrack app's keychain entry, and every repository asks the running app:
-
-```bash
-npx ethlete-agents timetrack status                # is it reachable, and what does it hold?
-npx ethlete-agents timetrack issue FIP-2177        # summary, type, parent, branch subject
-npx ethlete-agents timetrack search "password"     # open issues of the picked projects
-npx ethlete-agents timetrack project               # which project does this repo log into?
-npx ethlete-agents timetrack create --summary "…"  # file a ticket with the instance's settings
-npx ethlete-agents timetrack log --issue FIP-2177 --minutes 45
-npx ethlete-agents timetrack approval <id>         # where a queued write stands
-```
-
-`timetrack snapshot [from] [to] [--out <file>]` records the rows of real days (default: the last 7) with
-the git HEAD and uncommitted files of the current repo; without `--out` the file lands in the app's data
-directory under `snapshots/`, never in a repo. `timetrack snapshot --compare <file>` reads the same days
-again and prints every row gone, new or changed (`--json` for a script); it exits 1 when anything changed.
-
-`--json` prints the raw answer instead of lines. `git-flow start` uses the same channel.
-
-**Every write waits for the user.** `create`, `log` and every other write answer at once with an
-approval id and write nothing; the user approves or rejects the request in the app, and
-`approval <id>` reads the outcome. A request still waiting at the end of its day expires.
-`TIMETRACK_CLIENT` names the caller in the queue.
-
-**How it connects.** The app binds a loopback socket and writes its port and a fresh token
-into `agent.json` in its own data directory (`~/.local/share/io.ethlete.timetrack/` on Linux,
-`~/Library/Application Support/…` on macOS, `%APPDATA%\…` on Windows), readable by its owner
-alone. The token lives no longer than the run, so a caller left over from an earlier one is
-refused rather than trusted, and a request carrying an `Origin` header is refused outright -
-a page the user happens to have open must not reach Jira through a port it guessed.
-`TIMETRACK_AGENT_DISCOVERY` names the file for a machine that keeps it elsewhere.
-
-**What the app answers, not this package.** The instance, the credentials, the picked
-projects, the subject field and the ticket shape are all settings there. That is what makes
-`create` file a ticket indistinguishable from one the app filed, and it is why none of them
-appear in a repo's config any more.
-
-**`log` writes to the day, not to Tempo.** It adds the same row the app's own timeline draws
-for work nothing observed, and the user reviews the day before syncing it. A worklog posted
-behind the review would double-book against whatever the evidence already proposed for that
-hour.
-
-**When the app is not running** every command says so and exits non-zero. There is no
-fallback to an environment variable on purpose - a fallback is how the per-repo secret comes
-back.
+`ethlete-agents git-flow start` looks up the issue in the running Timetrack app, which holds the Jira
+credentials. The app writes its loopback port and per-run token to `agent.json` in its data directory.
+Set `TIMETRACK_AGENT_DISCOVERY` if the app keeps that file elsewhere.
 
 ## Hooks (opt-in)
 

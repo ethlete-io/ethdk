@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "value": {
+    "day": "2026-08-12",
+    "checkoutKeys": {},
+    "rows": [
+      {
+        "id": "ABC-3010@2026-08-12T09:00:00.000Z",
+        "issueKey": "ABC-3010",
+        "description": "feat(users): Invite a member by email",
+        "fromMs": 1786525200000,
+        "toMs": 1786530600000,
+        "durationMs": 5400000,
+        "observedMs": 5400000,
+        "laneKey": "repo:/Users/e2e/dev/fut-frontend",
+        "state": "accepted",
+        "confidence": "certain",
+        "edited": false,
+        "sources": {
+          "issue": "observed",
+          "description": "observed"
+        },
+        "hidden": false,
+        "presence": {
+          "deskEvents": 4,
+          "humanPrompts": 0
+        }
+      },
+      {
+        "id": "unnamed:repo:/Users/e2e/dev/fut-frontend@2026-08-12T11:00:00.000Z",
+        "description": "Try pdfkit for the invoice export",
+        "fromMs": 1786532400000,
+        "toMs": 1786536000000,
+        "durationMs": 3600000,
+        "observedMs": 3600000,
+        "laneKey": "repo:/Users/e2e/dev/fut-frontend",
+        "state": "suggested",
+        "confidence": "weak",
+        "edited": false,
+        "sources": {
+          "issue": "observed",
+          "description": "observed"
+        },
+        "hidden": false,
+        "presence": {
+          "deskEvents": 1,
+          "humanPrompts": 0
+        },
+        "autoModeSubject": {
+          "kind": "context",
+          "contextId": "repo:/Users/e2e/dev/fut-frontend@feat/pdf-export"
+        }
+      }
+    ],
+    "hidden": [],
+    "proposedMs": 5400000,
+    "loggedMs": 0,
+    "targetMs": 28800000,
+    "unattributedMs": 3600000,
+    "warnings": [
+      {
+        "kind": "unattributed-time",
+        "detail": "1h 0m in fut-frontend"
+      }
+    ],
+    "behind": []
+  }
+}

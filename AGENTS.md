@@ -107,10 +107,10 @@ jsdom specs catch value logic, not behavior regressions. Further layers:
 - `libs/query/src/scenarios` (**`query-scenario-tests`**) and `libs/core/src/scenarios`
   (**`core-scenario-tests`**): real app/client against fakes with leak invariants. Every bug fix in
   `libs/query` or `libs/core` adds one.
-- `timetrack snapshot` - before a change in `libs/timetrack` or `apps/timetrack` that can change rows, run
-  `node dist/libs/agent-rules/src/index.js timetrack snapshot` (build agent-rules first if `dist` is stale);
-  after it, run `... snapshot --compare <file>` and explain every changed row in the report. An unexplained
-  change is a regression. The file holds client names, so it stays outside the repo.
+- Before a change in `libs/timetrack` or `apps/timetrack` that can change rows, run
+  `node libs/timetrack/src/lib/agent-mcp/timetrack-snapshot.mts` from the repo root with the Timetrack app running.
+  After the change, run the same command with `--compare <file>` and explain every changed row in the report.
+  An unexplained change is a regression. The file holds client names, so it stays outside the repo.
   The commit-msg hook asks for a `Snapshot:` line (the `--compare` result, or `Snapshot: not run (<reason>)`) on
   commits that touch row-changing paths.
 - `apps/storybook-e2e` - Playwright against real stories (**`component-behavior-tests`**).

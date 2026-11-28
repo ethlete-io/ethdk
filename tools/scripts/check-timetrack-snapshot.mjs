@@ -65,6 +65,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       [
         'This commit touches paths that can change Timetrack rows:',
         ...rows.map((row) => `  ${row}`),
+        'Record rows with node libs/timetrack/src/lib/agent-mcp/timetrack-snapshot.mts',
+        'Compare with node libs/timetrack/src/lib/agent-mcp/timetrack-snapshot.mts --compare <file>',
         'Add a line to the message in one of these forms:',
         '  Snapshot: <the --compare result, every changed row explained>   (needs a snapshot file from the last 6 h in ' +
           `${snapshotDir()})`,

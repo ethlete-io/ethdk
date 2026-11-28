@@ -1,8 +1,6 @@
-import { CheckoutKeys, translatePeerPath } from './peer-path';
+import type { AgentApiDayRows } from '../agent-api/model';
 
-const PATH_TOKEN = /\/(?:[^/|@\s]+\/)*[^/|@\s]+/g;
-
-export const SNAPSHOT_ROW_FIELDS = [
+const SNAPSHOT_ROW_FIELDS = [
   'fromMs',
   'toMs',
   'issueKey',
@@ -53,15 +51,15 @@ export type SnapshotDiff = {
   uncommittedThen: string[];
 };
 
-type DayRowsLike = { day: string; loggedMs: number; proposedMs: number; rows: object[]; hidden: object[] };
+type DayRows = Pick<AgentApiDayRows, 'day' | 'loggedMs' | 'proposedMs' | 'rows' | 'hidden'>;
 
-export const snapshotDayOf = (found: DayRowsLike): SnapshotDay => ({
+export const snapshotDayOf = (found: DayRows): SnapshotDay => ({
   day: found.day,
   loggedMs: found.loggedMs,
   proposedMs: found.proposedMs,
   rows: [...found.rows, ...found.hidden].map((row) => {
     const source = row as Record<string, unknown>;
-    const kept: SnapshotRow = { id: String(source['id']) };
+    const kept: SnapshotRow = { id: row.id };
 
     SNAPSHOT_ROW_FIELDS.forEach((field) => {
       if (source[field] !== undefined) kept[field] = source[field];
@@ -70,56 +68,6 @@ export const snapshotDayOf = (found: DayRowsLike): SnapshotDay => ({
     return kept;
   }),
 });
-
-/** Rewrites every path in a recorded day's row ids and lane keys from a peer's checkouts to this machine's, by repository key. */
-export const translateSnapshotDay = (options: {
-  day: SnapshotDay;
-  peerKeys: CheckoutKeys;
-  localKeys: CheckoutKeys;
-}): SnapshotDay => {
-  const { day, peerKeys, localKeys } = options;
-  const translate = (value: unknown) =>
-    typeof value === 'string'
-      ? value.replace(PATH_TOKEN, (path) => translatePeerPath({ path, peerKeys, localKeys }))
-      : value;
-
-  return {
-    ...day,
-    rows: day.rows.map((row) => ({
-      ...row,
-      id: String(translate(row.id)),
-      ...(row.laneKey === undefined ? {} : { laneKey: translate(row.laneKey) }),
-    })),
-  };
-};
-
-const PATH_IN_KEY = /\/(?:[^/|@\s]+\/)*([^/|@\s]+)/g;
-
-const withoutPaths = (value: unknown) => (typeof value === 'string' ? value.replace(PATH_IN_KEY, '$1') : value);
-
-/** Drops what differs per machine: repo paths in ids and lane keys shrink to their last segment, and rows sort. */
-export const normaliseSnapshotDay = (day: SnapshotDay): SnapshotDay => ({
-  ...day,
-  rows: day.rows
-    .map((row) => ({
-      ...row,
-      id: String(withoutPaths(row.id)),
-      ...(row.laneKey === undefined ? {} : { laneKey: withoutPaths(row.laneKey) }),
-    }))
-    .sort(
-      (left, right) =>
-        Number(left.fromMs ?? 0) - Number(right.fromMs ?? 0) ||
-        String(left.laneKey).localeCompare(String(right.laneKey)) ||
-        left.id.localeCompare(right.id),
-    ),
-});
-
-/** Compares one day's rows from two machines, with machine-specific parts normalised away. */
-export const diffDayRows = (theirs: SnapshotDay, ours: SnapshotDay): SnapshotDiff =>
-  diffSnapshots(
-    { takenAt: 'then', days: [normaliseSnapshotDay(theirs)] },
-    { takenAt: 'now', days: [normaliseSnapshotDay(ours)] },
-  );
 
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
 
@@ -174,7 +122,6 @@ const diffDay = (before: SnapshotDay, after: SnapshotDay): DayDiff => {
 
 const sameSet = (left: readonly string[], right: readonly string[]) => same([...left].sort(), [...right].sort());
 
-/** Compares a recorded snapshot with the current one, day by day. Days only one side holds are skipped. */
 export const diffSnapshots = (before: Snapshot, after: Snapshot): SnapshotDiff => {
   const days = before.days
     .map((day) => {

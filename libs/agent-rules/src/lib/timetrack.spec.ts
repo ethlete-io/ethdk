@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { platform, tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { askTimetrack, timetrackDiscoveryPath, timetrackIssue } from './timetrack';
+import { timetrackDiscoveryPath, timetrackIssue } from './timetrack';
 
 type Handler = (request: IncomingMessage, response: ServerResponse) => void;
 
@@ -92,17 +92,17 @@ describe('timetrackDiscoveryPath', () => {
   });
 });
 
-describe('askTimetrack', () => {
+describe('timetrackIssue', () => {
   it('says the app is not running when nothing wrote a discovery file', async () => {
     process.env['TIMETRACK_AGENT_DISCOVERY'] = join(tmpdir(), 'nothing-wrote-this', 'agent.json');
 
-    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/Timetrack is not running/);
+    await expect(timetrackIssue('FIP-1')).rejects.toThrow(/Timetrack is not running/);
   });
 
   it('refuses a contract version it does not speak', async () => {
     await withEndpoint({ handler: answered({ ok: true, value: {} }), version: 99 });
 
-    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/version 99 .* speaks 3/);
+    await expect(timetrackIssue('FIP-1')).rejects.toThrow(/version 99 .* speaks 3/);
   });
 
   it('carries the run token and returns the value', async () => {
@@ -153,6 +153,6 @@ describe('askTimetrack', () => {
       },
     });
 
-    await expect(askTimetrack({ op: 'status' })).rejects.toThrow(/restart the app/);
+    await expect(timetrackIssue('FIP-1')).rejects.toThrow(/restart the app/);
   });
 });

@@ -13,7 +13,6 @@ import { detectCommandVars, followPackageManager } from './lib/package-runner';
 import { plain } from './lib/plain-text';
 import { reportCommand } from './lib/report-command';
 import { check, sync } from './lib/sync';
-import { timetrackCommand } from './lib/timetrack-command';
 
 const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into your repo
 
@@ -25,9 +24,6 @@ const USAGE = `ethlete-agents — compile @ethlete agent rules and skills into y
   ethlete-agents output-style
                            Install an Ethlete output style into this machine's Claude Code
                            config and switch to it (Claude Code only)
-  ethlete-agents timetrack Ask the running Timetrack app about Jira - it holds this
-                           machine's credentials, so no repo needs a token
-                           (status, instance, issue, search, project, create, log)
   ethlete-agents sessions  Run agents in tmux sessions of one checkout: message them, wake idle
                            ones, restart one with a prompt, claim paths (run, up, down, restart,
                            send, inbox, claim). The old name "mailbox" works too
@@ -136,8 +132,6 @@ const run = (argv: string[]): number | Promise<number> => {
       return outputStyleCommand({ argv: argv.slice(1) });
     case 'report':
       return reportCommand({ root, argv: argv.slice(1) });
-    case 'timetrack':
-      return timetrackCommand({ root, argv: argv.slice(1) });
     default:
       console.log(USAGE);
 

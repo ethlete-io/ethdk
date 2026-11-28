@@ -71,5 +71,8 @@ test('end to end in a temp repo', () => {
   const failed = run('fix: x\n');
   assert.equal(failed.status, 1);
   assert.match(failed.stderr, /libs\/timetrack\/src\/lib\/rows\/round\.ts/);
+  const command = 'node libs/timetrack/src/lib/agent-mcp/timetrack-snapshot.mts';
+  assert.ok(failed.stderr.includes(`Record rows with ${command}\n`));
+  assert.ok(failed.stderr.includes(`Compare with ${command} --compare <file>\n`));
   assert.equal(run('fix: x\n\nSnapshot: not run (app not running)\n').status, 0);
 });
