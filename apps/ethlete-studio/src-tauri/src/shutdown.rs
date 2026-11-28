@@ -6,7 +6,7 @@ use tokio::signal::unix::{signal, Signal, SignalKind};
 
 use crate::design_server::{stop_every, DesignServers};
 
-const WATCHDOG: Duration = Duration::from_secs(5);
+const WATCHDOG: Duration = Duration::from_secs(2);
 
 static SIGNAL_EXIT_CODE: AtomicI32 = AtomicI32::new(0);
 
@@ -34,7 +34,7 @@ pub fn listen() -> Option<Signals> {
 }
 
 /// Ends the app on the first signal through its own exit path, so the design servers it started stop
-/// with it. A main loop that does not reach the exit within five seconds is ended by the watchdog.
+/// with it. A main loop that does not reach the exit within two seconds is ended by the watchdog.
 pub fn end_on(signals: Option<Signals>, app: &AppHandle) {
     let Some(mut signals) = signals else {
         return;
@@ -54,7 +54,9 @@ pub fn end_on(signals: Option<Signals>, app: &AppHandle) {
         std::thread::spawn(move || {
             std::thread::sleep(WATCHDOG);
             stop_every(&watched.state::<DesignServers>());
-            std::process::exit(code);
+            // SAFETY: _exit skips the exit handlers, which would run CEF's teardown while the main
+            // thread is still inside cef::shutdown and can stall the exit.
+            unsafe { libc::_exit(code) };
         });
 
         app.exit(code);
