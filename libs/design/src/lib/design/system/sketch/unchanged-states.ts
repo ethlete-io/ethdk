@@ -213,14 +213,7 @@ const keyOf = (options: {
   );
 };
 
-type KeptOptions = {
-  product: ResolvedProduct;
-  sketch: Sketch;
-  variant: string;
-  pictured: boolean;
-  part?: string;
-  states?: string[];
-};
+type KeptOptions = { product: ResolvedProduct; sketch: Sketch; variant: string; pictured: boolean; part?: string };
 
 /**
  * The states `unchangedStatesOf` found unchanged for the same sources with `keepPictures`, and where each state it
@@ -229,7 +222,7 @@ type KeptOptions = {
 export const keptComparisonOf = async (
   options: KeptOptions,
 ): Promise<{ unchanged: string[]; changes: Record<string, ChangeBox> } | null> => {
-  const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch), states } = options;
+  const { product, sketch, variant, pictured, part: compared = partKeyOf(sketch) } = options;
   const overlaid = overlaySketch({ product, sketch, variant });
 
   if (comparesNothing(sketch, variant)) return { unchanged: [], changes: {} };
@@ -244,7 +237,7 @@ export const keptComparisonOf = async (
     compared,
     pictured,
     compareFrames: true,
-    states,
+    states: undefined,
   });
 
   const kept = cache.get(key);

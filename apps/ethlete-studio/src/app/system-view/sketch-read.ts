@@ -34,22 +34,9 @@ const listedOnly$ = ({ port, product }: { port: number; product: string }) =>
     `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}&unchanged=no&targets=no`,
   ).pipe(timeout(LISTED_SKETCHES_TIMEOUT_MS));
 
-/** How many leading states of a picked sketch are compared first, so its view shows before the rest is compared. */
-export const OPENED_FIRST_STATES = 6;
-
-const openedListed$ = ({
-  port,
-  product,
-  opened,
-  first = null,
-}: {
-  port: number;
-  product: string;
-  opened: string;
-  first?: number | null;
-}) =>
+const openedListed$ = ({ port, product, opened }: { port: number; product: string; opened: string }) =>
   designAnswer$<ListedSketches>(
-    `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(opened)}${first === null ? '' : `&first=${first}`}`,
+    `http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(opened)}`,
   ).pipe(timeout(LISTED_SKETCHES_TIMEOUT_MS));
 
 const started = <T>(source$: Observable<T>) => {
@@ -77,8 +64,7 @@ const openedOf = (picked: string | null) =>
 
 /**
  * Reads the sketch names without loading a part module, the quick listing and the compare of the sketch `picked`
- * names alone at once and answers them in that order, then the full listing; the picked sketch's compare
- * first answers its leading `OPENED_FIRST_STATES` states, then all of them; a failed or timed out listing keeps the
+ * names alone at once and answers them in that order, then the full listing; a failed or timed out listing keeps the
  * last items and carries the error, but a failed compare of a picked sketch only waits for the full listing. A sketch
  * that `picks` names later is compared alone while the full listing runs. A sketch in `kept` that the name listing
  * still lists stays as kept until the quick listing answers.
@@ -110,10 +96,7 @@ export const sketchRead$ = ({
       );
     const names = started(listedOnly$({ port, product }));
     const quick = started(listedSketches$({ port, product, quick: true }));
-    const openedFirst = opened ? started(openedListed$({ port, product, opened, first: OPENED_FIRST_STATES })) : null;
-    const openedCompare = opened
-      ? started(concat(openedFirst?.start$ ?? EMPTY, openedListed$({ port, product, opened })))
-      : null;
+    const openedCompare = opened ? started(openedListed$({ port, product, opened })) : null;
     const full$ = listedSketches$({ port, product }).pipe(share());
     const laterPicks$ = picks.pipe(
       map(openedOf),
@@ -129,7 +112,6 @@ export const sketchRead$ = ({
       concat(
         kept ? names.answer$.pipe(map(keepListed(kept))) : names.answer$,
         quick.answer$,
-        openedFirst ? compared$(openedFirst.answer$) : EMPTY,
         openedCompare ? compared$(openedCompare.answer$) : EMPTY,
         merge(
           full$,

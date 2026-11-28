@@ -10,7 +10,6 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { THEMES } from '../../themes';
 import { START_LABELS } from '../i18n/start-labels';
 import { SHELL_LABELS } from '../i18n/shell-labels';
-import { OPENED_FIRST_STATES } from './sketch-read';
 import { SYSTEM_LABELS, SYSTEM_TREE_LABELS } from '../i18n/system-labels';
 import { NO_LIST_REVISIONS } from '../studio-view/list-revisions';
 import { rememberedView } from '../studio-view/remembered';
@@ -172,9 +171,7 @@ describe('SystemViewComponent on a reload', () => {
 
     await mount({ systemProduct: 'web', systemEntry: 'sketch:elements/rating' });
 
-    expect(asked).toContain(
-      `http://localhost:4402/__design/sketches?product=web&sketch=elements%2Frating&first=${OPENED_FIRST_STATES}`,
-    );
+    expect(asked).toContain('http://localhost:4402/__design/sketches?product=web&sketch=elements%2Frating');
   });
 
   it('shows no read error, no call tree and the project name while the products of a switched project are listed', async () => {

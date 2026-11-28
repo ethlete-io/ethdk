@@ -566,14 +566,11 @@ export class SketchesComponent {
   );
   private editDrawing = computed(() => {
     if (!this.isEdit() || this.shownStatus() === 'failed') return false;
-
-    const shown = this.shownRows().some((row) => row.shots.length > 0);
-
-    if (this.listError() === null && this.pendingStates().size > 0 && !shown) return true;
+    if (this.listError() === null && this.pendingStates().size > 0) return true;
 
     const near = this.nearLoadingShots();
 
-    return near === null ? shown : near.size > 0;
+    return near === null ? this.shownRows().some((row) => row.shots.length > 0) : near.size > 0;
   });
   // Holds only the first finished view of an edit sketch: a later reload of a picture must not hide a shown view.
   private editDrawnSource = computed(() => ({ part: this.part(), drawn: !this.editDrawing() }));

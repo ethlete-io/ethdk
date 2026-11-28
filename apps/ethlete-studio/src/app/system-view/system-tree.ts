@@ -1521,11 +1521,7 @@ export const sketchRowsOf = ({
 
           return {
             state: sizes.length > 1 ? `${state} · ${size}` : state,
-            changed: !drawnHere
-              ? false
-              : target?.unchanged && !target.pending?.includes(state)
-                ? !target.unchanged.includes(state)
-                : null,
+            changed: !drawnHere ? false : target?.unchanged ? !target.unchanged.includes(state) : null,
             ...(change ? { change } : {}),
             ...(inherited.has(state) ? { inherited: true as const } : {}),
             ...(sameAsRest.some(([folded]) => folded === state) || atSizes.some(([folded]) => folded === state)
