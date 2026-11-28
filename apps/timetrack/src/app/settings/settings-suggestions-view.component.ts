@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { FORM_FIELD_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, SWITCH_IMPORTS } from '@ethlete/components';
 import { REASONING_LANGUAGES, withStoredOption } from './select-options';
 import { ActionClassesComponent } from './action-classes.component';
+import { AgentMcpSetupComponent } from './agent-mcp-setup.component';
 import { ExplainComponent } from './explain.component';
 import { MaskedNamesComponent } from './masked-names.component';
 import { injectTimetrackSettings } from './settings';
@@ -52,6 +53,8 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
       </div>
 
       <ethlete-action-classes [classes]="store.settings().actionClasses" (classChange)="store.setActionClass($event)" />
+
+      <ethlete-agent-mcp-setup />
 
       <div class="flex flex-wrap items-start gap-3">
         <et-form-field class="w-40" appearance="underline" size="sm">
@@ -108,6 +111,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
   encapsulation: ViewEncapsulation.None,
   imports: [
     ActionClassesComponent,
+    AgentMcpSetupComponent,
     ExplainComponent,
     FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,

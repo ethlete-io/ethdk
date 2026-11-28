@@ -5,7 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentApiApprovalStatus, AgentApiQueued } from '../agent-api/approval-queue';
+import { AGENT_CONTRACT_V3, AGENT_CONTRACT_V3_OPS } from '../agent-api/contract-v3';
 import type { AgentApiAnswer, AgentApiInstance, AgentApiIssue, AgentApiStatus } from '../agent-api/model';
+import { AGENT_API_OP_CLASSES } from '../agent-api/model';
 import { answerMcp } from './server.mts';
 
 const token = 'fake-timetrack-token';
@@ -117,53 +119,78 @@ describe('Timetrack agent MCP v3 contract', () => {
     await rm(directory, { recursive: true, force: true });
   });
 
+  const reads = AGENT_CONTRACT_V3.filter(({ queues }) => !queues);
+  const writes = AGENT_CONTRACT_V3.filter(({ queues }) => queues);
+
+  it('serves every v3 op through exactly one tool', () => {
+    expect(AGENT_CONTRACT_V3.map(({ tool }) => tool)).toEqual([...new Set(AGENT_CONTRACT_V3.map(({ tool }) => tool))]);
+    expect([...AGENT_CONTRACT_V3_OPS].sort()).toEqual(Object.keys(AGENT_API_OP_CLASSES).sort());
+  });
+
+  it.each(AGENT_CONTRACT_V3.map((entry) => [entry.tool, entry] as const))(
+    'pins the %s request',
+    async (_name, { tool, args, request, wire, queues }) => {
+      const value = queues ? queued : { echoed: tool };
+      appAnswer = success(value);
+
+      expect(await call(tool, args)).toEqual({
+        jsonrpc: '2.0',
+        id: 1,
+        result: { content: [{ type: 'text', text: JSON.stringify(value) }], structuredContent: value },
+      });
+      expect(posted).toEqual([{ ...(wire ?? request), client: 'Contract spec' }]);
+      expect(nonces).toHaveLength(1);
+    },
+  );
+
   it.each([
-    ['status', {}, { op: 'status' }, status],
-    ['jira_instance', {}, { op: 'jira.instance' }, instance],
-    ['jira_issue', { key: 'ABC-1' }, { op: 'jira.issue', key: 'ABC-1' }, { issue }],
-    [
-      'jira_search',
-      { text: 'PDF', projectKey: 'ABC', assignedToMe: true, limit: 5 },
-      { op: 'jira.search', text: 'PDF', projectKey: 'ABC', assignedToMe: true, limit: 5 },
-      { issues: [issue] },
-    ],
-    ['approval_status', { id: 'a1' }, { op: 'approval.status', id: 'a1' }, approved],
-  ])('pins the %s request and response', async (name, args, request, value) => {
+    ['status', status],
+    ['jira_instance', instance],
+    ['jira_issue', { issue }],
+    ['approval_status', approved],
+  ])('returns the %s response untouched', async (name, value) => {
     appAnswer = success(value);
 
-    expect(await call(name, args)).toEqual({
-      jsonrpc: '2.0',
-      id: 1,
-      result: { content: [{ type: 'text', text: JSON.stringify(value) }], structuredContent: value },
+    expect(
+      await call(name, name === 'jira_issue' ? { key: 'ABC-1' } : name === 'approval_status' ? { id: 'a1' } : {}),
+    ).toMatchObject({
+      result: { structuredContent: value },
     });
-    expect(posted).toEqual([{ ...request, client: 'Contract spec' }]);
-    expect(nonces).toHaveLength(1);
   });
 
-  it('queues jira_create and returns only the approval receipt', async () => {
+  it('queues the jira_create defaults the app expects', async () => {
     appAnswer = success(queued);
-    const args = {
-      summary: 'Export PDFs',
-      description: 'Add an export',
-      projectKey: 'ABC',
-      issueTypeName: 'Task',
-      parentKey: 'ABC-2',
-      subject: 'pdf-export',
-    };
 
-    expect(await call('jira_create', args)).toMatchObject({
-      result: { content: [{ type: 'text', text: JSON.stringify(queued) }], structuredContent: queued },
-    });
-    expect(posted).toEqual([{ op: 'jira.create', ...args, client: 'Contract spec' }]);
+    await call('jira_create', { summary: 'Export PDFs' });
+
+    expect(posted).toEqual([{ op: 'jira.create', summary: 'Export PDFs', description: '', client: 'Contract spec' }]);
   });
 
-  it('rejects an applied result from the write tool', async () => {
-    appAnswer = success({ status: 'applied', key: 'ABC-3', id: '125' });
+  it.each(writes.map((entry) => [entry.tool, entry] as const))(
+    'never lets %s report an applied change',
+    async (_name, { tool, args }) => {
+      appAnswer = success({ status: 'applied', key: 'ABC-3', id: '125' });
 
-    expect(await call('jira_create', { summary: 'Export PDFs' })).toMatchObject({
-      result: { isError: true, content: [{ type: 'text', text: expect.stringContaining('approval receipt') }] },
-    });
-    expect(posted).toEqual([{ op: 'jira.create', summary: 'Export PDFs', description: '', client: 'Contract spec' }]);
+      expect(await call(tool, args)).toMatchObject({
+        result: { isError: true, content: [{ type: 'text', text: expect.stringContaining('approval receipt') }] },
+      });
+    },
+  );
+
+  it('never lets a write tool take an answer without an approval id', async () => {
+    appAnswer = success({ status: 'queued' });
+
+    for (const { tool, args } of writes) {
+      expect(await call(tool, args)).toMatchObject({ result: { isError: true } });
+    }
+  });
+
+  it('leaves reads free of the approval receipt check', async () => {
+    appAnswer = success({ status: 'applied' });
+
+    for (const { tool, args } of reads) {
+      expect(await call(tool, args)).toMatchObject({ result: { structuredContent: { status: 'applied' } } });
+    }
   });
 
   it('refuses a different discovery version before making any request', async () => {
@@ -195,7 +222,7 @@ describe('Timetrack agent MCP v3 contract', () => {
     expect(posted).toEqual([{ op: 'jira.issue', key: 'ABC-9', client: 'Contract spec' }]);
   });
 
-  it('initializes with approval instructions and exposes only this slice’s tools', async () => {
+  it('initializes with approval instructions and exposes one tool per v3 op', async () => {
     expect(await answerMcp({ jsonrpc: '2.0', id: 0, method: 'initialize' })).toMatchObject({
       jsonrpc: '2.0',
       id: 0,
@@ -210,9 +237,7 @@ describe('Timetrack agent MCP v3 contract', () => {
 
     expect(listing).toMatchObject({
       result: {
-        tools: ['status', 'jira_instance', 'jira_issue', 'jira_search', 'jira_create', 'approval_status'].map(
-          (name) => ({ name, inputSchema: { type: 'object' } }),
-        ),
+        tools: AGENT_CONTRACT_V3.map(({ tool }) => ({ name: tool, inputSchema: { type: 'object' } })),
       },
     });
     expect(nonces).toEqual([]);
