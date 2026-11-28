@@ -277,6 +277,28 @@ describe('createDrawQueue', () => {
     expect(order).toEqual([...busyNames, 'high 1', 'high 2', 'low 1', 'low 2', 'low 3']);
   });
 
+  it('gives a place to one job of a turn at a time, so a job of another turn asked behind them starts at once', async () => {
+    const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
+    const started: string[] = [];
+    let release = () => undefined as void;
+    const held = new Promise<void>((done) => (release = done));
+    const busy = (name: string) => async () => {
+      started.push(name);
+      await held;
+    };
+    const oldNames = Array.from({ length: IDLE_DRAWS_AT_ONCE + 1 }, (_, at) => `old ${at + 1}`);
+    const drawn = [
+      ...oldNames.map((name) => queue.run(busy(name), { want: 'idle', turn: 'old' })),
+      queue.run(busy('new 1'), { want: 'idle', turn: 'new' }),
+    ];
+
+    await vi.waitFor(() => expect(started).toEqual(['old 1', 'new 1']));
+
+    release();
+    await Promise.all(drawn);
+    expect(started).toEqual(['old 1', 'new 1', ...oldNames.slice(1)]);
+  });
+
   it('keeps places free of idle jobs, so a low job asked behind them starts at once', async () => {
     const queue = createDrawQueue({ target: '/co', chromiumOf: withBrowser });
     const started: string[] = [];

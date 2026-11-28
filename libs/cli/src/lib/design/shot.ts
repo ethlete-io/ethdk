@@ -609,20 +609,29 @@ export const createPartShooter = (options: {
     if (before !== undefined && before !== hash && 'part' in drawn) options.changed?.(drawn.part);
   };
 
-  const draw = (browser: Browser, frame: Frame): Promise<Picture> =>
-    warmPages.run(
+  const contextOf = (frame: Frame) => ({
+    viewport: viewportOf(frame.size),
+    ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
+    ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
+  });
+  // The shooter number keeps a page another shooter left on its drawing, of another server or edit, from being lent as booted.
+  const bootOf = (frame: Frame) =>
+    frame.checker || frame.textless || frame.titleless ? null : `${shooter}.${edits} ${bootKeyOf(frame.search)}`;
+  const turnOf = (frame: Frame) => {
+    const boot = bootOf(frame);
+
+    return boot === null ? null : JSON.stringify([contextOf(frame), boot]);
+  };
+
+  const draw = (browser: Browser, frame: Frame): Promise<Picture> => {
+    const boot = bootOf(frame);
+
+    return warmPages.run(
       {
         browser,
-        context: {
-          viewport: viewportOf(frame.size),
-          ...(frame.scale > 1 ? { deviceScaleFactor: frame.scale } : {}),
-          ...(frame.scheme ? { colorScheme: frame.scheme } : {}),
-        },
+        context: contextOf(frame),
         limit: { ms: loadScaledMs(DRAW_LIMIT_MS), what: `the draw of frame.html?${frame.search}` },
-        // The shooter number keeps a page another shooter left on its drawing, of another server or edit, from being lent as booted.
-        ...(frame.checker || frame.textless || frame.titleless
-          ? {}
-          : { boot: `${shooter}.${edits} ${bootKeyOf(frame.search)}` }),
+        ...(boot === null ? {} : { boot }),
       },
       async (page, booted) => {
         const state = new URLSearchParams(frame.search).get('state');
@@ -748,6 +757,7 @@ export const createPartShooter = (options: {
         return picture;
       },
     );
+  };
 
   const themeOf = (params: URLSearchParams) => ({
     surface: params.get('surface') ?? '',
@@ -859,35 +869,39 @@ export const createPartShooter = (options: {
     const search = options.search.toString();
     const drawing: { startedAt: number | null } = { startedAt: null };
     const waiting: { wants: DrawWant[]; queued: Promise<Picture> | null } = { wants: [options.want], queued: null };
+    const frame: Frame = {
+      search,
+      size: options.size,
+      clip: options.clip ?? false,
+      scale,
+      crop,
+      scheme,
+      emptySlots: options.emptySlots ?? null,
+      slotFill: options.slotFill ?? null,
+      checker: options.checker ?? false,
+      pan: options.pan ?? null,
+      boxes: options.boxes ?? false,
+      textless,
+      titleless,
+    };
     const drawHere = () =>
-      (waiting.queued = drawQueue.run((browser) => {
-        const gone = options.gone?.();
-        const startedAt = performance.now();
+      (waiting.queued = drawQueue.run(
+        (browser) => {
+          const gone = options.gone?.();
+          const startedAt = performance.now();
 
-        drawing.startedAt = startedAt;
+          drawing.startedAt = startedAt;
 
-        return gone
-          ? Promise.reject(gone)
-          : draw(browser, {
-              search,
-              size: options.size,
-              clip: options.clip ?? false,
-              scale,
-              crop,
-              scheme,
-              emptySlots: options.emptySlots ?? null,
-              slotFill: options.slotFill ?? null,
-              checker: options.checker ?? false,
-              pan: options.pan ?? null,
-              boxes: options.boxes ?? false,
-              textless,
-              titleless,
-            }).then((picture) => {
-              drawStarts.set(picture, startedAt);
+          return gone
+            ? Promise.reject(gone)
+            : draw(browser, frame).then((picture) => {
+                drawStarts.set(picture, startedAt);
 
-              return picture;
-            });
-      }, waiting.wants));
+                return picture;
+              });
+        },
+        { want: waiting.wants, turn: turnOf(frame) },
+      ));
 
     const { address } = options;
     const shared = address && !options.fresh ? store : undefined;

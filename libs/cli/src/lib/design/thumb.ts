@@ -261,11 +261,16 @@ export type DrawWant = {
   onStart?: (start: { lane: number; waitedMs: number; busyLanes: number[] }) => void;
 };
 
+/** What `run` is asked: the wants, or the wants with the `turn` the drawing shares with others (see `createDrawQueue`). */
+export type DrawAsk =
+  DrawPriority | DrawWant | DrawWant[] | { want: DrawPriority | DrawWant | DrawWant[]; turn: string | null };
+
 type WaitingDraw = {
   job: (stop: AbortSignal | null) => Promise<void>;
   wants: Set<DrawWant>;
   drop: () => void;
   asked: number;
+  turn: string | null;
 };
 
 // Partial raster redraws only the invalidated part of a tile, so the anti-aliased edge of a rounded clip over an
@@ -287,7 +292,8 @@ const SPARE_DRAWS_AT_ONCE = 1;
  * ones, each lane in the order asked. `idle` drawings take at most `IDLE_DRAWS_AT_ONCE` places and `spare` ones one
  * place of their own, so a spare drawing does not wait for every idle one; none start while a shown shot draws, so a
  * shot the viewer waits for starts at once and shares the CPU with few of them. A shown shot that starts stops the running `idle` and `spare` drawings no other ask joined; each waits in
- * its lane again and draws anew.
+ * its lane again and draws anew. Drawings that name the same `turn` draw one after another (one warm page serves
+ * them), so only one of them holds a place at a time and the others leave their places to other drawings.
  * A drawing every ask withdrew before it started is dropped. A failed launch is not kept, so the next ask
  * tries again.
  */
@@ -344,6 +350,7 @@ export const createDrawQueue = (options: {
   const waiting: WaitingDraw[] = [];
   const entries = new WeakMap<Promise<unknown>, WaitingDraw>();
   const drawingLanes: number[] = [];
+  const drawingTurns: string[] = [];
   const runningIdle = new Map<AbortController, WaitingDraw>();
   let shownView = 0;
 
@@ -392,7 +399,11 @@ export const createDrawQueue = (options: {
         (shownDrawing ||
           drawingLanes.filter((running) => running === lane).length >=
             (lane === SPARE_LANE ? SPARE_DRAWS_AT_ONCE : IDLE_DRAWS_AT_ONCE));
-      const lanes = waiting.map(entryLaneOf).map((lane) => (full(lane) ? Infinity : lane));
+      const lanes = waiting.map((entry) => {
+        const lane = entryLaneOf(entry);
+
+        return full(lane) || (entry.turn !== null && drawingTurns.includes(entry.turn)) ? Infinity : lane;
+      });
       const lane = Math.min(...lanes);
 
       if (lane === Infinity) return;
@@ -410,10 +421,12 @@ export const createDrawQueue = (options: {
       if (stop) runningIdle.set(stop, entry);
 
       drawingLanes.push(lane);
+      if (entry.turn !== null) drawingTurns.push(entry.turn);
       entry.wants.forEach((want) => want.onStart?.(start));
       void entry.job(stop?.signal ?? null).finally(() => {
         if (stop) runningIdle.delete(stop);
         drawingLanes.splice(drawingLanes.indexOf(lane), 1);
+        if (entry.turn !== null) drawingTurns.splice(drawingTurns.indexOf(entry.turn), 1);
         next();
       });
     }
@@ -450,7 +463,8 @@ export const createDrawQueue = (options: {
   };
 
   return {
-    run: <T>(draw: (browser: Browser) => Promise<T>, want: DrawPriority | DrawWant | DrawWant[] = 'high') => {
+    run: <T>(draw: (browser: Browser) => Promise<T>, ask: DrawAsk = 'high') => {
+      const { want, turn } = typeof ask === 'object' && 'turn' in ask ? ask : { want: ask, turn: null };
       const ticket = ledger?.ask();
       const asked = performance.now();
       const signal = runSignal();
@@ -459,6 +473,7 @@ export const createDrawQueue = (options: {
         wants: new Set(),
         drop: () => undefined,
         asked,
+        turn,
       };
       const drawn = new Promise<T>((resolve, reject) => {
         let started = false;
