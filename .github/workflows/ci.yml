@@ -92,7 +92,7 @@ jobs:
       - run: yarn components:export-coverage
       - run: yarn vitest:projects:check
 
-      - run: yarn lint:cli-related-map
+      - run: yarn lint:related-map
       - run: yarn lint:commit-messages
 
       # Spec files are excluded from every lib's build tsconfig, so this is the only step that
@@ -378,7 +378,7 @@ jobs:
 
       - run: yarn nx run-many -t build -p cli,components,core
 
-      - run: yarn nx run cli:test-dist
+      - run: yarn nx run design:test-dist
         timeout-minutes: 5
 
   verified:

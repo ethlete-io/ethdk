@@ -266,7 +266,7 @@ jobs:
       - run: xvfb-run -a yarn studio:e2e:host-signal
         timeout-minutes: 5
 
-  # ci.yml runs cli:test-dist when cli is an SDK project; a design-only change moves cli here.
+  # ci.yml runs design:test-dist when cli is an SDK project; a design-only change moves cli here.
   studio-cli-dist:
     name: CLI dist specs
     if: contains(format(',{0},', inputs.studio_projects), ',cli,')
@@ -289,7 +289,7 @@ jobs:
 
       - run: yarn nx run-many -t build -p cli,components,core
 
-      - run: yarn nx run cli:test-dist
+      - run: yarn nx run design:test-dist
         timeout-minutes: 5
 
   design-changes:

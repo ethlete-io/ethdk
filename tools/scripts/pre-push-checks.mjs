@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 export const CHECKS = [
   'lint:changesets',
   'versions:check',
-  'lint:cli-related-map',
+  'lint:related-map',
   'lint:migration-entries',
   'lint:studio-label-specs',
   'lint:runner-os',

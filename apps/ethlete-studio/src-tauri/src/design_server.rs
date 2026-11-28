@@ -52,7 +52,7 @@ const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 /// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
 const CLI_BUILD: [&str; 3] = ["nx", "run", "ethlete-studio:cli-runtime"];
 
-/// Written by `libs/cli/src/lib/design/crash-log.ts`, one entry per crash.
+/// Written by `libs/design/src/lib/design/crash-log.ts`, one entry per crash.
 const CRASH_LOG: &str = ".ethlete/cache/design-server-crash.log";
 
 const CRASH_SEPARATOR: &str = "\n---\n";

@@ -382,7 +382,7 @@ records nothing. An open point that the check names, such as a ready sketch that
 
 `et design check` fails with `SAMPLE-DEFAULT` when an `input()` or `model()` of an app component that implements a part
 defaults to sample data, an `…_SAMPLE` or `…_ROWS` identifier. Known hits sit on lists in
-`libs/cli/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is fixed again fails
+`libs/design/src/lib/design/system/rules/*-known.ts` and print as `(known)` warnings; a listed input that is fixed again fails
 until it comes off the list.
 
 `et design check` fails with `ORPHAN-ENDPOINT` when the design server answers an endpoint that no app code calls. An

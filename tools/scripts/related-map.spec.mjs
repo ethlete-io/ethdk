@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readsSourcePath, specsForFiles, unmappedSpecs } from './cli-related-map.mjs';
+import { readsSourcePath, specsForFiles, unmappedSpecs } from './related-map.mjs';
 
 const loader = "import { readFileSync } from 'fs';\nreadFileSync(join(__dirname, 'frame.ts'), 'utf8');";
 

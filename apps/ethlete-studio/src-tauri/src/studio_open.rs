@@ -27,7 +27,7 @@ struct Reply {
 }
 
 /// The folder where `et design studio open` requests wait for Studio. It must survive a reboot, so it is not the temp
-/// folder, and it must match `openRequestsDirOf` in `libs/cli/src/lib/design/studio-open.ts`.
+/// folder, and it must match `openRequestsDirOf` in `libs/design/src/lib/design/studio-open.ts`.
 fn open_requests_dir_of(os: &str, var: impl Fn(&str) -> Option<OsString>) -> PathBuf {
     let set = |key: &str| var(key).filter(|value| !value.is_empty()).map(PathBuf::from);
     let home = || set(if os == "windows" { "USERPROFILE" } else { "HOME" }).unwrap_or_default();

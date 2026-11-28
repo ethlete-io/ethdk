@@ -40,7 +40,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - run: yarn nx run cli:test-perf
+      - run: yarn nx run design:test-perf
 
       - id: browsers
         if: ${{ !cancelled() }}

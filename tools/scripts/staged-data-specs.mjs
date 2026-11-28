@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { matchesGlob } from './cli-related-map.mjs';
+import { matchesGlob } from './related-map.mjs';
 import { gitEnv } from './git-test-env.mjs';
 
 const root = join(fileURLToPath(import.meta.url), '../../..');
