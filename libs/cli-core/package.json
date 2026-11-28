@@ -4,5 +4,7 @@
   "private": true,
   "license": "MIT",
   "type": "commonjs",
-  "main": "./src/index.ts"
+  "exports": {
+    "./*": "./src/lib/*.ts"
+  }
 }
