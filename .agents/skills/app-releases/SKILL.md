@@ -15,10 +15,14 @@ never publishes it, and `yarn versions:sync` copies the new version into `tauri.
 `package.json`, or write a changeset, and run `yarn versions:sync`. `yarn versions:check`
 fails CI on drift.
 
-The SDK publish and the app releases are separate. `ci.yml` checks the SDK and gates `publish.yml`;
-`ci-apps.yml` checks Studio and Timetrack (app lint, tests, builds, e2e, Rust, WebKit) and gates only
-`release-apps.yml`, so a red app never holds back an SDK publish. An app project added to the workspace
-goes into `APP_PROJECTS` in `ci.yml` and `ci-apps.yml` and the `--exclude` list in `publish.yml`.
+The SDK publish and the app releases are separate. `ci-groups.yml` (`tools/scripts/ci-groups.mjs`) picks
+the groups a change hits in the Nx affected graph since the last green run: SDK libs, Studio, Timetrack.
+`ci.yml` checks the SDK projects and gates `publish.yml`; `ci-apps.yml` checks the Studio and Timetrack
+projects in separate jobs, and `release-apps.yml` releases only an app whose own group passed (or was not
+hit). A skipped group counts as passed, and an app version without a release forces its group. `ci-repo.yml`
+(format, changesets, commitlint) runs on every change; `All verified` is the single check to require. An
+app project added to the workspace goes into `APP_GROUP_PROJECTS` in `ci-groups.mjs` and the `--exclude`
+list in `publish.yml`.
 
 When `release-apps.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm),
 macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. The Linux bundles carry CEF

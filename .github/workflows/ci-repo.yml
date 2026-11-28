@@ -1,0 +1,44 @@
+name: CI (Repo)
+
+# The repo-wide checks every change needs, whichever groups ci-groups.yml selects. Called by ci-pr,
+# ci-next and ci-main.
+on:
+  workflow_call:
+
+# Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
+# is off; everything else about the run is unchanged. Delete this to re-enable.
+env:
+  NX_NO_CLOUD: 'true'
+
+jobs:
+  repo:
+    name: Repo checks
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      # Only the files this branch touched. The base commit was formatted when it landed.
+      - run: yarn nx format:check ${NX_BASE:+--base=$NX_BASE --head=$NX_HEAD}
+
+      # Changeset notes are capped at one to two sentences / 40 words (see the `changeset` skill).
+      # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
+      - run: yarn lint:changesets
+
+      # Catches a commit made where the local commit-msg hook never ran (finding 390).
+      # Only the commits of this push or pull request: NX_BASE lags to the last green run and reaches
+      # into history that predates the commit rules.
+      - run: |
+          if [ -z "$EVENT_BASE" ] || [ "$EVENT_BASE" = "0000000000000000000000000000000000000000" ]; then
+            EVENT_BASE="$NX_BASE"
+          fi
+          yarn commitlint --from "$EVENT_BASE" --to "$NX_HEAD"
+        env:
+          EVENT_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}

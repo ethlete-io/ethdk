@@ -1,9 +1,15 @@
 name: Release apps
 
 # Releases each private app (Studio, Timetrack) whose version has no GitHub release yet. Called by
-# ci-next and ci-main after ci-apps.yml passed; the SDK publish in publish.yml does not wait for it.
+# ci-next and ci-main with the apps whose own ci-apps.yml checks passed; the SDK publish in
+# publish.yml does not wait for it.
 on:
   workflow_call:
+    inputs:
+      apps:
+        description: Comma list of the app packages allowed to release (`timetrack-app`, `ethlete-studio`).
+        type: string
+        required: true
 
 # Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
 # is off; everything else about the run is unchanged. Delete this to re-enable.
@@ -26,6 +32,7 @@ jobs:
       - id: plan
         env:
           GH_TOKEN: ${{ github.token }}
+          ALLOWED: ${{ inputs.apps }}
         run: |
           set -euo pipefail
           apps='[]'
@@ -33,6 +40,10 @@ jobs:
             name=$(jq -r .name "$dir/package.json")
             version=$(jq -r .version "$dir/package.json")
             tag="$name@$version"
+            if [[ ",$ALLOWED," != *",$name,"* ]]; then
+              echo "$tag: its checks did not pass, not released"
+              continue
+            fi
             draft=$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null || echo missing)
             if [ "$draft" = false ]; then
               continue

@@ -1,24 +1,43 @@
 name: CI (Apps)
 
 # The checks of the private apps (Studio, Timetrack), called next to ci.yml by ci-pr, ci-next and
-# ci-main. A red job here holds back only the app releases, never the SDK publish.
+# ci-main for the app groups ci-groups.yml selects. A red Studio job holds back only the Studio release,
+# a red Timetrack job only the Timetrack release, and neither the SDK publish.
 on:
   workflow_call:
+    inputs:
+      studio_projects:
+        description: Comma list of the Studio group projects to check (ci-groups.yml). Empty skips Studio.
+        type: string
+        default: ''
+      timetrack_projects:
+        description: Comma list of the Timetrack group projects to check (ci-groups.yml). Empty skips Timetrack.
+        type: string
+        default: ''
+    outputs:
+      studio_ok:
+        description: '`true` when every Studio check passed or Studio was not checked.'
+        value: ${{ jobs.studio-verified.outputs.ok }}
+      timetrack_ok:
+        description: '`true` when every Timetrack check passed or Timetrack was not checked.'
+        value: ${{ jobs.timetrack-verified.outputs.ok }}
 
 # Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
 # is off; everything else about the run is unchanged. Delete this to re-enable.
 env:
   NX_NO_CLOUD: 'true'
-  APP_PROJECTS: ethlete-studio,timetrack-app,timetrack,timetrack-e2e,timetrack-vscode
 
 jobs:
-  apps:
-    name: App checks
+  studio-checks:
+    name: Studio checks
+    if: inputs.studio_projects != ''
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
     permissions:
       contents: read
+    env:
+      PROJECTS: ${{ inputs.studio_projects }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -26,18 +45,46 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          nx-cache-key: apps
+          nx-cache-key: studio-checks
 
       # Tailwind classes in apps/ethlete-studio/src must be written in their canonical form.
       - run: yarn studio:classes:check
+      - run: node --test apps/ethlete-studio/eslint-rules/*.spec.mjs
+
       - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
-      - run: yarn nx run-many -t typecheck -p "$APP_PROJECTS"
-      - run: yarn nx run-many -t lint -p "$APP_PROJECTS"
-      - run: yarn nx run-many -t test -p "$APP_PROJECTS" --output-style=static --parallel 1
-      - run: yarn nx run-many -t build -p "$APP_PROJECTS"
+      - run: yarn nx run-many -t typecheck -p "$PROJECTS"
+      - run: yarn nx run-many -t lint -p "$PROJECTS"
+      - run: yarn nx run-many -t test -p "$PROJECTS" --output-style=static --parallel 1
+      - run: yarn nx run-many -t build -p "$PROJECTS"
+
+  timetrack-checks:
+    name: Timetrack checks
+    if: inputs.timetrack_projects != ''
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # playwright:v1.64.1-noble
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
+    permissions:
+      contents: read
+    env:
+      PROJECTS: ${{ inputs.timetrack_projects }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: timetrack-checks
+
+      - run: bash tools/scripts/ci-apt-retry.sh yarn playwright install --with-deps chromium
+      - run: yarn nx run-many -t typecheck -p "$PROJECTS"
+      - run: yarn nx run-many -t lint -p "$PROJECTS"
+      - run: yarn nx run-many -t test -p "$PROJECTS" --output-style=static --parallel 1
+      - run: yarn nx run-many -t build -p "$PROJECTS"
 
   timetrack-e2e:
     name: Timetrack e2e
+    if: contains(format(',{0},', inputs.timetrack_projects), ',timetrack-e2e,')
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
@@ -62,6 +109,7 @@ jobs:
 
   studio-e2e:
     name: Studio e2e (${{ matrix.shard }}/10)
+    if: inputs.studio_projects != ''
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # playwright:v1.64.1-noble
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f' || '' }}
@@ -115,8 +163,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  rust:
-    name: Rust host
+  timetrack-rust:
+    name: Timetrack Rust host
+    if: contains(format(',{0},', inputs.timetrack_projects), ',timetrack-app,')
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
@@ -131,11 +180,45 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          nx-cache-key: rust
+          nx-cache-key: timetrack-rust
 
       # Before the build dependencies: rustfmt needs no toolchain beyond the one the image ships,
       # so a badly formatted crate fails the job in seconds rather than after a cargo build.
       - run: yarn nx run timetrack-app:format-rust
+
+      - name: Install the Tauri Linux build dependencies
+        run: |
+          bash tools/scripts/ci-apt-retry.sh sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-4-dev ninja-build libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: apps/timetrack/src-tauri -> target
+
+      - uses: ./.github/actions/cef
+
+      # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
+      - run: yarn nx run timetrack-app:lint-rust
+
+      - run: yarn nx run timetrack-app:test-rust
+
+  studio-rust:
+    name: Studio Rust host
+    if: contains(format(',{0},', inputs.studio_projects), ',ethlete-studio,')
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+    env:
+      # Full debug info makes the cached dependencies several GB, and the restore then costs more
+      # than the build it saves.
+      CARGO_PROFILE_DEV_DEBUG: line-tables-only
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        with:
+          nx-cache-key: studio-rust
 
       - run: yarn nx run ethlete-studio:format-rust
 
@@ -145,16 +228,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          workspaces: |
-            apps/timetrack/src-tauri -> target
-            apps/ethlete-studio/src-tauri -> target
+          workspaces: apps/ethlete-studio/src-tauri -> target
 
       - uses: ./.github/actions/cef
-
-      # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
-      - run: yarn nx run timetrack-app:lint-rust
-
-      - run: yarn nx run timetrack-app:test-rust
 
       - run: yarn nx run ethlete-studio:lint-rust
 
@@ -188,6 +264,7 @@ jobs:
 
   design-changes:
     name: Design server changes
+    if: inputs.studio_projects != ''
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # node:24.22.1-bookworm
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
@@ -234,11 +311,43 @@ jobs:
       # WKWebView drops an SSE response that sends no bytes for 60 s; Chromium does not.
       - run: node tools/scripts/verify-webkit-design-events.mjs
 
+  studio-verified:
+    name: Studio verified
+    # The check the Studio release waits for. Skipped jobs pass.
+    if: always()
+    needs: [studio-checks, studio-e2e, studio-rust, webkit-design-events]
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
+    outputs:
+      ok: ${{ steps.ok.outputs.ok }}
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - id: ok
+        run: echo "ok=true" >> "$GITHUB_OUTPUT"
+
+  timetrack-verified:
+    name: Timetrack verified
+    # The check the Timetrack release waits for. Skipped jobs pass.
+    if: always()
+    needs: [timetrack-checks, timetrack-e2e, timetrack-rust]
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    # node:24.22.1-bookworm
+    container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}
+    outputs:
+      ok: ${{ steps.ok.outputs.ok }}
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - id: ok
+        run: echo "ok=true" >> "$GITHUB_OUTPUT"
+
   apps-verified:
     name: Apps verified
-    # The single check an app release waits for. Skipped jobs pass.
+    # Kept for a branch rule or a Mergify condition that names it.
     if: always()
-    needs: [apps, timetrack-e2e, studio-e2e, rust, webkit-design-events]
+    needs: [studio-verified, timetrack-verified]
     runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
     # node:24.22.1-bookworm
     container: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && 'node@sha256:6449e19d8184d84062525b6a7524def03146c2cb04a7f08b076680d0e8e4240a' || '' }}

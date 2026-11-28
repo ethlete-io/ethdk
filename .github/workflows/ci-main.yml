@@ -8,7 +8,21 @@ on:
 concurrency: release_environment
 
 jobs:
+  groups:
+    uses: ./.github/workflows/ci-groups.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
+  repo:
+    uses: ./.github/workflows/ci-repo.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
   ci:
+    needs: groups
+    if: ${{ !cancelled() && needs.groups.outputs.sdk == 'true' }}
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
@@ -16,6 +30,7 @@ jobs:
       pull-requests: write
       checks: write
     with:
+      projects: ${{ needs.groups.outputs.sdk_projects }}
       deploy: true
       storybook_target: storybook-prod
       docs_target: docs-prod
@@ -23,13 +38,21 @@ jobs:
     secrets: inherit
 
   ci-apps:
+    needs: groups
+    if: ${{ !cancelled() && (needs.groups.outputs.studio == 'true' || needs.groups.outputs.timetrack == 'true') }}
     uses: ./.github/workflows/ci-apps.yml
     permissions:
       contents: read
+    with:
+      studio_projects: ${{ needs.groups.outputs.studio_projects }}
+      timetrack_projects: ${{ needs.groups.outputs.timetrack_projects }}
     secrets: inherit
 
   publish:
-    needs: ci
+    needs: [groups, repo, ci]
+    if: >-
+      ${{ always() && needs.groups.result == 'success' && needs.repo.result == 'success' &&
+      (needs.ci.result == 'success' || (needs.ci.result == 'skipped' && needs.groups.outputs.sdk != 'true')) }}
     uses: ./.github/workflows/publish.yml
     permissions:
       contents: write
@@ -43,8 +66,24 @@ jobs:
     secrets: inherit
 
   release-apps:
-    needs: [ci, ci-apps]
+    needs: [groups, repo, ci-apps]
+    if: ${{ always() && needs.groups.result == 'success' && needs.repo.result == 'success' }}
     uses: ./.github/workflows/release-apps.yml
     permissions:
       contents: write
+    with:
+      apps: >-
+        ${{ format('{0},{1}',
+        (needs.groups.outputs.timetrack != 'true' || needs.ci-apps.outputs.timetrack_ok == 'true') && 'timetrack-app' || '',
+        (needs.groups.outputs.studio != 'true' || needs.ci-apps.outputs.studio_ok == 'true') && 'ethlete-studio' || '') }}
     secrets: inherit
+
+  verified:
+    name: All verified
+    # The one check a branch rule can require: the groups ci-groups.yml skipped count as passed.
+    if: always()
+    needs: [groups, repo, ci, ci-apps]
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

@@ -1,0 +1,67 @@
+name: CI groups
+
+# Picks which check groups (SDK libs, Studio, Timetrack) a run needs, from the Nx affected graph
+# between the last green run and HEAD (tools/scripts/ci-groups.mjs). Called first by ci-pr, ci-next
+# and ci-main; a group it leaves out is skipped.
+on:
+  workflow_call:
+    outputs:
+      sdk:
+        value: ${{ jobs.select.outputs.sdk }}
+      sdk_projects:
+        value: ${{ jobs.select.outputs.sdk_projects }}
+      studio:
+        value: ${{ jobs.select.outputs.studio }}
+      studio_projects:
+        value: ${{ jobs.select.outputs.studio_projects }}
+      timetrack:
+        value: ${{ jobs.select.outputs.timetrack }}
+      timetrack_projects:
+        value: ${{ jobs.select.outputs.timetrack_projects }}
+
+# Nx Cloud is temporarily bypassed while the self-hosted instance is unstable. Remote caching
+# is off; everything else about the run is unchanged. Delete this to re-enable.
+env:
+  NX_NO_CLOUD: 'true'
+
+jobs:
+  select:
+    name: Select groups
+    runs-on: ${{ vars.CI_SELF_HOSTED == 'true' && (!github.event.pull_request || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","ethdk"]') || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+    outputs:
+      sdk: ${{ steps.groups.outputs.sdk }}
+      sdk_projects: ${{ steps.groups.outputs.sdk_projects }}
+      studio: ${{ steps.groups.outputs.studio }}
+      studio_projects: ${{ steps.groups.outputs.studio_projects }}
+      timetrack: ${{ steps.groups.outputs.timetrack }}
+      timetrack_projects: ${{ steps.groups.outputs.timetrack_projects }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      # An app version without a published release runs that app's group, so release-apps.yml never
+      # releases on checks of an older commit.
+      - id: pending
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/main')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          force=''
+          for app in timetrack:apps/timetrack studio:apps/ethlete-studio; do
+            dir=${app#*:}
+            tag="$(node -p "require('./$dir/package.json').name")@$(node -p "require('./$dir/package.json').version")"
+            draft=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null || echo missing)
+            [ "$draft" = false ] || force="$force,${app%%:*}"
+          done
+          echo "Pending app releases: ${force:-none}"
+          echo "force=$force" >> "$GITHUB_OUTPUT"
+
+      - id: groups
+        env:
+          FORCE: ${{ steps.pending.outputs.force }}
+        run: node tools/scripts/ci-groups.mjs --base "$NX_BASE" --head "$NX_HEAD" --force "$FORCE" --github-output "$GITHUB_OUTPUT"
