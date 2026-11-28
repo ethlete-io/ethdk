@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".."
+  },
+  "include": ["src/bin.ts", "src/lib/**/*.ts", "../cli-core/src/lib/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.fixtures.ts",
+    "../cli-core/src/**/*.spec.ts",
+    "../cli-core/src/**/*.test.ts",
+    "../cli-core/src/**/*.fixtures.ts"
+  ]
+}

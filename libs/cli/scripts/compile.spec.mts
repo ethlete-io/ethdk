@@ -146,6 +146,26 @@ describe('layOutPackage', () => {
     expect(decode(mappings)[0]?.map(([generated]) => generated)).toEqual([0, written.indexOf('design_1.go')]);
   });
 
+  it('lays out the design entry of a design-only build as src/bin.js next to the design lib', () => {
+    const root = mkdtempSync(join(tmpdir(), 'compile-'));
+    const emitted = join(root, 'run-tsc');
+    const run = join(root, 'run');
+
+    tree(emitted, {
+      'design/src/bin.js':
+        'const i = require("@ethlete/cli-core/invocation");\nconst d = require("./lib/design/design-command");\n',
+      'design/src/lib/design/design-command.js': '',
+      'cli-core/src/lib/invocation.js': '',
+    });
+
+    layOutPackage(emitted, run);
+
+    expect(readFileSync(join(run, 'src/bin.js'), 'utf8')).toBe(
+      'const i = require("./lib/invocation");\nconst d = require("./lib/design/design-command");\n',
+    );
+    expect(existsSync(join(run, 'src/lib/design/design-command.js'))).toBe(true);
+  });
+
   it('refuses an alias whose target is not part of the package', () => {
     const { emitted, run } = emit();
 

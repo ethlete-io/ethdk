@@ -24,8 +24,8 @@ const jsFiles = (dir: string): string[] =>
   });
 
 /** Lists every relative `require("./…")` in a built CLI that does not resolve, plus a missing entry point. */
-const unresolvedRequires = (root: string) => {
-  const entry = join(root, 'src/index.js');
+const unresolvedRequires = (root: string, entryFile: string) => {
+  const entry = join(root, entryFile);
   if (!existsSync(entry)) return [`${relative(root, entry)} is missing`];
 
   return jsFiles(root).flatMap((file) =>
@@ -36,8 +36,8 @@ const unresolvedRequires = (root: string) => {
 };
 
 /** Throws when the built CLI under `root` is partial, naming what is missing. */
-export const assertCompleteBuild = (root: string, label: string) => {
-  const missing = unresolvedRequires(root);
+export const assertCompleteBuild = (root: string, label: string, entryFile = 'src/index.js') => {
+  const missing = unresolvedRequires(root, entryFile);
   if (!missing.length) return;
 
   const shown = missing.slice(0, 20).map((line) => `  ${line}`);

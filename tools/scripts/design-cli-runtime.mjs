@@ -1,46 +1,84 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cpSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { layOutPackage, swapIntoPlace } from '../../libs/cli/scripts/compile.mts';
 import { assertCompleteBuild } from '../../libs/cli/scripts/move-into-place.mts';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const built = resolve(root, 'dist/libs/cli');
-const runtime = resolve(root, 'dist/apps/ethlete-studio/cli-runtime');
-
-assertCompleteBuild(built, built);
-
-const manifest = JSON.parse(readFileSync(resolve(built, 'package.json'), 'utf8'));
+/** The design entry inside the runtime, as `SHIPPED_CLI` in apps/ethlete-studio/src-tauri/src/design_server.rs names it. */
+export const RUNTIME_ENTRY = 'src/bin.js';
 
 /**
- * `playwright` is left out: it wants a browser download of its own, so the browser stage of
- * `et design check` and the server's variant thumbnails take it from the checkout. Every other version is the one the package declares, so the shipped
- * copy can never drift from the published one.
+ * The runtime's manifest. `playwright` is left out: it wants a browser download of its own, so the browser stage of
+ * `et design check` and the server's variant thumbnails take it from the checkout. Every other dependency is the one
+ * `@ethlete/cli` declares, so the shipped copy draws with the versions the published package draws with.
  */
-const dependencies = { ...manifest.dependencies, tslib: manifest.peerDependencies.tslib };
-
-rmSync(runtime, { recursive: true, force: true });
-mkdirSync(runtime, { recursive: true });
-writeFileSync(
-  resolve(runtime, 'package.json'),
-  `${JSON.stringify({ name: 'ethlete-studio-design-runtime', private: true, dependencies }, null, 2)}\n`,
-);
-
-/**
- * `--omit=optional` would drop esbuild's platform binary, which vite cannot run without. The
- * install is therefore per platform, which is what a bundle is anyway.
- *
- * On Windows `npm` is `npm.cmd`, which Node spawns only through a shell.
- */
-execFileSync('npm', ['install', '--omit=dev', '--omit=peer', '--no-audit', '--no-fund', '--no-package-lock'], {
-  cwd: runtime,
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
+export const runtimeManifestOf = ({ cliManifest, studioManifest }) => ({
+  name: 'ethlete-studio-design-runtime',
+  version: studioManifest.version,
+  private: true,
+  dependencies: cliManifest.dependencies,
 });
 
-const runtimeCli = resolve(runtime, 'node_modules/@ethlete/cli');
-cpSync(built, runtimeCli, { recursive: true });
-assertCompleteBuild(runtimeCli, runtimeCli);
+const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
-console.log(`design runtime written to ${runtime}`);
+const build = (root) => {
+  const runtime = resolve(root, 'dist/apps/ethlete-studio/cli-runtime');
+  const run = `${runtime}-run-${process.pid}`;
+  const emitted = `${run}-tsc`;
+
+  rmSync(run, { recursive: true, force: true });
+  rmSync(emitted, { recursive: true, force: true });
+
+  try {
+    const tsc = spawnSync('npx', ['tsc', '-p', 'libs/design/tsconfig.build.json', '--outDir', emitted], {
+      cwd: root,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+
+    if (tsc.status !== 0) throw new Error(`tsc exited with ${tsc.status}`);
+
+    layOutPackage(emitted, run, runtime);
+    cpSync(resolve(root, 'libs/design/design'), join(run, 'design'), {
+      recursive: true,
+      filter: (source) => !(statSync(source).isFile() && source.endsWith(`${sep}tsconfig.json`)),
+    });
+
+    const manifest = runtimeManifestOf({
+      cliManifest: readJson(resolve(root, 'libs/cli/package.json')),
+      studioManifest: readJson(resolve(root, 'apps/ethlete-studio/package.json')),
+    });
+
+    writeFileSync(join(run, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+
+    /**
+     * `--omit=optional` would drop esbuild's platform binary, which vite cannot run without. The
+     * install is therefore per platform, which is what a bundle is anyway.
+     *
+     * On Windows `npm` is `npm.cmd`, which Node spawns only through a shell.
+     */
+    execFileSync('npm', ['install', '--omit=dev', '--omit=peer', '--no-audit', '--no-fund', '--no-package-lock'], {
+      cwd: run,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+
+    assertCompleteBuild(run, run, RUNTIME_ENTRY);
+    execFileSync(process.execPath, [resolve(root, 'libs/cli/scripts/write-build-info.mts'), run, 'libs/cli'], {
+      cwd: root,
+      stdio: 'inherit',
+    });
+    swapIntoPlace(run, runtime);
+  } finally {
+    rmSync(run, { recursive: true, force: true });
+    rmSync(emitted, { recursive: true, force: true });
+  }
+
+  if (!existsSync(join(runtime, RUNTIME_ENTRY))) throw new Error(`${runtime} has no ${RUNTIME_ENTRY}`);
+
+  console.log(`design runtime written to ${runtime}`);
+};
+
+if (import.meta.main) build(resolve(dirname(fileURLToPath(import.meta.url)), '../..'));

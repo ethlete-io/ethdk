@@ -135,7 +135,6 @@
     "cli-runtime": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/ethlete-studio/cli-runtime"],
-      "dependsOn": [{ "projects": ["cli"], "target": "build" }],
       "options": {
         "command": "node tools/scripts/design-cli-runtime.mjs"
       }

@@ -26,9 +26,10 @@ const CLI_ENTRIES: [&str; 2] = ["node_modules/@ethlete/cli/src/index.js", "dist/
 /// on Linux, so the two must stay equal.
 const PRODUCT_NAME: &str = "Ethlete Studio";
 
-/// The copy of the design tool the app carries, under Tauri's resource directory. It brings its own
+/// The entry of the design tool the app carries, under Tauri's resource directory, as
+/// `RUNTIME_ENTRY` in tools/scripts/design-cli-runtime.mjs writes it. It brings its own
 /// `node_modules`, so it draws a checkout that installs no design tooling at all.
-const SHIPPED_CLI: &str = "cli-runtime/node_modules/@ethlete/cli/src/index.js";
+const SHIPPED_CLI: &str = "cli-runtime/src/bin.js";
 
 /// Enough of the server's output to read a failure, short enough to send on every poll.
 const LOG_LINES: usize = 40;
@@ -54,7 +55,9 @@ const CLI_SOURCE_FILES: [&str; 1] = ["package.json"];
 
 const BUILD_INFO: &str = "dist/libs/cli/build-info.json";
 
-/// `cli-runtime` depends on `cli:build`, so it renews both copies a development build may start.
+const SHIPPED_BUILD_INFO: &str = "dist/apps/ethlete-studio/cli-runtime/build-info.json";
+
+/// Renews the runtime, which a development build starts in place of `dist/libs/cli` once it exists.
 const CLI_BUILD: [&str; 3] = ["nx", "run", "ethlete-studio:cli-runtime"];
 
 /// Written by `libs/design/src/lib/design/crash-log.ts`, one entry per crash.
@@ -508,7 +511,17 @@ async fn judged(
 fn built_cli_outdated() -> bool {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
 
-    cli_build_is_stale(&root.join("libs/cli"), &root.join(BUILD_INFO))
+    cli_build_is_stale(&root.join("libs/cli"), &built_cli_info(&root))
+}
+
+/// The build-info of the copy a development build starts: the runtime once one is built, else `dist/libs/cli`.
+fn built_cli_info(root: &Path) -> PathBuf {
+    let shipped = root.join(SHIPPED_BUILD_INFO);
+
+    match shipped.is_file() {
+        true => shipped,
+        false => root.join(BUILD_INFO),
+    }
 }
 
 /// A missing or unreadable build-info.json is not stale: there is no build to compare with.
@@ -1970,5 +1983,29 @@ mod tests {
             resources.values().any(|target| target.as_str() == Some(shipped_under)),
             "no resource is bundled as {shipped_under}, so SHIPPED_CLI points at nothing"
         );
+    }
+
+    #[test]
+    fn the_shipped_copy_names_the_entry_the_runtime_build_writes() {
+        let script = include_str!("../../../../tools/scripts/design-cli-runtime.mjs");
+        let entry = SHIPPED_CLI.split_once('/').expect("a resource folder").1;
+
+        assert!(
+            script.contains(&format!("RUNTIME_ENTRY = '{entry}'")),
+            "design-cli-runtime.mjs writes no {entry}, so SHIPPED_CLI points at nothing"
+        );
+    }
+
+    #[test]
+    fn a_development_build_judges_the_runtime_once_one_is_built() {
+        let root = ground("built-info");
+
+        assert_eq!(built_cli_info(&root), root.join(BUILD_INFO));
+
+        let shipped = root.join(SHIPPED_BUILD_INFO);
+        std::fs::create_dir_all(shipped.parent().expect("a parent")).expect("a directory");
+        std::fs::write(&shipped, "{}").expect("a build-info");
+
+        assert_eq!(built_cli_info(&root), shipped);
     }
 }

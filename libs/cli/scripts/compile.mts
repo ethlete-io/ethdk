@@ -10,12 +10,13 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { assertCompleteBuild } from './move-into-place.mts';
 
 const CLI_CORE_ALIASES = ['@ethlete/cli-core/'];
 const DESIGN_ALIAS = '@ethlete/design';
 const SPECIFIER = /(require\(|import\(|from )(["'])([^"']+)\2/g;
+const DESIGN_ENTRY = /^bin\.(js|d\.ts|js\.map)$/;
 const BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 type SourceMap = { sources: string[]; mappings?: string };
@@ -105,14 +106,17 @@ const shiftGeneratedColumns = (mappings: string, shifts: ColumnShift[][]) =>
 
 /**
  * Lays the `tsc` output of libs/cli, libs/cli-core and libs/design (`emitted/{cli,cli-core,design}/**`) out as the one
- * published package: libs/cli-core's `src/lib` lands in `src/lib`, libs/design's `src/lib/design` in `src/lib/design`. The path aliases between the two libs become
- * relative requires, and every source map points at its source from where `run` is moved to (`final`).
+ * published package: libs/cli-core's `src/lib` lands in `src/lib`, libs/design's `src/lib/design` in `src/lib/design` and its entry
+ * `src/bin.ts` in `src/bin.js`. The path aliases between the libs become relative requires, and every source map points at its source
+ * from where `run` is moved to (`final`).
  */
 export const layOutPackage = (emitted: string, run: string, final = run) => {
   const cliSrc = join(emitted, 'cli', 'src');
   const coreSrc = join(emitted, 'cli-core', 'src');
-  const designLib = join(emitted, 'design', 'src', 'lib', 'design');
+  const designSrc = join(emitted, 'design', 'src');
+  const designLib = join(designSrc, 'lib', 'design');
   const placeOf = (path: string) => {
+    if (dirname(path) === designSrc && DESIGN_ENTRY.test(basename(path))) return join(run, 'src', basename(path));
     if (isInside(cliSrc, path)) return join(run, 'src', relative(cliSrc, path));
     if (isInside(coreSrc, path)) return join(run, 'src', relative(coreSrc, path));
     if (isInside(designLib, path)) return join(run, 'src', 'lib', 'design', relative(designLib, path));
