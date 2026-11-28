@@ -124,6 +124,41 @@ const makeTarget = (config?: unknown) => {
   return target;
 };
 
+it('loads Vite and Tailwind PostCSS from the served project', async () => {
+  const target = makeTarget();
+  writeFileSync(join(target, 'package.json'), '{}');
+
+  const packages = {
+    vite: `
+      export const createLogger = () => ({ error() {} });
+      export const createServer = async (options) => ({
+        config: { ...options, viteMarker: 'project-vite' },
+        close: async () => {},
+        listen: async () => {},
+        environments: { ssr: { fetchModule: async () => ({}) } },
+      });`,
+    '@tailwindcss/postcss': `export default () => ({ postcssPlugin: 'project-tailwind' });`,
+  };
+
+  for (const [name, source] of Object.entries(packages)) {
+    const directory = join(target, 'node_modules', name);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'package.json'), JSON.stringify({ exports: './index.mjs' }));
+    writeFileSync(join(directory, 'index.mjs'), source);
+  }
+
+  const server = await createDesignServer({ target, config: {}, listen: false });
+
+  try {
+    expect(server.config).toMatchObject({
+      viteMarker: 'project-vite',
+      css: { postcss: { plugins: expect.arrayContaining([{ postcssPlugin: 'project-tailwind' }]) } },
+    });
+  } finally {
+    await server.close();
+  }
+});
+
 describe('terminalPortLine', () => {
   it('names the port left to Studio, the port it serves on and how to bind the Studio port', () => {
     expect(terminalPortLine(4402, 51234)).toBe(

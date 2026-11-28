@@ -1,9 +1,11 @@
 import { createHash } from 'crypto';
 import { Dirent, existsSync, readdirSync, readFileSync, realpathSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
+import { createRequire } from 'module';
 import { AddressInfo, createServer as createNetServer } from 'net';
 import { setTimeout as delay } from 'timers/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'path';
+import { pathToFileURL } from 'url';
 import { interval, Subscription, tap, timer } from 'rxjs';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
@@ -1265,14 +1267,24 @@ export const linkedRootsOf = (target: string) => {
   return [...roots];
 };
 
+const DENIED_REQUEST = /^The request id "(.*)" is outside of Vite serving allow list\.$/;
+
+const resolveProjectPackage = (projectRequire: NodeJS.Require, specifier: string) => {
+  try {
+    return pathToFileURL(projectRequire.resolve(specifier)).href;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error;
+
+    return null;
+  }
+};
+
 /**
  * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
  * middleware mode only to load design modules for a command. With `port`, it listens there instead
  * (0 picks a free one), quiet and unwatched. Only the user's server uses the checkout's dependency cache,
  * so a command can draw while that server runs.
  */
-const DENIED_REQUEST = /^The request id "(.*)" is outside of Vite serving allow list\.$/;
-
 export const createDesignServer = async (options: {
   target: string;
   config: DesignConfig;
@@ -1285,6 +1297,7 @@ export const createDesignServer = async (options: {
   chromiumOf?: ChromiumOf;
 }) => {
   const { target, listen, sketchesRoot, checkSketches, chromiumOf } = options;
+  const projectRequire = createRequire(resolve(target, 'package.json'));
   const config = withLegacyProducts(target, options.config);
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
@@ -1305,8 +1318,13 @@ export const createDesignServer = async (options: {
   // A worker thread cannot chdir: the slow-run worker draws in the directory the serve already moved to.
   if (process.cwd() !== resolve(target)) process.chdir(target);
 
-  const { createServer, createLogger } = await import('vite');
-  const { default: tailwind } = await import('@tailwindcss/postcss');
+  const viteEntry = resolveProjectPackage(projectRequire, 'vite');
+  const tailwindEntry = resolveProjectPackage(projectRequire, '@tailwindcss/postcss');
+  const { createServer, createLogger }: typeof import('vite', { with: { 'resolution-mode': 'import' } }) = viteEntry
+    ? await import(viteEntry)
+    : await import('vite');
+  const { default: tailwind }: typeof import('@tailwindcss/postcss', { with: { 'resolution-mode': 'import' } }) =
+    tailwindEntry ? await import(tailwindEntry) : await import('@tailwindcss/postcss');
   const here = assetRoot();
   const system = createSystemModules({ target, config, sketchesRoot });
   const generatedStylesheetsOf = createGeneratedStylesheets({ target, config, system });
@@ -1354,8 +1372,7 @@ export const createDesignServer = async (options: {
     createServer({
       configFile: false,
       root: resolve(here, 'web'),
-      // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
-      // own pipeline so no checkout's postcss config reaches a drawing.
+      // Keep drawings on the inline PostCSS pipeline so the checkout's PostCSS config cannot change them.
       css: {
         postcss: {
           plugins: [
