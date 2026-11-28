@@ -19,7 +19,7 @@ describe('staleCliBuildMessage', () => {
     root = mkdtempSync(join(tmpdir(), 'b267-'));
     buildDir = join(root, 'dist');
     write(join(root, 'libs/cli/src/index.ts'), 'export const a = 1;');
-    write(join(root, 'libs/cli/design/part.ts'), 'export const b = 1;');
+    write(join(root, 'libs/design/design/part.ts'), 'export const b = 1;');
     record();
   });
 
@@ -51,8 +51,8 @@ describe('staleCliBuildMessage', () => {
     );
   });
 
-  it('refuses after an edit in design/', () => {
-    write(join(root, 'libs/cli/design/part.ts'), 'export const b = 2;');
+  it('refuses after an edit in libs/design/design', () => {
+    write(join(root, 'libs/design/design/part.ts'), 'export const b = 2;');
 
     expect(staleCliBuildMessage({ root, buildDir })).toBeDefined();
   });
@@ -91,7 +91,7 @@ describe('staleCliBuildMessage', () => {
 
     it('passes when the hash matches', () => {
       write(join(other, 'libs/cli/src/index.ts'), 'export const a = 1;');
-      write(join(other, 'libs/cli/design/part.ts'), 'export const b = 1;');
+      write(join(other, 'libs/design/design/part.ts'), 'export const b = 1;');
 
       expect(staleCliBuildMessage({ root: other, buildDir: join(other, 'dist') })).toBeUndefined();
     });

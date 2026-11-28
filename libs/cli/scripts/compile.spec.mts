@@ -76,6 +76,8 @@ describe('layOutPackage', () => {
     expect(readFileSync(join(run, 'src/lib/design/system/lock.d.ts'), 'utf8')).toBe(
       "import { LockSystem } from '../../api/lock';\n",
     );
+    expect(existsSync(join(run, 'src/lib/plain-output.js')), 'CLI core runtime target').toBe(true);
+    expect(existsSync(join(run, 'src/lib/api/lock.d.ts')), 'CLI core declaration target').toBe(true);
     expect(existsSync(join(run, 'src/lib/person-name-hashes.json'))).toBe(true);
     expect(existsSync(join(run, 'src/lib/design/serve.js'))).toBe(true);
     expect(readdirSync(run)).toEqual(['src']);

@@ -11,6 +11,7 @@ const NON_LITERAL_LOADS_ALLOWED = new Set<string>([
   'design/src/lib/design/browser.ts',
   'design/src/lib/design/commit-hunks.ts',
   'design/src/lib/design/render-worker.ts',
+  'design/src/lib/design/serve.ts',
 ]);
 
 const isInside = (dir: string, path: string) => path === dir || path.startsWith(`${dir}${sep}`);
@@ -206,11 +207,15 @@ const fixtureLayout = (files: Record<string, string>): Layout => {
   };
 };
 
-describe('the boundary between libs/cli and libs/design', () => {
+describe('the boundary between libs/cli, libs/cli-core and libs/design', () => {
   const layout: Layout = { root: join(__dirname, '..', '..'), options: cliCompilerOptions };
-  const files = [...sourceFiles(join(layout.root, 'cli', 'src')), ...sourceFiles(designDirOf(layout))];
+  const files = [
+    ...sourceFiles(join(layout.root, 'cli', 'src')),
+    ...sourceFiles(join(layout.root, 'cli-core', 'src')),
+    ...sourceFiles(designDirOf(layout)),
+  ];
 
-  it('keeps every cli file from importing design, except the et design command wiring', () => {
+  it('keeps CLI and CLI core files from importing design, except the et design command wiring', () => {
     expect(outsideImportsOfDesign(layout, files)).toEqual([]);
   });
 
