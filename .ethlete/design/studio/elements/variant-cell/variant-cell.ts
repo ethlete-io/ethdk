@@ -1,6 +1,5 @@
 import { definePart, drawing, html, slot } from '@design-system';
 import { control } from '@ethlete/components/design/control';
-import { loaderStyles, spinner } from '@ethlete/components/design/loader';
 import styles from './variant-cell.css?inline';
 import { CANVAS_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/canvas-labels';
 import { SKETCHES_LABELS } from '../../../../../apps/ethlete-studio/src/app/i18n/sketches-labels';
@@ -56,18 +55,20 @@ const moveArrows = (arrows: Arrow[]) =>
           .join('')}
       </svg>`;
 
-export const variantCellStyles = styles + loaderStyles;
+export const variantCellStyles = styles;
 
 const loadingBadge = html`<span
   class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-text-muted [@container(height<14px)]:hidden"
   data-loading-badge
-  >${spinner({ diameter: 14, strokeWidth: 1.75 })}<span class="[@container(height<18px)]:hidden"
-    >${CANVAS_LABELS.loading}</span
-  ></span
+  ><span class="[@container(height<18px)]:hidden">${CANVAS_LABELS.loading}</span></span
 >`;
 
 const pending = (height?: number) =>
-  html`<div class="${height === undefined ? 'h-30' : 'h-full'}" aria-busy="true" data-loading></div>`;
+  html`<div
+    class="${height === undefined ? 'h-30' : 'h-full'} animate-pulse bg-et-surface-tint/8 motion-reduce:animate-none"
+    aria-busy="true"
+    data-loading
+  ></div>`;
 
 const stackButton = (stacked: string[]) =>
   html`<button
@@ -202,7 +203,7 @@ const crop = {
 
 export default definePart({
   implements: 'apps/ethlete-studio/src/app/design-parts/variant-cell/variant-cell.component.ts',
-  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an empty, aria-busy box at the default height with the Lädt mark (the SDK spinner at 14 px and Lädt) centered in it, losing the text below 18px of frame height and the spinner below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with an accent crop mark on each changed area (a part that only moved gets one solid mark on its new place, a dashed one on its old place and an accent arrow from the old to the new) and, when it stands for a group of states, two card edges under the frame like a stack and one plain line below (+ 2 weitere Zustände sehen genauso aus. Klick zeigt die Namen.) that is a button: a click opens the folded state names under it, a second click closes them; the host places comment pins on their point in the shot through the overlay slot.',
+  note: 'One state of a sketch variant in the sketch matrix: the state name above, then the part drawn at its own width and scaled into the frame. A state the variant leaves as it was is dimmed and reads unverändert; a base-state cell names the states folded as drawn like it after its own state name (hover, active = default). The host sets the frame width, the scale and the label size (`--sk-frame`, `--sk-scale`, `--sk-label`) and places the cell in its grid. While its render is not there yet, the frame is an aria-busy skeleton box at the default height, filled with the surface tint and fading softly in and out (opacity only, static under reduced motion), with the muted Lädt text centered in it and no spinner, losing the text below 18px of frame height and the mark below 14px; the label row is the same loading or not. A cropped cell shows the change magnified, with an accent crop mark on each changed area (a part that only moved gets one solid mark on its new place, a dashed one on its old place and an accent arrow from the old to the new) and, when it stands for a group of states, two card edges under the frame like a stack and one plain line below (+ 2 weitere Zustände sehen genauso aus. Klick zeigt die Namen.) that is a button: a click opens the folded state names under it, a second click closes them; the host places comment pins on their point in the shot through the overlay slot.',
   madeBy: ['claude-opus-5-5', 'claude-sonnet-5-5', 'design check'],
   controls: { names: { kind: 'button', input: ['pointer', 'keyboard'] } },
   widths: [240],
@@ -230,9 +231,9 @@ export default definePart({
     stacked:
       'A cropped cell standing for a group of states; check the two card edges under the frame read as a stack and the plain line below counts the folded states and says that hovering it shows their names.',
     'loading-small':
-      'A loading cell whose frame is 16px tall; check that only the spinner shows, with no Lädt text, and nothing leaves the frame.',
+      'A loading cell whose frame is 16px tall; check that only the pulsing tint fill shows, with no Lädt text, and nothing leaves the frame.',
     loading:
-      'A cell whose shot still loads; check the spinner with Lädt centered in the empty busy frame and the label row unchanged.',
+      'A cell whose shot still loads; check the pulsing tint skeleton with Lädt centered in the busy frame and the label row unchanged.',
   },
   motions: {
     loading: { from: 'loading', to: 'loading' },

@@ -52,7 +52,14 @@
         class="relative origin-top-left"
       >
         @if (loading()) {
-          <div [class]="height() === undefined ? 'h-30' : 'h-full'" aria-busy="true" data-loading></div>
+          <div
+            [class]="
+              (height() === undefined ? 'h-30' : 'h-full') +
+              ' animate-pulse bg-et-surface-tint/8 motion-reduce:animate-none'
+            "
+            aria-busy="true"
+            data-loading
+          ></div>
         }
         <div [class]="loading() ? 'invisible absolute inset-x-0 top-0' : 'contents'">
           <ng-content />
@@ -104,9 +111,7 @@
       <span
         class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-space-1 text-ui-xs text-et-surface-text-muted [@container(height<14px)]:hidden"
         data-loading-badge
-        ><et-spinner [diameter]="14" [strokeWidth]="1.75" /><span class="[@container(height<18px)]:hidden">{{
-          LABELS.loading
-        }}</span></span
+        ><span class="[@container(height<18px)]:hidden">{{ LABELS.loading }}</span></span
       >
     }
     <span class="pointer-events-none absolute inset-0" data-frame-border></span>

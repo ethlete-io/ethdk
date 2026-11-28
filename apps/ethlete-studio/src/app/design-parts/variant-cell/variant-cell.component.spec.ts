@@ -139,7 +139,7 @@ describe('VariantCellComponent', () => {
     const cell = fixture.nativeElement as HTMLElement;
 
     expect(cell.querySelector('[data-loading][aria-busy="true"]')).not.toBeNull();
-    expect(cell.querySelector('[data-loading-badge] et-spinner')).not.toBeNull();
+    expect(cell.querySelector('[data-loading-badge] et-spinner')).toBeNull();
     expect(cell.querySelector('[data-loading-badge]')?.textContent).toContain('Lädt');
     expect(cell.querySelector('[data-sk-label] [data-loading-badge]')).toBeNull();
     expect(cell.querySelector('[data-sk-frame]')?.contains(cell.querySelector('[data-loading-badge]'))).toBe(true);

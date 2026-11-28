@@ -1,5 +1,4 @@
 import { Component, computed, ElementRef, input, signal, viewChild, ViewEncapsulation } from '@angular/core';
-import { SpinnerComponent } from '@ethlete/components';
 import { SKETCHES_LABELS } from '../../i18n/sketches-labels';
 import { moveArrowOf } from './move-arrow';
 
@@ -21,7 +20,6 @@ const THUMBNAIL_SCALE = 1 / 16;
   selector: 'ethlete-variant-cell',
   templateUrl: './variant-cell.component.html',
   encapsulation: ViewEncapsulation.None,
-  imports: [SpinnerComponent],
   host: {
     class: 'group/sk-shot row-span-2 grid min-w-0 grid-rows-subgrid gap-y-space-1',
     '[attr.data-sk-state]': 'state()',
